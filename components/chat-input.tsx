@@ -11,6 +11,7 @@ import { useAIGeneration } from "state/ai";
 import { useSettingsState } from "state/ui/settings";
 import { getAIErrorMessage } from "lib/ai/error-handler";
 import { providerModels, getDefaultModel, getModelName } from "lib/ai/types";
+import React from "react";
 
 interface ChatInputProps {
   chatId: Id<"chats">;
