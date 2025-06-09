@@ -6,7 +6,7 @@ import { api } from "convex/_generated/api";
 import { Id } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
 import { Textarea } from "components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, ChevronDown, Paperclip, Search } from "lucide-react";
 import { useAIGeneration } from "state/ai";
 import { useSettingsState } from "state/ui/settings";
 import { getAIErrorMessage } from "lib/ai/error-handler";
@@ -67,28 +67,66 @@ export function ChatInput({ chatId }: ChatInputProps) {
   };
 
   return (
-    <div className="p-4 border-t border-border">
-      <form onSubmit={(e) => void handleSubmit(e)} className="flex gap-2">
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-1 min-h-[60px] max-h-[200px] my-auto resize-none"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void handleSubmit(e);
-            }
-          }}
-        />
-        <Button
-          type="submit"
-          disabled={!input.trim() || isGenerating}
-          className="self-end my-auto"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
-      </form>
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto">
+        <form onSubmit={(e) => void handleSubmit(e)} className="relative">
+          <div className="transition-shadow border shadow-sm border-border rounded-2xl bg-background focus-within:shadow-md">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message here..."
+              className="w-full pr-20 pb-12 pt-4 px-4 min-h-[80px] max-h-[300px] resize-none !border-0 bg-transparent font-sans text-sm focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void handleSubmit(e);
+                }
+              }}
+            />
+
+            <div className="flex items-center justify-between px-4 pb-3">
+              <div className="flex items-center space-x-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-3 font-sans text-xs rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                >
+                  <span className="mr-1">Claude 3.5 Sonnet</span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-8 h-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-8 h-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={!input.trim() || isGenerating}
+                size="sm"
+                className="w-8 h-8 p-0 rounded-lg bg-foreground text-background hover:bg-foreground/90"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

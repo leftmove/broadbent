@@ -24,9 +24,10 @@ export function ChatInterface() {
       <Authenticated>
         <Sidebar onSettingsClick={() => setShowSettings(true)} />
         <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between p-4 border-b border-border">
-            <h1 className="text-xl font-semibold">Broadbent</h1>
-            <ThemeToggle />
+          <header className="flex items-center justify-end px-6 py-4 border-b border-border/30 bg-background/80 backdrop-blur-sm">
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+            </div>
           </header>
           <ChatWindow chatId={selectedChatId} />
         </div>
