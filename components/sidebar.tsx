@@ -7,7 +7,7 @@ import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { Plus, Settings, MessageSquare, Search, Menu } from "lucide-react";
 import { useChatState } from "state/ui/chat";
-import { signOut } from "supertokens-auth-react/recipe/session";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -19,6 +19,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
   const chats = useQuery(api.chats.list) || [];
   const createChat = useMutation(api.chats.create);
   const { selectedChatId, setSelectedChatId } = useChatState();
+  const { signOut } = useAuthActions();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleNewChat = () => {
@@ -27,9 +28,8 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
     });
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    window.location.href = "/";
+  const handleSignOut = () => {
+    void signOut();
   };
 
   const groupChatsByTime = (chats: Doc<"chats">[]) => {
@@ -178,7 +178,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
           <Button
             variant="ghost"
             className="w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            onClick={() => void handleSignOut()}
+            onClick={handleSignOut}
           >
             Sign Out
           </Button>

@@ -1,28 +1,69 @@
 "use client";
 
-import { useEffect } from "react";
-import { redirectToAuth } from "supertokens-auth-react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useState } from "react";
 import { Button } from "components/ui/button";
+import { Input } from "components/ui/input";
 
 export function AuthForm() {
-  const handleSignIn = () => {
-    redirectToAuth();
+  const { signIn } = useAuthActions();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await signIn("password", {
+        email,
+        password,
+        flow: isSignUp ? "signUp" : "signIn",
+      });
+    } catch (error) {
+      console.error("Auth error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
       <div className="space-y-4">
-        <Button 
-          onClick={handleSignIn}
-          className="w-full font-sans"
+        <Input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="font-sans"
+          required
+        />
+        <Input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="font-sans"
+          required
+        />
+      </div>
+      <div className="space-y-3">
+        <Button type="submit" className="w-full font-sans" disabled={loading}>
+          {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full font-sans text-sm"
+          onClick={() => setIsSignUp(!isSignUp)}
         >
-          Sign In / Sign Up
+          {isSignUp
+            ? "Already have an account? Sign In"
+            : "Need an account? Sign Up"}
         </Button>
       </div>
-      <div className="text-center text-sm text-muted-foreground">
-        <p>Secure authentication powered by SuperTokens</p>
-        <p className="mt-2">Supports email/password and social login</p>
-      </div>
-    </div>
+    </form>
   );
 }
