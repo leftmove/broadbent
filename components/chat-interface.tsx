@@ -20,11 +20,11 @@ export function ChatInterface() {
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       <Authenticated>
         <Sidebar onSettingsClick={() => setShowSettings(true)} />
-        <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-end px-6 py-4 border-b border-border/30 bg-background/80 backdrop-blur-sm">
+        <div className="flex flex-col flex-1 min-h-0">
+          <header className="flex items-center justify-end px-6 py-4 border-b border-border/30 bg-background/80 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center space-x-2">
               <ThemeToggle />
             </div>
