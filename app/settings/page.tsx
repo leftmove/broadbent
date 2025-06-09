@@ -12,7 +12,7 @@ import {
 } from "components/ui/select";
 import { useSettingsState } from "state/ui/settings";
 import { AIProvider } from "lib/ai/types";
-import { ArrowLeft, Key, Brain, Palette, Shield, Bell } from "lucide-react";
+import { ArrowLeft, Key, Brain, Palette, Shield, Bell, Check } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -24,6 +24,7 @@ export default function SettingsPage() {
     anthropic: false,
     google: false,
   });
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const toggleKeyVisibility = (provider: keyof typeof showKeys) => {
     setShowKeys(prev => ({
@@ -31,6 +32,22 @@ export default function SettingsPage() {
       [provider]: !prev[provider]
     }));
   };
+
+  const handleSave = () => {
+    setSaveStatus('saving');
+    
+    // Simulate save delay
+    setTimeout(() => {
+      setSaveStatus('saved');
+      
+      // Reset to idle after showing success
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2000);
+    }, 500);
+  };
+
+  const hasAnyApiKey = apiKeys.openai || apiKeys.anthropic || apiKeys.google;
 
   return (
     <div className="min-h-screen bg-background">
@@ -257,6 +274,36 @@ export default function SettingsPage() {
                     className="font-mono text-sm"
                   />
                 </div>
+
+                {/* Save Button */}
+                {hasAnyApiKey && (
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleSave}
+                      disabled={saveStatus === 'saving'}
+                      className="relative overflow-hidden transition-all duration-200"
+                    >
+                      {saveStatus === 'saving' && (
+                        <span className="flex items-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Saving...
+                        </span>
+                      )}
+                      {saveStatus === 'saved' && (
+                        <span className="flex items-center text-green-600">
+                          <Check className="w-4 h-4 mr-2" />
+                          Saved!
+                        </span>
+                      )}
+                      {saveStatus === 'idle' && 'Save Settings'}
+                      
+                      {/* Green success animation */}
+                      {saveStatus === 'saved' && (
+                        <div className="absolute inset-0 bg-green-100 dark:bg-green-900/20 animate-pulse" />
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Security Notice */}
