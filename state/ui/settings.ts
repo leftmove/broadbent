@@ -12,6 +12,8 @@ const settingsState = observable<SettingsState>({
     openai: "",
     anthropic: "",
     google: "",
+    grok: "",
+    openrouter: "",
   },
   selectedProvider: "openai",
 });
@@ -20,7 +22,7 @@ const settingsState = observable<SettingsState>({
 if (typeof window !== "undefined") {
   const savedApiKeys = localStorage.getItem("broadbent-api-keys");
   const savedProvider = localStorage.getItem("broadbent-selected-provider");
-  
+
   if (savedApiKeys) {
     try {
       const parsed = JSON.parse(savedApiKeys);
@@ -29,7 +31,7 @@ if (typeof window !== "undefined") {
       console.error("Failed to parse saved API keys:", e);
     }
   }
-  
+
   if (savedProvider) {
     settingsState.selectedProvider.set(savedProvider as AIProvider);
   }
@@ -42,12 +44,12 @@ export const useSettingsState = () => {
   );
 
   useEffect(() => {
-    const unsubscribeApiKeys = settingsState.apiKeys.onChange((newApiKeys) => {
-      setApiKeys(newApiKeys);
+    const unsubscribeApiKeys = settingsState.apiKeys.onChange(() => {
+      setApiKeys(settingsState.apiKeys.get());
     });
-    
-    const unsubscribeProvider = settingsState.selectedProvider.onChange((newProvider) => {
-      setSelectedProviderState(newProvider);
+
+    const unsubscribeProvider = settingsState.selectedProvider.onChange(() => {
+      setSelectedProviderState(settingsState.selectedProvider.get());
     });
 
     return () => {
@@ -63,15 +65,15 @@ export const useSettingsState = () => {
       settingsState.apiKeys[provider].set(key);
       // Save to localStorage
       if (typeof window !== "undefined") {
-        localStorage.setItem("broadbent-api-keys", JSON.stringify(settingsState.apiKeys.get()));
+        localStorage.setItem(
+          "broadbent-api-keys",
+          JSON.stringify(settingsState.apiKeys.get())
+        );
       }
     },
     setSelectedProvider: (provider: AIProvider) => {
       settingsState.selectedProvider.set(provider);
-      // Save to localStorage
-      if (typeof window !== "undefined") {
-        localStorage.setItem("broadbent-selected-provider", provider);
-      }
+      localStorage.setItem("broadbent-selected-provider", provider);
     },
   };
 };
