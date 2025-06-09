@@ -464,6 +464,8 @@ export default function SettingsPage() {
                         onChange={(e) => setApiKey(prov, e.target.value)}
                         placeholder={info.apiKeyPlaceholder}
                         className="font-mono text-sm"
+                        autoComplete="off"
+                        spellCheck={false}
                       />
                     </div>
                   );
