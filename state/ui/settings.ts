@@ -1,5 +1,6 @@
 import { observable } from "@legendapp/state";
 import { AIProvider, ApiKeys } from "lib/ai/types";
+import { useEffect, useState } from "react";
 
 interface SettingsState {
   apiKeys: ApiKeys;
@@ -34,21 +35,43 @@ if (typeof window !== "undefined") {
   }
 }
 
-export const useSettingsState = () => ({
-  apiKeys: settingsState.apiKeys.get(),
-  selectedProvider: settingsState.selectedProvider.get(),
-  setApiKey: (provider: keyof ApiKeys, key: string) => {
-    settingsState.apiKeys[provider].set(key);
-    // Save to localStorage
-    if (typeof window !== "undefined") {
-      localStorage.setItem("broadbent-api-keys", JSON.stringify(settingsState.apiKeys.get()));
-    }
-  },
-  setSelectedProvider: (provider: AIProvider) => {
-    settingsState.selectedProvider.set(provider);
-    // Save to localStorage
-    if (typeof window !== "undefined") {
-      localStorage.setItem("broadbent-selected-provider", provider);
-    }
-  },
-});
+export const useSettingsState = () => {
+  const [apiKeys, setApiKeys] = useState<ApiKeys>(settingsState.apiKeys.get());
+  const [selectedProvider, setSelectedProviderState] = useState<AIProvider>(
+    settingsState.selectedProvider.get()
+  );
+
+  useEffect(() => {
+    const unsubscribeApiKeys = settingsState.apiKeys.onChange((newApiKeys) => {
+      setApiKeys(newApiKeys);
+    });
+    
+    const unsubscribeProvider = settingsState.selectedProvider.onChange((newProvider) => {
+      setSelectedProviderState(newProvider);
+    });
+
+    return () => {
+      unsubscribeApiKeys();
+      unsubscribeProvider();
+    };
+  }, []);
+
+  return {
+    apiKeys,
+    selectedProvider,
+    setApiKey: (provider: keyof ApiKeys, key: string) => {
+      settingsState.apiKeys[provider].set(key);
+      // Save to localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("broadbent-api-keys", JSON.stringify(settingsState.apiKeys.get()));
+      }
+    },
+    setSelectedProvider: (provider: AIProvider) => {
+      settingsState.selectedProvider.set(provider);
+      // Save to localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("broadbent-selected-provider", provider);
+      }
+    },
+  };
+};
