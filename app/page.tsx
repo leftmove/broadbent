@@ -1,18 +1,9 @@
-"use client";
+import { ChatInterface } from "components/chat-interface";
 
-import { Sidebar } from "components/layout/sidebar";
-import { ChatArea } from "components/chat/chat-area";
-import { useUser } from "hooks/useUser";
-
-export default function HomePage() {
-  useUser(); // Initialize user state
-
+export default function Home() {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-hidden">
-        <ChatArea />
-      </main>
-    </div>
+    <main className="min-h-screen bg-background">
+      <ChatInterface />
+    </main>
   );
 }
