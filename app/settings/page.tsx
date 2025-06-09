@@ -68,26 +68,10 @@ const GoogleIcon = (props: SVGProps<SVGSVGElement>) => (
     viewBox="0 0 48 48"
     {...props}
   >
-    <linearGradient
-      id="8sl3bbNtWcumaCBCPc4S6a_rnK88i9FvAFO_gr1"
-      x1="3.906"
-      x2="45.428"
-      y1="3.906"
-      y2="45.428"
-      gradientUnits="userSpaceOnUse"
-    >
-      <stop offset="0" stop-color="#ca5df5"></stop>
-      <stop offset=".036" stop-color="#c05ff4"></stop>
-      <stop offset=".293" stop-color="#806cea"></stop>
-      <stop offset=".528" stop-color="#4d77e3"></stop>
-      <stop offset=".731" stop-color="#297fdd"></stop>
-      <stop offset=".895" stop-color="#1283da"></stop>
-      <stop offset="1" stop-color="#0a85d9"></stop>
-    </linearGradient>
-    <path
-      fill="url(#8sl3bbNtWcumaCBCPc4S6a_rnK88i9FvAFO_gr1)"
-      d="M46.117,23.081l-0.995-0.04H45.12C34.243,22.613,25.387,13.757,24.959,2.88l-0.04-0.996	C24.9,1.39,24.494,1,24,1s-0.9,0.39-0.919,0.883l-0.04,0.996c-0.429,10.877-9.285,19.733-20.163,20.162l-0.995,0.04	C1.39,23.1,1,23.506,1,24s0.39,0.9,0.884,0.919l0.995,0.039c10.877,0.43,19.733,9.286,20.162,20.163l0.04,0.996	C23.1,46.61,23.506,47,24,47s0.9-0.39,0.919-0.883l0.04-0.996c0.429-10.877,9.285-19.733,20.162-20.163l0.995-0.039	C46.61,24.9,47,24.494,47,24S46.61,23.1,46.117,23.081z"
-    ></path>
+    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
+    <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"></path>
+    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
+    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
   </svg>
 );
 const GrokIcon = (props: SVGProps<SVGSVGElement>) => (
@@ -180,8 +164,8 @@ const providersInfo: Record<
     apiKeyName: "OpenAI API Key",
     apiKeyPlaceholder: "sk-...",
     style: {
-      default: "border-gray-300 hover:bg-gray-50",
-      selected: "border-blue-500 bg-blue-50 text-blue-600",
+      default: "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
+      selected: "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300",
     },
   },
   anthropic: {
@@ -191,8 +175,8 @@ const providersInfo: Record<
     apiKeyName: "Anthropic API Key",
     apiKeyPlaceholder: "sk-ant-...",
     style: {
-      default: "border-gray-300 hover:bg-gray-50",
-      selected: "border-orange-500 bg-orange-50 text-orange-600",
+      default: "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
+      selected: "border-orange-500 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950 dark:text-orange-300",
     },
   },
   google: {
@@ -202,8 +186,8 @@ const providersInfo: Record<
     apiKeyName: "Google API Key",
     apiKeyPlaceholder: "AI...",
     style: {
-      default: "border-gray-300 hover:bg-gray-50",
-      selected: "border-red-500 bg-red-50 text-red-600",
+      default: "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
+      selected: "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-300",
     },
   },
   grok: {
@@ -213,8 +197,8 @@ const providersInfo: Record<
     apiKeyName: "Grok API Key",
     apiKeyPlaceholder: "...",
     style: {
-      default: "border-gray-300 hover:bg-gray-50",
-      selected: "border-purple-500 bg-purple-50 text-purple-600",
+      default: "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
+      selected: "border-gray-800 bg-gray-100 text-gray-900 dark:border-gray-300 dark:bg-gray-900 dark:text-gray-100",
     },
   },
   openrouter: {
@@ -224,8 +208,8 @@ const providersInfo: Record<
     apiKeyName: "OpenRouter API Key",
     apiKeyPlaceholder: "sk-or-...",
     style: {
-      default: "border-gray-300 hover:bg-gray-50",
-      selected: "border-green-500 bg-green-50 text-green-600",
+      default: "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
+      selected: "border-purple-500 bg-purple-50 text-purple-700 dark:border-purple-400 dark:bg-purple-950 dark:text-purple-300",
     },
   },
 };
@@ -265,6 +249,7 @@ export default function SettingsPage() {
   }, [providerPref, setSelectedProvider]);
 
   const handleProviderChange = async (value: AIProvider) => {
+    console.log('Provider change triggered:', value);
     setProvider(value);
     setSelectedProvider(value);
     if (userId) {
@@ -454,7 +439,7 @@ export default function SettingsPage() {
                               href={info.href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
+                              className="text-blue-600 hover:underline dark:text-blue-400"
                             >
                               {new URL(info.href).hostname}
                             </a>
@@ -489,7 +474,7 @@ export default function SettingsPage() {
                       disabled={saveStatus === "saving"}
                       className={`relative overflow-hidden transition-all duration-300 ${
                         saveStatus === "saved"
-                          ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                          ? "bg-green-600 hover:bg-green-700 text-white border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
                           : ""
                       }`}
                     >
@@ -517,17 +502,17 @@ export default function SettingsPage() {
               </div>
 
               {/* Security Notice */}
-              <div className="overflow-hidden border border-blue-100 rounded-lg shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="overflow-hidden border border-blue-100 rounded-lg shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-950 dark:to-indigo-950">
                 <div className="p-5">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full shrink-0">
-                      <Shield className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full shrink-0 dark:bg-blue-900">
+                      <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="font-sans text-base font-medium text-blue-900">
+                      <h3 className="font-sans text-base font-medium text-blue-900 dark:text-blue-100">
                         Security Notice
                       </h3>
-                      <div className="text-sm leading-relaxed text-blue-700">
+                      <div className="text-sm leading-relaxed text-blue-700 dark:text-blue-300">
                         Your API keys are stored locally in your browser and are
                         never sent to our servers. They are only used to make
                         direct requests to the respective AI providers.
