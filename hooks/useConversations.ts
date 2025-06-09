@@ -12,7 +12,7 @@ export function useConversations() {
 
   const conversationsQuery = useQuery(
     api.conversations.getConversations,
-    user ? { userId: user._id as Id<"users"> } : "skip"
+    user.get() ? { userId: user.get()!._id as Id<"users"> } : "skip"
   );
 
   const createConversation = useMutation(api.conversations.createConversation);
@@ -20,21 +20,21 @@ export function useConversations() {
   const updateConversationTitle = useMutation(api.conversations.updateConversationTitle);
 
   // Update state when query data changes
-  if (conversationsQuery && conversationsQuery !== conversations) {
+  if (conversationsQuery && conversationsQuery !== conversations.get()) {
     conversationState.conversations.set(conversationsQuery);
     
     // Set active conversation if none is set
     const activeConv = conversationsQuery.find(c => c.isActive);
-    if (activeConv && !activeConversationId) {
+    if (activeConv && !activeConversationId.get()) {
       conversationState.activeConversationId.set(activeConv._id);
     }
   }
 
   const createNewConversation = async (title: string, model: string, provider: string) => {
-    if (!user) return;
+    if (!user.get()) return;
 
     const conversationId = await createConversation({
-      userId: user._id as Id<"users">,
+      userId: user.get()!._id as Id<"users">,
       title,
       model,
       provider,
@@ -45,10 +45,10 @@ export function useConversations() {
   };
 
   const switchConversation = async (conversationId: string) => {
-    if (!user) return;
+    if (!user.get()) return;
 
     await setActiveConversation({
-      userId: user._id as Id<"users">,
+      userId: user.get()!._id as Id<"users">,
       conversationId: conversationId as Id<"conversations">,
     });
 

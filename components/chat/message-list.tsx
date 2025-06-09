@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { ScrollArea } from "components/ui/scroll-area";
-import { MessageBubble } from "./MessageBubble";
-import { TypingIndicator } from "./TypingIndicator";
+import { MessageBubble } from "components/chat/message-bubble";
+import { TypingIndicator } from "components/chat/typing-indicator";
 import type { Message } from "state/functionality/messages";
 
 interface MessageListProps {
@@ -23,7 +23,7 @@ export function MessageList({ messages, isTyping }: MessageListProps) {
 
   return (
     <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-      <div className="space-y-4 max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-4">
         {messages.map((message) => (
           <MessageBubble key={message._id} message={message} />
         ))}

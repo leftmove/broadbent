@@ -26,7 +26,7 @@ export function useMessages(conversationId: string | null) {
   }
 
   const sendMessage = async (content: string) => {
-    if (!conversationId || !user.currentUser) return;
+    if (!conversationId || !user.currentUser.get()) return;
 
     chatState.isTyping.set(true);
 
@@ -49,13 +49,13 @@ export function useMessages(conversationId: string | null) {
       chatState.streamingMessageId.set(assistantMessageId);
 
       // Get API key for selected provider
-      const apiKey = user.apiKeys[chat.selectedProvider];
+      const apiKey = user.apiKeys.get()[chat.selectedProvider.get()];
       if (!apiKey) {
-        throw new Error(`No API key found for ${chat.selectedProvider}`);
+        throw new Error(`No API key found for ${chat.selectedProvider.get()}`);
       }
 
       // Prepare messages for AI
-      const conversationMessages = messages[conversationId] || [];
+      const conversationMessages = messages.get()[conversationId] || [];
       const aiMessages = [
         ...conversationMessages.map(msg => ({
           role: msg.role as 'user' | 'assistant',
@@ -68,8 +68,8 @@ export function useMessages(conversationId: string | null) {
 
       // Stream AI response
       await streamAIResponse({
-        provider: chat.selectedProvider as any,
-        model: chat.selectedModel,
+        provider: chat.selectedProvider.get() as any,
+        model: chat.selectedModel.get(),
         apiKey,
         messages: aiMessages,
         onChunk: (chunk) => {
@@ -104,9 +104,9 @@ export function useMessages(conversationId: string | null) {
   };
 
   return {
-    messages: conversationId ? messages[conversationId] || [] : [],
+    messages: conversationId ? messages.get()[conversationId] || [] : [],
     sendMessage,
-    isTyping: chat.isTyping,
-    streamingMessageId: chat.streamingMessageId,
+    isTyping: chat.isTyping.get(),
+    streamingMessageId: chat.streamingMessageId.get(),
   };
 }

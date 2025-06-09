@@ -18,13 +18,17 @@ import { Settings, Bot } from "lucide-react";
 
 export function ChatHeader() {
   const conversations = useObservable(conversationState.conversations);
-  const activeConversationId = useObservable(conversationState.activeConversationId);
+  const activeConversationId = useObservable(
+    conversationState.activeConversationId
+  );
   const chat = useObservable(chatState);
 
-  const activeConversation = conversations.find(c => c._id === activeConversationId);
+  const activeConversation = conversations.find(
+    (c) => c._id === activeConversationId
+  );
 
   const handleModelChange = (value: string) => {
-    const [provider, model] = value.split(':');
+    const [provider, model] = value.split(":");
     chatState.selectedProvider.set(provider);
     chatState.selectedModel.set(model);
   };
@@ -37,14 +41,17 @@ export function ChatHeader() {
     <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center space-x-3">
         <div className="flex items-center space-x-2">
-          <Bot className="h-5 w-5 text-primary" />
+          <Bot className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">
-            {activeConversation?.title || "Chat"}
+            {activeConversation?.title.get() || "Chat"}
           </h2>
         </div>
         {activeConversation && (
           <Badge variant="outline">
-            {getModelName(activeConversation.provider as any, activeConversation.model)}
+            {getModelName(
+              activeConversation.provider.get() as any,
+              activeConversation.model.get()
+            )}
           </Badge>
         )}
       </div>
@@ -74,7 +81,7 @@ export function ChatHeader() {
         </Select>
 
         <Button variant="ghost" size="sm">
-          <Settings className="h-4 w-4" />
+          <Settings className="w-4 h-4" />
         </Button>
       </div>
     </div>

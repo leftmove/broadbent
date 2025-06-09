@@ -23,7 +23,12 @@ import { format } from "date-fns";
 
 export function Sidebar() {
   const sidebar = useObservable(sidebarState);
-  const { conversations, activeConversationId, createConversation, switchConversation } = useConversations();
+  const {
+    conversations,
+    activeConversationId,
+    createConversation,
+    switchConversation,
+  } = useConversations();
   const { mode, isSystemTheme, toggleTheme, setSystemTheme } = useTheme();
 
   const handleNewConversation = () => {
@@ -51,11 +56,11 @@ export function Sidebar() {
           sidebar.isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-full flex-col">
+        <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center space-x-2">
-              <MessageSquare className="h-6 w-6 text-primary" />
+              <MessageSquare className="w-6 h-6 text-primary" />
               <h1 className="text-xl font-bold">Broadbent</h1>
             </div>
             <Button
@@ -64,7 +69,7 @@ export function Sidebar() {
               onClick={toggleSidebar}
               className="lg:hidden"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="w-4 h-4" />
             </Button>
           </div>
 
@@ -72,10 +77,10 @@ export function Sidebar() {
           <div className="p-4">
             <Button
               onClick={handleNewConversation}
-              className="w-full justify-start"
+              className="justify-start w-full"
               variant="default"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="w-4 h-4 mr-2" />
               New Chat
             </Button>
           </div>
@@ -83,14 +88,18 @@ export function Sidebar() {
           {/* Conversations List */}
           <ScrollArea className="flex-1 px-4">
             <div className="space-y-2">
-              {conversations.map((conversation) => (
+              {conversations.get().map((conversation) => (
                 <Button
                   key={conversation._id}
-                  variant={activeConversationId === conversation._id ? "secondary" : "ghost"}
-                  className="w-full justify-start p-3 h-auto"
+                  variant={
+                    activeConversationId.get() === conversation._id
+                      ? "secondary"
+                      : "ghost"
+                  }
+                  className="justify-start w-full h-auto p-3"
                   onClick={() => switchConversation(conversation._id)}
                 >
-                  <div className="flex flex-col items-start space-y-1 w-full">
+                  <div className="flex flex-col items-start w-full space-y-1">
                     <div className="flex items-center justify-between w-full">
                       <span className="text-sm font-medium truncate">
                         {conversation.title}
@@ -100,7 +109,10 @@ export function Sidebar() {
                       </Badge>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(conversation._creationTime), "MMM d, h:mm a")}
+                      {format(
+                        new Date(conversation._creationTime),
+                        "MMM d, h:mm a"
+                      )}
                     </span>
                   </div>
                 </Button>
@@ -120,21 +132,29 @@ export function Sidebar() {
                   size="sm"
                   onClick={setSystemTheme}
                 >
-                  <Monitor className="h-4 w-4" />
+                  <Monitor className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant={!isSystemTheme && mode === "light" ? "default" : "ghost"}
+                  variant={
+                    !isSystemTheme && mode.get() === "light"
+                      ? "default"
+                      : "ghost"
+                  }
                   size="sm"
-                  onClick={mode === "light" ? undefined : toggleTheme}
+                  onClick={mode.get() === "light" ? undefined : toggleTheme}
                 >
-                  <Sun className="h-4 w-4" />
+                  <Sun className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant={!isSystemTheme && mode === "dark" ? "default" : "ghost"}
+                  variant={
+                    !isSystemTheme && mode.get() === "dark"
+                      ? "default"
+                      : "ghost"
+                  }
                   size="sm"
-                  onClick={mode === "dark" ? undefined : toggleTheme}
+                  onClick={mode.get() === "dark" ? undefined : toggleTheme}
                 >
-                  <Moon className="h-4 w-4" />
+                  <Moon className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -142,8 +162,8 @@ export function Sidebar() {
 
           {/* Settings */}
           <div className="p-4 border-t">
-            <Button variant="ghost" className="w-full justify-start">
-              <Settings className="mr-2 h-4 w-4" />
+            <Button variant="ghost" className="justify-start w-full">
+              <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
           </div>
@@ -156,9 +176,9 @@ export function Sidebar() {
           variant="ghost"
           size="sm"
           onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-40 lg:hidden"
+          className="fixed z-40 top-4 left-4 lg:hidden"
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="w-4 h-4" />
         </Button>
       )}
     </>

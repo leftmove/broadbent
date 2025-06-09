@@ -21,6 +21,25 @@ export const getConversations = query({
   },
 });
 
+export const getActiveConversation = query({
+  args: { userId: v.id("users") },
+  returns: v.union(v.object({
+    _id: v.id("conversations"),
+    _creationTime: v.number(),
+    title: v.string(),
+    userId: v.id("users"),
+    model: v.string(),
+    provider: v.string(),
+    isActive: v.boolean(),
+  }), v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("conversations")
+      .withIndex("by_user_active", (q) => q.eq("userId", args.userId).eq("isActive", true))
+      .unique();
+  },
+});
+
 export const createConversation = mutation({
   args: {
     userId: v.id("users"),

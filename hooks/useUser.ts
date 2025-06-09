@@ -17,7 +17,7 @@ export function useUser() {
     }
 
     // Create a default user if none exists
-    if (!user.currentUser) {
+    if (!user.currentUser.get()) {
       createDefaultUser();
     }
   }, []);
@@ -40,17 +40,20 @@ export function useUser() {
   };
 
   const setApiKey = (provider: string, key: string) => {
-    userState.apiKeys[provider].set(key);
+    const currentKeys = userState.apiKeys.get();
+    userState.apiKeys.set({ ...currentKeys, [provider]: key });
     Storage.set('API_KEYS', userState.apiKeys.get());
   };
 
   const removeApiKey = (provider: string) => {
-    userState.apiKeys[provider].delete();
+    const currentKeys = userState.apiKeys.get();
+    const { [provider]: removed, ...rest } = currentKeys;
+    userState.apiKeys.set(rest);
     Storage.set('API_KEYS', userState.apiKeys.get());
   };
 
   const updateUserProfile = (updates: { name?: string; email?: string; avatar?: string }) => {
-    if (user.currentUser) {
+    if (user.currentUser.get()) {
       Object.assign(userState.currentUser, updates);
     }
   };
