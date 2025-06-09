@@ -3,7 +3,6 @@
 import { useObservable } from "@legendapp/state/react";
 import { sidebarState } from "state/ui/sidebar";
 import { useConversations } from "hooks/useConversations";
-import { useTheme } from "hooks/useTheme";
 import { Button } from "components/ui/button";
 import { ScrollArea } from "components/ui/scroll-area";
 import { Separator } from "components/ui/separator";
@@ -12,9 +11,6 @@ import {
   MessageSquare,
   Plus,
   Settings,
-  Moon,
-  Sun,
-  Monitor,
   ChevronLeft,
   Menu,
 } from "lucide-react";
@@ -29,7 +25,6 @@ export function Sidebar() {
     createConversation,
     switchConversation,
   } = useConversations();
-  const { mode, isSystemTheme, toggleTheme, setSystemTheme } = useTheme();
 
   const handleNewConversation = () => {
     createConversation("New Chat", "gpt-4o", "openai");
@@ -88,11 +83,11 @@ export function Sidebar() {
           {/* Conversations List */}
           <ScrollArea className="flex-1 px-4">
             <div className="space-y-2">
-              {conversations.get().map((conversation) => (
+              {conversations.map((conversation) => (
                 <Button
                   key={conversation._id}
                   variant={
-                    activeConversationId.get() === conversation._id
+                    activeConversationId === conversation._id
                       ? "secondary"
                       : "ghost"
                   }
@@ -121,44 +116,6 @@ export function Sidebar() {
           </ScrollArea>
 
           <Separator />
-
-          {/* Theme Toggle */}
-          <div className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Theme</span>
-              <div className="flex items-center space-x-1">
-                <Button
-                  variant={isSystemTheme ? "default" : "ghost"}
-                  size="sm"
-                  onClick={setSystemTheme}
-                >
-                  <Monitor className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={
-                    !isSystemTheme && mode.get() === "light"
-                      ? "default"
-                      : "ghost"
-                  }
-                  size="sm"
-                  onClick={mode.get() === "light" ? undefined : toggleTheme}
-                >
-                  <Sun className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={
-                    !isSystemTheme && mode.get() === "dark"
-                      ? "default"
-                      : "ghost"
-                  }
-                  size="sm"
-                  onClick={mode.get() === "dark" ? undefined : toggleTheme}
-                >
-                  <Moon className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
 
           {/* Settings */}
           <div className="p-4 border-t">

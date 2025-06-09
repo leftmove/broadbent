@@ -1,73 +1,59 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
 import { useObservable } from "@legendapp/state/react";
-import { conversationState } from "state/functionality/conversations";
 import { userState } from "state/functionality/user";
 import { Id } from "convex/_generated/dataModel";
 
 export function useConversations() {
   const user = useObservable(userState.currentUser);
-  const conversations = useObservable(conversationState.conversations);
-  const activeConversationId = useObservable(conversationState.activeConversationId);
-
-  const conversationsQuery = useQuery(
+  
+  const conversations = useQuery(
     api.conversations.getConversations,
     user.get() ? { userId: user.get()!._id as Id<"users"> } : "skip"
   );
 
-  const createConversation = useMutation(api.conversations.createConversation);
-  const setActiveConversation = useMutation(api.conversations.setActiveConversation);
-  const updateConversationTitle = useMutation(api.conversations.updateConversationTitle);
+  const activeConversation = useQuery(
+    api.conversations.getActiveConversation,
+    user.get() ? { userId: user.get()!._id as Id<"users"> } : "skip"
+  );
 
-  // Update state when query data changes
-  if (conversationsQuery && conversationsQuery !== conversations.get()) {
-    conversationState.conversations.set(conversationsQuery);
-    
-    // Set active conversation if none is set
-    const activeConv = conversationsQuery.find(c => c.isActive);
-    if (activeConv && !activeConversationId.get()) {
-      conversationState.activeConversationId.set(activeConv._id);
-    }
-  }
+  const createConversationMutation = useMutation(api.conversations.createConversation);
+  const setActiveConversationMutation = useMutation(api.conversations.setActiveConversation);
+  const updateConversationTitleMutation = useMutation(api.conversations.updateConversationTitle);
 
-  const createNewConversation = async (title: string, model: string, provider: string) => {
+  const createConversation = async (title: string, model: string, provider: string) => {
     if (!user.get()) return;
 
-    const conversationId = await createConversation({
+    return await createConversationMutation({
       userId: user.get()!._id as Id<"users">,
       title,
       model,
       provider,
     });
-
-    conversationState.activeConversationId.set(conversationId);
-    return conversationId;
   };
 
   const switchConversation = async (conversationId: string) => {
     if (!user.get()) return;
 
-    await setActiveConversation({
+    return await setActiveConversationMutation({
       userId: user.get()!._id as Id<"users">,
       conversationId: conversationId as Id<"conversations">,
     });
-
-    conversationState.activeConversationId.set(conversationId);
   };
 
   const updateTitle = async (conversationId: string, title: string) => {
-    await updateConversationTitle({
+    return await updateConversationTitleMutation({
       conversationId: conversationId as Id<"conversations">,
       title,
     });
   };
 
   return {
-    conversations,
-    activeConversationId,
-    createConversation: createNewConversation,
+    conversations: conversations || [],
+    activeConversationId: activeConversation?._id || null,
+    createConversation,
     switchConversation,
     updateTitle,
-    isLoading: conversationsQuery === undefined,
+    isLoading: conversations === undefined,
   };
 }

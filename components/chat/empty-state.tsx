@@ -1,15 +1,25 @@
 "use client";
 
 import { useConversations } from "hooks/useConversations";
+import { useObservable } from "@legendapp/state/react";
+import { userState } from "state/functionality/user";
 import { Button } from "components/ui/button";
 import { Card, CardContent } from "components/ui/card";
 import { MessageSquare, Plus, Sparkles } from "lucide-react";
 
 export function EmptyState() {
   const { createConversation } = useConversations();
+  const user = useObservable(userState.currentUser);
 
-  const handleNewChat = () => {
-    createConversation("New Chat", "gpt-4o", "openai");
+  const handleNewChat = async () => {
+    console.log("Button clicked! Creating conversation...");
+    console.log("Current user:", user.get());
+    try {
+      const result = await createConversation("New Chat", "gpt-4o", "openai");
+      console.log("Conversation created:", result);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+    }
   };
 
   return (

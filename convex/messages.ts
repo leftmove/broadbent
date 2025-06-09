@@ -1,5 +1,6 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const getMessages = query({
   args: { conversationId: v.id("conversations") },
@@ -20,6 +21,34 @@ export const getMessages = query({
       )
       .order("asc")
       .collect();
+  },
+});
+
+export const sendMessage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    content: v.string(),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    isStreaming: v.optional(v.boolean()),
+  },
+  returns: v.id("messages"),
+  handler: async (ctx, args) => {
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      content: args.content,
+      role: args.role,
+      isStreaming: args.isStreaming || false,
+      timestamp: Date.now(),
+    });
+
+    // If this is a user message, schedule AI response
+    if (args.role === "user") {
+      await ctx.scheduler.runAfter(100, internal.ai.generateResponse, {
+        conversationId: args.conversationId,
+      });
+    }
+
+    return messageId;
   },
 });
 
