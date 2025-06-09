@@ -371,9 +371,9 @@ export default function SettingsPage() {
               {/* AI Provider Selection */}
               <div className="space-y-4">
                 <div>
-                  <h2 className="mb-2 text-lg font-semibold">AI Provider</h2>
+                  <h2 className="mb-2 text-lg font-semibold">Provider</h2>
                   <div className="mb-4 text-sm text-muted-foreground">
-                    Choose your preferred AI provider for generating responses
+                    Choose your preferred AI provider for generating responses.
                   </div>
                 </div>
                 <div className="space-y-2">
