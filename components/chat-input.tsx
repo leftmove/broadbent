@@ -10,37 +10,11 @@ import { Send, ChevronDown, Paperclip, Search } from "lucide-react";
 import { useAIGeneration } from "state/ai";
 import { useSettingsState } from "state/ui/settings";
 import { getAIErrorMessage } from "lib/ai/error-handler";
-import { AIProvider } from "lib/ai/types";
+import { providerModels, getDefaultModel, getModelName } from "lib/ai/types";
 
 interface ChatInputProps {
   chatId: Id<"chats">;
 }
-
-// Model configurations for each provider
-const providerModels: Record<AIProvider, { name: string; id: string }[]> = {
-  openai: [
-    { name: "GPT-4 Turbo", id: "gpt-4-turbo-preview" },
-    { name: "GPT-4", id: "gpt-4" },
-    { name: "GPT-3.5 Turbo", id: "gpt-3.5-turbo" },
-  ],
-  anthropic: [
-    { name: "Claude 3.5 Sonnet", id: "claude-3-5-sonnet-20241022" },
-    { name: "Claude 3 Sonnet", id: "claude-3-sonnet-20240229" },
-    { name: "Claude 3 Haiku", id: "claude-3-haiku-20240307" },
-  ],
-  google: [
-    { name: "Gemini Pro", id: "gemini-pro" },
-    { name: "Gemini Pro Vision", id: "gemini-pro-vision" },
-  ],
-  grok: [
-    { name: "Grok Beta", id: "grok-beta" },
-  ],
-  openrouter: [
-    { name: "GPT-4 Turbo", id: "openai/gpt-4-turbo" },
-    { name: "Claude 3.5 Sonnet", id: "anthropic/claude-3.5-sonnet" },
-    { name: "Llama 3.1 405B", id: "meta-llama/llama-3.1-405b-instruct" },
-  ],
-};
 
 export function ChatInput({ chatId }: ChatInputProps) {
   const [input, setInput] = useState("");
@@ -55,10 +29,8 @@ export function ChatInput({ chatId }: ChatInputProps) {
   const availableModels = providerModels[selectedProvider] || [];
   
   // Get current model (selected or default)
-  const currentModel = selectedModel || (availableModels[0]?.id || "");
-  const currentModelName = availableModels.find(m => m.id === currentModel)?.name || 
-                          availableModels[0]?.name || 
-                          "Select Model";
+  const currentModel = selectedModel || getDefaultModel(selectedProvider);
+  const currentModelName = getModelName(selectedProvider, currentModel);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +82,11 @@ export function ChatInput({ chatId }: ChatInputProps) {
     setShowModelDropdown(false);
   };
 
+  // Reset selected model when provider changes
+  React.useEffect(() => {
+    setSelectedModel(null);
+  }, [selectedProvider]);
+
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
@@ -143,12 +120,12 @@ export function ChatInput({ chatId }: ChatInputProps) {
                   </Button>
 
                   {showModelDropdown && (
-                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-popover border border-border rounded-lg shadow-lg z-50">
+                    <div className="absolute bottom-full left-0 mb-2 w-80 bg-popover border border-border rounded-lg shadow-lg z-50">
                       <div className="p-2">
                         <div className="px-2 py-1 text-xs font-medium text-muted-foreground border-b border-border mb-2">
                           {selectedProvider.toUpperCase()} Models
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 max-h-64 overflow-y-auto">
                           {availableModels.map((model) => (
                             <button
                               key={model.id}
@@ -161,7 +138,10 @@ export function ChatInput({ chatId }: ChatInputProps) {
                               onClick={() => handleModelSelect(model.id)}
                             >
                               <div className="font-medium">{model.name}</div>
-                              <div className="text-xs text-muted-foreground">{model.id}</div>
+                              <div className="text-xs text-muted-foreground truncate">{model.id}</div>
+                              {model.description && (
+                                <div className="text-xs text-muted-foreground/80 mt-1">{model.description}</div>
+                              )}
                             </button>
                           ))}
                         </div>

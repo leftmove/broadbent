@@ -2,7 +2,7 @@ import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { AIProvider, ApiKeys } from "lib/ai/types";
+import { AIProvider, ApiKeys, getDefaultModel } from "lib/ai/types";
 
 export const useAIGeneration = () => {
   const generateResponse = async (
@@ -14,23 +14,26 @@ export const useAIGeneration = () => {
     let llm;
     let model;
 
+    // Use provided model or default for provider
+    const selectedModel = modelId || getDefaultModel(provider);
+
     switch (provider) {
       case "openai":
         if (!apiKeys.openai) throw new Error("OpenAI API key not set");
         llm = createOpenAI({ apiKey: apiKeys.openai });
-        model = llm(modelId || "gpt-4-turbo-preview");
+        model = llm(selectedModel);
         break;
 
       case "anthropic":
         if (!apiKeys.anthropic) throw new Error("Anthropic API key not set");
         llm = createAnthropic({ apiKey: apiKeys.anthropic });
-        model = llm(modelId || "claude-3-5-sonnet-20241022");
+        model = llm(selectedModel);
         break;
 
       case "google":
         if (!apiKeys.google) throw new Error("Google API key not set");
         llm = createGoogleGenerativeAI({ apiKey: apiKeys.google });
-        model = llm(modelId || "gemini-pro");
+        model = llm(selectedModel);
         break;
 
       case "grok":
@@ -40,7 +43,7 @@ export const useAIGeneration = () => {
           apiKey: apiKeys.grok,
           baseURL: "https://api.x.ai/v1"
         });
-        model = llm(modelId || "grok-beta");
+        model = llm(selectedModel);
         break;
 
       case "openrouter":
@@ -49,7 +52,7 @@ export const useAIGeneration = () => {
           apiKey: apiKeys.openrouter,
           baseURL: "https://openrouter.ai/api/v1"
         });
-        model = llm(modelId || "openai/gpt-4-turbo");
+        model = llm(selectedModel);
         break;
 
       default:
