@@ -24,6 +24,7 @@ const applicationTables = {
       v.literal("grok"),
       v.literal("openrouter")
     ),
+    selectedModel: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 };
 

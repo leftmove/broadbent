@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import { Id } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
@@ -21,12 +21,34 @@ export function ChatInput({ chatId }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [streamingMessageId, setStreamingMessageId] = useState<Id<"messages"> | null>(null);
+  
   const sendMessage = useMutation(api.messages.send);
   const updateMessage = useMutation(api.messages.update);
+  const setSelectedModelMutation = useMutation(api.settings.setSelectedModel);
+  
   const { generateResponse } = useAIGeneration();
   const { apiKeys, selectedProvider } = useSettingsState();
+
+  // Get user for settings
+  const user = useQuery(api.auth.loggedInUser);
+  const userId = user?._id;
+
+  // Get saved model selection from Convex
+  const savedModel = useQuery(
+    api.settings.getSelectedModel,
+    userId ? { userId } : "skip"
+  );
+
+  // Local state for selected model
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+
+  // Sync with saved model when loaded
+  useEffect(() => {
+    if (savedModel !== undefined) {
+      setSelectedModel(savedModel);
+    }
+  }, [savedModel]);
 
   // Get available models for current provider
   const availableModels = providerModels[selectedProvider] || [];
@@ -99,13 +121,25 @@ export function ChatInput({ chatId }: ChatInputProps) {
     }
   };
 
-  const handleModelSelect = (modelId: string) => {
+  const handleModelSelect = async (modelId: string) => {
     setSelectedModel(modelId);
     setShowModelDropdown(false);
+    
+    // Save to Convex if user is logged in
+    if (userId) {
+      try {
+        await setSelectedModelMutation({
+          userId,
+          modelId,
+        });
+      } catch (error) {
+        console.error("Failed to save model selection:", error);
+      }
+    }
   };
 
   // Reset selected model when provider changes
-  React.useEffect(() => {
+  useEffect(() => {
     setSelectedModel(null);
   }, [selectedProvider]);
 
@@ -159,7 +193,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
                                   ? 'bg-accent text-accent-foreground'
                                   : 'hover:bg-accent hover:text-accent-foreground'
                               }`}
-                              onClick={() => handleModelSelect(model.id)}
+                              onClick={() => void handleModelSelect(model.id)}
                             >
                               <div className="font-medium">{model.name}</div>
                               <div className="text-xs text-muted-foreground truncate">{model.id}</div>
