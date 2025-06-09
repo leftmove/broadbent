@@ -7,8 +7,9 @@ import { Id } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
 import { Textarea } from "components/ui/textarea";
 import { Send } from "lucide-react";
-import { useAIGeneration } from "state/functionality/ai";
+import { useAIGeneration } from "state/ai";
 import { useSettingsState } from "state/ui/settings";
+import { getAIErrorMessage } from "lib/ai/error-handler";
 
 interface ChatInputProps {
   chatId: Id<"chats">;
@@ -53,25 +54,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
     } catch (error) {
       console.error("Error generating response:", error);
 
-      // Send helpful error message to the chat
-      let errorMessage =
-        "Sorry, I couldn't generate a response due to an error.";
-
-      if (error instanceof Error) {
-        if (error.message.includes("API key not set")) {
-          errorMessage = `🔑 **API Key Required**: I need an API key to respond. Please go to Settings and add your ${selectedProvider.toUpperCase()} API key.\n\n**How to get an API key:**\n• **OpenAI**: Visit https://platform.openai.com/api-keys\n• **Anthropic**: Visit https://console.anthropic.com/\n• **Google**: Visit https://aistudio.google.com/app/apikey\n\nOnce you have your key, click the Settings button to add it.`;
-        } else if (
-          error.message.includes("rate limit") ||
-          error.message.includes("quota")
-        ) {
-          errorMessage = `⚠️ **Rate Limit Exceeded**: Your API key has reached its usage limit. Please check your ${selectedProvider.toUpperCase()} account or wait before trying again.`;
-        } else if (
-          error.message.includes("invalid") &&
-          error.message.includes("key")
-        ) {
-          errorMessage = `❌ **Invalid API Key**: The ${selectedProvider.toUpperCase()} API key appears to be invalid. Please check your Settings and update the key.`;
-        }
-      }
+      const errorMessage = getAIErrorMessage(error, selectedProvider);
 
       await sendMessage({
         chatId,
@@ -90,7 +73,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
-          className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+          className="flex-1 min-h-[60px] max-h-[200px] my-auto resize-none"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -101,7 +84,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
         <Button
           type="submit"
           disabled={!input.trim() || isGenerating}
-          className="self-end"
+          className="self-end my-auto"
         >
           <Send className="w-4 h-4" />
         </Button>

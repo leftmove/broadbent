@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "components/ui/select";
 import { useSettingsState } from "state/ui/settings";
+import { AIProvider } from "lib/ai/types";
 
 interface SettingsModalProps {
   open: boolean;
@@ -40,7 +41,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
             <Select
               value={selectedProvider}
               onValueChange={(value) =>
-                setSelectedProvider(value as "openai" | "anthropic" | "google")
+                setSelectedProvider(value as AIProvider)
               }
             >
               <SelectTrigger>

@@ -1,32 +1,27 @@
-import { observable } from '@legendapp/state'
-
-interface ApiKeys {
-  openai: string
-  anthropic: string
-  google: string
-}
+import { observable } from "@legendapp/state";
+import { AIProvider, ApiKeys } from "lib/ai/types";
 
 interface SettingsState {
-  apiKeys: ApiKeys
-  selectedProvider: 'openai' | 'anthropic' | 'google'
+  apiKeys: ApiKeys;
+  selectedProvider: AIProvider;
 }
 
 const settingsState = observable<SettingsState>({
   apiKeys: {
-    openai: '',
-    anthropic: '',
-    google: ''
+    openai: "",
+    anthropic: "",
+    google: "",
   },
-  selectedProvider: 'openai'
-})
+  selectedProvider: "openai",
+});
 
 export const useSettingsState = () => ({
   apiKeys: settingsState.apiKeys.get(),
   selectedProvider: settingsState.selectedProvider.get(),
   setApiKey: (provider: keyof ApiKeys, key: string) => {
-    settingsState.apiKeys[provider].set(key)
+    settingsState.apiKeys[provider].set(key);
   },
-  setSelectedProvider: (provider: 'openai' | 'anthropic' | 'google') => {
-    settingsState.selectedProvider.set(provider)
-  }
-})
+  setSelectedProvider: (provider: AIProvider) => {
+    settingsState.selectedProvider.set(provider);
+  },
+});
