@@ -53,6 +53,7 @@ const SelectTrigger = React.forwardRef<
 >(({ className, children, value: _value, open, setOpen, ...props }, ref) => (
   <button
     ref={ref}
+    type="button"
     className={cn(
       "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
       className
@@ -61,7 +62,7 @@ const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform", open && "rotate-180")} />
+    <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform duration-200", open && "rotate-180")} />
   </button>
 ));
 SelectTrigger.displayName = "SelectTrigger";
@@ -88,7 +89,7 @@ const SelectContent = ({
   if (!open) return null;
 
   return (
-    <div className="absolute left-0 right-0 z-50 mt-1 border rounded-md shadow-lg top-full bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95">
+    <div className="absolute left-0 right-0 z-50 mt-1 border rounded-md shadow-lg top-full bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-200">
       <div className="p-1">
         {React.Children.map(children, (child) => {
           if (React.isValidElement(child)) {
@@ -116,8 +117,11 @@ const SelectItem = ({
   setOpen?: (open: boolean) => void;
 }) => (
   <div
-    className="relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors"
-    onClick={() => {
+    className="relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors duration-150"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('SelectItem clicked:', value); // Debug log
       onValueChange?.(value);
       setOpen?.(false);
     }}

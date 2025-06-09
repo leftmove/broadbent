@@ -47,6 +47,11 @@ export default function SettingsPage() {
     }, 500);
   };
 
+  const handleProviderChange = (value: string) => {
+    console.log('Provider changed to:', value); // Debug log
+    setSelectedProvider(value as AIProvider);
+  };
+
   const hasAnyApiKey = apiKeys.openai || apiKeys.anthropic || apiKeys.google;
 
   return (
@@ -136,9 +141,7 @@ export default function SettingsPage() {
                   <Label htmlFor="provider">Default Provider</Label>
                   <Select
                     value={selectedProvider}
-                    onValueChange={(value) =>
-                      setSelectedProvider(value as AIProvider)
-                    }
+                    onValueChange={handleProviderChange}
                   >
                     <SelectTrigger className="font-sans">
                       <SelectValue placeholder="Select provider" />
@@ -281,7 +284,11 @@ export default function SettingsPage() {
                     <Button
                       onClick={handleSave}
                       disabled={saveStatus === 'saving'}
-                      className="relative overflow-hidden transition-all duration-200"
+                      className={`relative overflow-hidden transition-all duration-300 ${
+                        saveStatus === 'saved' 
+                          ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' 
+                          : ''
+                      }`}
                     >
                       {saveStatus === 'saving' && (
                         <span className="flex items-center">
@@ -290,16 +297,16 @@ export default function SettingsPage() {
                         </span>
                       )}
                       {saveStatus === 'saved' && (
-                        <span className="flex items-center text-green-600">
+                        <span className="flex items-center">
                           <Check className="w-4 h-4 mr-2" />
                           Saved!
                         </span>
                       )}
                       {saveStatus === 'idle' && 'Save Settings'}
                       
-                      {/* Green success animation */}
+                      {/* Green success animation overlay */}
                       {saveStatus === 'saved' && (
-                        <div className="absolute inset-0 bg-green-100 dark:bg-green-900/20 animate-pulse" />
+                        <div className="absolute inset-0 bg-green-500/20 animate-pulse" />
                       )}
                     </Button>
                   </div>
