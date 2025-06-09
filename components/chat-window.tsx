@@ -113,7 +113,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   return (
     <div className="flex flex-col flex-1 relative min-h-0">
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+        <div className="max-w-4xl mx-auto py-8 space-y-8">
           {messages.map((message) => (
             <ChatMessage key={message._id} message={message} />
           ))}

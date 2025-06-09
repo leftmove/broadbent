@@ -12,23 +12,18 @@ export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
 
   return (
-    <div
-      className={cn(
-        "flex max-w-4xl",
-        isUser ? "ml-auto justify-end" : "mr-auto justify-start"
-      )}
-    >
+    <div className="flex w-full px-4">
       <div
         className={cn(
-          "rounded-lg px-4 py-3 max-w-[80%]",
+          "rounded-lg px-4 py-3 max-w-[85%] break-words",
           isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-secondary text-secondary-foreground"
+            ? "bg-primary text-primary-foreground ml-auto"
+            : "bg-secondary text-secondary-foreground mr-auto"
         )}
       >
         <div
           className={cn(
-            "prose prose-sm max-w-none break-words",
+            "prose prose-sm max-w-none break-words overflow-wrap-anywhere",
             isUser
               ? "prose-invert text-primary-foreground [&_*]:text-primary-foreground"
               : "text-secondary-foreground [&_*]:text-secondary-foreground"
@@ -37,7 +32,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <ReactMarkdown
             components={{
               p: ({ children }) => (
-                <p className="mb-3 leading-relaxed last:mb-0">{children}</p>
+                <p className="mb-3 leading-relaxed last:mb-0 break-words">{children}</p>
               ),
               strong: ({ children }) => (
                 <strong className="font-semibold">{children}</strong>
@@ -46,7 +41,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
               code: ({ children }) => (
                 <code
                   className={cn(
-                    "px-1.5 py-0.5 rounded text-sm font-mono",
+                    "px-1.5 py-0.5 rounded text-sm font-mono break-all",
                     isUser
                       ? "bg-primary-foreground/20 text-primary-foreground"
                       : "bg-muted text-muted-foreground"
@@ -58,7 +53,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
               pre: ({ children }) => (
                 <pre
                   className={cn(
-                    "p-3 rounded-md mt-2 mb-2 overflow-x-auto font-mono text-sm",
+                    "p-3 rounded-md mt-2 mb-2 overflow-x-auto font-mono text-sm whitespace-pre-wrap break-words",
                     isUser
                       ? "bg-primary-foreground/20 text-primary-foreground"
                       : "bg-muted text-muted-foreground"
@@ -78,12 +73,12 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 </ol>
               ),
               li: ({ children }) => (
-                <li className="leading-relaxed">{children}</li>
+                <li className="leading-relaxed break-words">{children}</li>
               ),
               blockquote: ({ children }) => (
                 <blockquote
                   className={cn(
-                    "border-l-4 pl-4 py-2 my-3 italic",
+                    "border-l-4 pl-4 py-2 my-3 italic break-words",
                     isUser
                       ? "border-primary-foreground/30"
                       : "border-muted-foreground/30"
@@ -98,7 +93,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
-                    "underline hover:no-underline transition-colors",
+                    "underline hover:no-underline transition-colors break-all",
                     isUser
                       ? "text-primary-foreground hover:text-primary-foreground/80"
                       : "text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -108,17 +103,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 </a>
               ),
               h1: ({ children }) => (
-                <h1 className="mt-4 mb-3 text-xl font-bold first:mt-0">
+                <h1 className="mt-4 mb-3 text-xl font-bold first:mt-0 break-words">
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="mt-3 mb-2 text-lg font-bold first:mt-0">
+                <h2 className="mt-3 mb-2 text-lg font-bold first:mt-0 break-words">
                   {children}
                 </h2>
               ),
               h3: ({ children }) => (
-                <h3 className="mt-3 mb-2 text-base font-bold first:mt-0">
+                <h3 className="mt-3 mb-2 text-base font-bold first:mt-0 break-words">
                   {children}
                 </h3>
               ),

@@ -29,6 +29,32 @@ export const send = mutation({
   },
 });
 
+export const update = mutation({
+  args: {
+    messageId: v.id("messages"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get the message and verify ownership
+    const message = await ctx.db.get(args.messageId);
+    if (!message || message.userId !== userId) {
+      throw new Error("Message not found or access denied");
+    }
+
+    // Update the message content
+    await ctx.db.patch(args.messageId, {
+      content: args.content,
+    });
+
+    return args.messageId;
+  },
+});
+
 export const list = query({
   args: {
     chatId: v.id("chats"),

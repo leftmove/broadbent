@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
@@ -9,7 +9,8 @@ export const useAIGeneration = () => {
     prompt: string,
     provider: AIProvider,
     apiKeys: ApiKeys,
-    modelId?: string
+    modelId?: string,
+    onChunk?: (chunk: string) => void
   ): Promise<string> => {
     let llm;
     let model;
@@ -59,12 +60,34 @@ export const useAIGeneration = () => {
         throw new Error("Invalid provider");
     }
 
-    const { text } = await generateText({
-      model,
-      prompt,
-    });
+    // Use streaming if onChunk callback is provided
+    if (onChunk) {
+      const { textStream } = await streamText({
+        model,
+        prompt,
+      });
 
-    return text;
+      let fullText = "";
+      for await (const textPart of textStream) {
+        fullText += textPart;
+        onChunk(fullText);
+      }
+
+      return fullText;
+    } else {
+      // Fallback to non-streaming for compatibility
+      const { streamText: stream } = await streamText({
+        model,
+        prompt,
+      });
+
+      let fullText = "";
+      for await (const textPart of stream) {
+        fullText += textPart;
+      }
+
+      return fullText;
+    }
   };
 
   return { generateResponse };

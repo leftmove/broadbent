@@ -22,7 +22,9 @@ export function ChatInput({ chatId }: ChatInputProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [streamingMessageId, setStreamingMessageId] = useState<Id<"messages"> | null>(null);
   const sendMessage = useMutation(api.messages.send);
+  const updateMessage = useMutation(api.messages.update);
   const { generateResponse } = useAIGeneration();
   const { apiKeys, selectedProvider } = useSettingsState();
 
@@ -49,32 +51,51 @@ export function ChatInput({ chatId }: ChatInputProps) {
         role: "user",
       });
 
-      // Generate AI response with selected model
-      const response = await generateResponse(
+      // Create initial AI message placeholder
+      const aiMessageId = await sendMessage({
+        chatId,
+        content: "",
+        role: "assistant",
+      });
+
+      setStreamingMessageId(aiMessageId);
+
+      // Generate AI response with streaming
+      await generateResponse(
         userMessage,
         selectedProvider,
         apiKeys,
-        currentModel
+        currentModel,
+        // Streaming callback
+        async (partialText: string) => {
+          await updateMessage({
+            messageId: aiMessageId,
+            content: partialText,
+          });
+        }
       );
 
-      // Send AI response
-      await sendMessage({
-        chatId,
-        content: response,
-        role: "assistant",
-      });
     } catch (error) {
       console.error("Error generating response:", error);
 
       const errorMessage = getAIErrorMessage(error, selectedProvider);
 
-      await sendMessage({
-        chatId,
-        content: errorMessage,
-        role: "assistant",
-      });
+      // Update the streaming message with error or create new error message
+      if (streamingMessageId) {
+        await updateMessage({
+          messageId: streamingMessageId,
+          content: errorMessage,
+        });
+      } else {
+        await sendMessage({
+          chatId,
+          content: errorMessage,
+          role: "assistant",
+        });
+      }
     } finally {
       setIsGenerating(false);
+      setStreamingMessageId(null);
     }
   };
 
@@ -96,7 +117,8 @@ export function ChatInput({ chatId }: ChatInputProps) {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message here..."
+              placeholder={isGenerating ? "Generating response..." : "Type your message here..."}
+              disabled={isGenerating}
               className="w-full pr-20 pb-12 pt-4 px-4 min-h-[80px] max-h-[300px] resize-none !border-0 bg-transparent font-sans text-sm focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -115,6 +137,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
                     size="sm"
                     className="h-8 px-3 font-sans text-xs rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                     onClick={() => setShowModelDropdown(!showModelDropdown)}
+                    disabled={isGenerating}
                   >
                     <span className="mr-1">{currentModelName}</span>
                     <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showModelDropdown ? 'rotate-180' : ''}`} />
@@ -156,6 +179,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
                   variant="ghost"
                   size="sm"
                   className="w-8 h-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  disabled={isGenerating}
                 >
                   <Paperclip className="w-4 h-4" />
                 </Button>
@@ -165,6 +189,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
                   variant="ghost"
                   size="sm"
                   className="w-8 h-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  disabled={isGenerating}
                 >
                   <Search className="w-4 h-4" />
                 </Button>
@@ -174,9 +199,13 @@ export function ChatInput({ chatId }: ChatInputProps) {
                 type="submit"
                 disabled={!input.trim() || isGenerating}
                 size="sm"
-                className="w-8 h-8 p-0 rounded-lg bg-foreground text-background hover:bg-foreground/90"
+                className="w-8 h-8 p-0 rounded-lg bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
               >
-                <Send className="w-4 h-4" />
+                {isGenerating ? (
+                  <div className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </div>
