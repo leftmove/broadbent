@@ -9,9 +9,10 @@ import { Plus, Settings, MessageSquare, Search, Menu } from "lucide-react";
 import { useChatState } from "state/ui/chat";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
+import Link from "next/link";
 
 interface SidebarProps {
-  onSettingsClick: () => void;
+  onSettingsClick?: () => void;
 }
 
 export function Sidebar({ onSettingsClick }: SidebarProps) {
@@ -165,14 +166,15 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
 
       <div className="p-4 border-t border-border">
         <div className="space-y-1">
-          <Button
-            variant="ghost"
-            className="justify-start w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            onClick={onSettingsClick}
-          >
-            <Settings className="w-4 h-4 mr-3" />
-            Settings
-          </Button>
+          <Link href="/settings">
+            <Button
+              variant="ghost"
+              className="justify-start w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            >
+              <Settings className="w-4 h-4 mr-3" />
+              Settings
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             className="w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"

@@ -6,12 +6,10 @@ import { ChatWindow } from "components/chat-window";
 import { Sidebar } from "components/sidebar";
 import { AuthForm } from "components/auth-form";
 import { ThemeToggle } from "components/theme-toggle";
-import { SettingsModal } from "components/settings-modal";
 import { useChatState } from "state/ui/chat";
 
 export function ChatInterface() {
   const { selectedChatId } = useChatState();
-  const [showSettings, setShowSettings] = useState(false);
 
   console.log(
     "ChatInterface render - selectedChatId:",
@@ -22,7 +20,7 @@ export function ChatInterface() {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <Authenticated>
-        <Sidebar onSettingsClick={() => setShowSettings(true)} />
+        <Sidebar />
         <div className="flex flex-col flex-1 min-h-0">
           <header className="flex items-center justify-end px-6 py-4 border-b border-border/30 bg-background/80 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center space-x-2">
@@ -31,7 +29,6 @@ export function ChatInterface() {
           </header>
           <ChatWindow chatId={selectedChatId} />
         </div>
-        <SettingsModal open={showSettings} onOpenChange={setShowSettings} />
       </Authenticated>
       <Unauthenticated>
         <div className="flex items-center justify-center flex-1 p-8">
