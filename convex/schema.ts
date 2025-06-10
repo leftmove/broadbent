@@ -6,6 +6,7 @@ const applicationTables = {
   chats: defineTable({
     title: v.string(),
     userId: v.id("users"),
+    pinned: v.optional(v.boolean()),
   }).index("by_user", ["userId"]),
 
   messages: defineTable({

@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
-import { Id } from "convex/_generated/dataModel";
-
-import { ChatMessage } from "components/chat-message";
-import { ChatInput } from "components/chat-input";
 import { Textarea } from "components/ui/textarea";
 import { Button } from "components/ui/button";
-import { Send, Search, ChevronDown, Paperclip } from "lucide-react";
-// import { useChatState } from "state/chat";
+import {
+  Send,
+  Sparkles,
+  Search,
+  BrainCircuit,
+  Compass,
+  Telescope,
+  ChevronDown,
+  Paperclip,
+} from "lucide-react";
+
 import { useAIGeneration } from "state/ai";
 import { useSettingsState } from "state/settings";
 import { providerModels, getDefaultModel, getModelName } from "lib/ai/types";
 import { getApiKeyMissingErrorMessage } from "lib/ai/error-messages";
-
-interface ChatWindowProps {
-  chatId: Id<"chats"> | null;
-  prompt: string | null;
-}
 
 const placeholderPhrases: string[] = [
   "How can I help you today?",
@@ -183,7 +183,7 @@ function HomeScreenInput() {
     getDefaultModel(selectedProvider)
   );
 
-  // Update model when provider changes - simpler direct approach
+  // Update model when provider changes
   useEffect(() => {
     // Get default model for the current provider
     const defaultModel = getDefaultModel(selectedProvider);
@@ -193,7 +193,7 @@ function HomeScreenInput() {
 
     // Save to database if user is logged in
     if (userId) {
-      setSelectedModelMutation({
+      void setSelectedModelMutation({
         userId,
         modelId: defaultModel,
       }).catch((error) => {
@@ -219,7 +219,7 @@ function HomeScreenInput() {
     // Save to Convex if user is logged in
     if (userId) {
       try {
-        await setSelectedModelMutation({
+        void setSelectedModelMutation({
           userId,
           modelId,
         });
@@ -233,78 +233,8 @@ function HomeScreenInput() {
     e.preventDefault();
     if (!input.trim() || isSubmitting) return;
 
-    const userMessage = input.trim();
-    setInput("");
-    setIsSubmitting(true);
-
-    try {
-      // Check if API key is available for the selected provider
-      if (!hasApiKey) {
-        // Create a new chat
-        const newChatId = await createChat({
-          title: userMessage.substring(0, 30) + "...",
-        });
-
-        // Navigate to the chat
-        router.push(`/conversation/${newChatId}`);
-
-        // Send user message
-        await sendMessage({
-          chatId: newChatId,
-          content: userMessage,
-          role: "user",
-        });
-
-        // Add error message about missing API key
-        await sendMessage({
-          chatId: newChatId,
-          content: getApiKeyMissingErrorMessage(selectedProvider),
-          role: "assistant",
-        });
-
-        return;
-      }
-
-      // 1. Create a new chat
-      const newChatId = await createChat({
-        title: userMessage.substring(0, 30) + "...",
-      });
-
-      // 2. Navigate to the chat
-      router.push(`/conversation/${newChatId}`);
-
-      // 3. Send user message
-      await sendMessage({
-        chatId: newChatId,
-        content: userMessage,
-        role: "user",
-      });
-
-      // 4. Create initial AI message placeholder
-      const aiMessageId = await sendMessage({
-        chatId: newChatId,
-        content: "",
-        role: "assistant",
-      });
-
-      // 5. Generate AI response
-      await generateResponse(
-        userMessage,
-        selectedProvider,
-        apiKeys,
-        selectedModel,
-        (partialText: string) => {
-          void updateMessage({
-            messageId: aiMessageId,
-            content: partialText,
-          });
-        }
-      );
-    } catch (error) {
-      console.error("Error starting new chat:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Use the direct submission function
+    void submitPromptDirectly(input.trim());
   };
 
   // Handle Enter key press
@@ -438,31 +368,146 @@ function HomeScreenInput() {
   );
 }
 
-export function ChatWindow({ chatId, prompt = null }: ChatWindowProps) {
-  const router = useRouter();
-  const messagesQuery = useQuery(
-    api.messages.list,
-    chatId ? { chatId } : "skip"
-  );
-  const messages = useMemo(() => messagesQuery || [], [messagesQuery]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
+export function HomePlaceholder() {
   return (
-    <div className="relative flex flex-col flex-1 min-h-0">
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-4xl py-8 mx-auto space-y-8">
-          {messages.map((message) => (
-            <ChatMessage key={message._id} message={message} />
-          ))}
-          <div ref={messagesEndRef} />
+    <div className="flex flex-col items-center justify-center flex-1 px-4">
+      <div className="max-w-3xl mx-auto space-y-8 text-center">
+        <div className="space-y-6 opacity-0 animate-pop-in">
+          <h1 className="font-sans text-4xl font-semibold text-foreground">
+            {
+              placeholderPhrases[
+                Math.floor(Math.random() * placeholderPhrases.length)
+              ]
+            }
+          </h1>
         </div>
-      </div>
-      <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur-sm border-border/50">
-        <ChatInput chatId={chatId} />
+
+        <div className="grid w-full max-w-2xl grid-cols-1 gap-4 font-serif md:grid-cols-2">
+          <button
+            onClick={() =>
+              handlePromptSelection(
+                "Help me spark my imagination with a creative writing prompt."
+              )
+            }
+            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-1"
+          >
+            <div className="flex items-center h-16 space-x-3">
+              <div className="text-lg">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  Imagine
+                </div>
+                <div className="font-sans text-xs leading-relaxed text-muted-foreground">
+                  Write a thousand words at once with image generation.
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() =>
+              handlePromptSelection(
+                "What are some emerging technologies I should learn about?"
+              )
+            }
+            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-1"
+          >
+            <div className="flex items-center h-16 space-x-3">
+              <div className="text-lg">
+                <Telescope className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  Search
+                </div>
+                <div className="font-sans text-xs leading-relaxed text-muted-foreground">
+                  Traverse the web to find more current and specific context.
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() =>
+              handlePromptSelection(
+                "Help me break down a complex problem I'm facing with my project."
+              )
+            }
+            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-2"
+          >
+            <div className="flex items-center h-16 space-x-3">
+              <div className="text-lg">
+                <BrainCircuit className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">Think</div>
+                <div className="font-sans text-xs leading-relaxed text-muted-foreground">
+                  Reason with complex problems to get more accurate answers.
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() =>
+              handlePromptSelection(
+                "Explain a complex topic to me in simple terms."
+              )
+            }
+            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-2"
+          >
+            <div className="flex items-center h-16 space-x-3">
+              <div className="text-lg">
+                <Compass className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  Assist
+                </div>
+                <div className="font-sans text-xs leading-relaxed text-muted-foreground">
+                  Navigate your browser with an extra helping hand.
+                </div>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div className="max-w-lg mx-auto space-y-4 font-sans text-sm opacity-0 animate-pop-in-delay-3">
+          <button
+            onClick={() => handlePromptSelection("How does AI work?")}
+            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+          >
+            How does AI work?
+          </button>
+          <button
+            onClick={() => handlePromptSelection("Are black holes real?")}
+            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+          >
+            Are black holes real?
+          </button>
+          <button
+            onClick={() =>
+              handlePromptSelection('How many Rs are in the word "strawberry"?')
+            }
+            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+          >
+            How many Rs are in the word "strawberry"?
+          </button>
+          <button
+            onClick={() =>
+              handlePromptSelection("What is the meaning of life?")
+            }
+            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+          >
+            What is the meaning of life?
+          </button>
+        </div>
+
+        <div className="max-w-4xl mx-auto opacity-0 animate-pop-in-delay-3">
+          <HomeScreenInput />
+        </div>
       </div>
     </div>
   );

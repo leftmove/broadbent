@@ -2,22 +2,18 @@
 
 import { useState } from "react";
 import { Authenticated, Unauthenticated } from "convex/react";
-import { ChatWindow } from "components/chat-window";
 import { Sidebar } from "components/sidebar";
 import { AuthForm } from "components/auth-form";
 import { ThemeToggle } from "components/theme-toggle";
-import { useChatState } from "state/chat";
+// import { useChatState } from "state/chat";
 import { useUIState } from "state/ui";
 
-export function ChatInterface() {
-  const { selectedChatId } = useChatState();
-  const { sidebarCollapsed, toggleSidebar } = useUIState();
+interface ChatInterfaceProps {
+  children: React.ReactNode;
+}
 
-  console.log(
-    "ChatInterface render - selectedChatId:",
-    selectedChatId,
-    typeof selectedChatId
-  );
+export function ChatInterface({ children }: ChatInterfaceProps) {
+  const { sidebarCollapsed, toggleSidebar } = useUIState();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -29,7 +25,7 @@ export function ChatInterface() {
               <ThemeToggle />
             </div>
           </header>
-          <ChatWindow chatId={selectedChatId} />
+          {children}
         </div>
       </Authenticated>
       <Unauthenticated>

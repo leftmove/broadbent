@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
-import { Doc } from "convex/_generated/dataModel";
+import { Doc, Id } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import {
@@ -13,8 +13,13 @@ import {
   PanelLeft,
   ChevronLeft,
   ChevronRight,
+  Pin,
+  Trash2,
 } from "lucide-react";
-import { useChatState } from "state/chat";
+import { ChatDeleteDialog } from "components/chat-delete-dialog";
+import { ChatItem } from "components/chat-item";
+// import { useChatState } from "state/chat";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
 import Link from "next/link";
@@ -33,14 +38,90 @@ export function Sidebar({
 }: SidebarProps) {
   const chats = useQuery(api.chats.list) || [];
   const createChat = useMutation(api.chats.create);
-  const { selectedChatId, setSelectedChatId } = useChatState();
+  const togglePinChat = useMutation(api.chats.togglePin);
+  const deleteChatMutation = useMutation(api.chats.deleteChat);
   const { signOut } = useAuthActions();
   const [searchQuery, setSearchQuery] = useState("");
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const handleNewChat = () => {
-    void createChat({ title: "New Chat" }).then((chatId) => {
-      setSelectedChatId(chatId);
+  // State for delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{
+    id: Id<"chats">;
+    title: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Determine which chat is currently selected based on the URL
+  const selectedChatIdString = pathname?.startsWith("/conversation/")
+    ? pathname.split("/").pop()
+    : null;
+
+  const handleNewChat = async () => {
+    try {
+      const chatId = await createChat({ title: "New Chat" });
+      // Navigate to the conversation page using the router
+      router.push(`/conversation/${chatId}`);
+    } catch (error) {
+      console.error("Error creating new chat:", error);
+    }
+  };
+
+  const handlePinChat = (chatId: Id<"chats">, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    console.log("Toggling pin for chat:", chatId);
+
+    try {
+      togglePinChat({ chatId })
+        .then(() => console.log("Pin toggled successfully"))
+        .catch((error) => {
+          console.error("Error toggling chat pin:", error);
+        });
+    } catch (error) {
+      console.error("Error in pin handler:", error);
+    }
+  };
+
+  const handleDeleteClick = (chat: Doc<"chats">, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setChatToDelete({
+      id: chat._id,
+      title: chat.title,
     });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!chatToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      console.log("Deleting chat:", chatToDelete.id);
+
+      await deleteChatMutation({ chatId: chatToDelete.id });
+      console.log("Chat deleted successfully");
+
+      // If the deleted chat is the current one, navigate to home
+      if (
+        selectedChatIdString &&
+        chatToDelete &&
+        selectedChatIdString === String(chatToDelete.id)
+      ) {
+        router.push("/");
+      }
+
+      setDeleteDialogOpen(false);
+      setChatToDelete(null);
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSignOut = () => {
@@ -53,13 +134,27 @@ export function Sidebar({
     const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const groups = {
+      pinned: [] as Doc<"chats">[],
       today: [] as Doc<"chats">[],
       yesterday: [] as Doc<"chats">[],
       lastWeek: [] as Doc<"chats">[],
       older: [] as Doc<"chats">[],
     };
 
-    chats.forEach((chat: Doc<"chats">) => {
+    // First sort the chats by creation time, newest first
+    // This ensures that within each group, newest chats appear first
+    const sortedChats = [...chats].sort(
+      (a, b) => b._creationTime - a._creationTime
+    );
+
+    sortedChats.forEach((chat: Doc<"chats">) => {
+      // First sort pinned chats
+      if (chat.pinned) {
+        groups.pinned.push(chat);
+        return;
+      }
+
+      // Then group non-pinned chats by time
       const chatDate = new Date(chat._creationTime);
       if (chatDate.toDateString() === now.toDateString()) {
         groups.today.push(chat);
@@ -85,10 +180,10 @@ export function Sidebar({
       )}
     >
       <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-start mb-4">
           {!collapsed && (
             <div className="flex items-center space-x-2">
-              <span className="font-serif text-lg italic font-semibold">
+              <span className="mx-auto font-sans text-lg font-bold">
                 Broadbent
               </span>
             </div>
@@ -96,7 +191,7 @@ export function Sidebar({
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            className="w-8 h-8 p-0 ml-auto rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             onClick={toggleSidebar}
           >
             <PanelLeft className="w-5 h-5" />
@@ -106,12 +201,11 @@ export function Sidebar({
 
         {!collapsed ? (
           <>
-            <Button
-              onClick={() => setSelectedChatId(null)}
-              className="w-full h-10 mb-4 font-sans text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Chat
-            </Button>
+            <Link href="/" className="block w-full">
+              <Button className="w-full h-10 mb-4 font-sans text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+                New Chat
+              </Button>
+            </Link>
 
             <div className="relative">
               <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
@@ -125,13 +219,12 @@ export function Sidebar({
           </>
         ) : (
           <div className="flex flex-col items-center space-y-2">
-            <Button
-              onClick={() => setSelectedChatId(null)}
-              className="w-10 h-10 p-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <MessageSquare className="w-5 h-5" />
-              <span className="sr-only">Chat</span>
-            </Button>
+            <Link href="/">
+              <Button className="w-10 h-10 p-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+                <MessageSquare className="w-5 h-5" />
+                <span className="sr-only">Chat</span>
+              </Button>
+            </Link>
 
             <Button
               variant="ghost"
@@ -146,49 +239,20 @@ export function Sidebar({
 
       {!collapsed && (
         <div className="flex-1 px-2 overflow-y-auto">
-          {chatGroups.yesterday.length > 0 && (
+          {chatGroups.pinned.length > 0 && (
             <div className="mb-4">
               <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
-                Yesterday
+                Pinned
               </div>
               <div className="space-y-1">
-                {chatGroups.yesterday.map((chat: Doc<"chats">) => (
-                  <Button
+                {chatGroups.pinned.map((chat) => (
+                  <ChatItem
                     key={chat._id}
-                    variant="ghost"
-                    className={`flex justify-start w-full text-left font-sans text-sm h-auto py-2 px-3 rounded-lg ${
-                      selectedChatId === chat._id
-                        ? "bg-secondary text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    }`}
-                    onClick={() => setSelectedChatId(chat._id)}
-                  >
-                    <span className="truncate">{chat.title}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {chatGroups.lastWeek.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
-                Last 7 Days
-              </div>
-              <div className="space-y-1">
-                {chatGroups.lastWeek.map((chat) => (
-                  <Button
-                    key={chat._id}
-                    variant="ghost"
-                    className={`justify-start w-full text-left font-sans text-sm h-auto py-2 px-3 rounded-lg ${
-                      selectedChatId === chat._id
-                        ? "bg-secondary text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    }`}
-                    onClick={() => setSelectedChatId(chat._id)}
-                  >
-                    <span className="truncate">{chat.title}</span>
-                  </Button>
+                    chat={chat}
+                    isSelected={selectedChatIdString === chat._id}
+                    onPinClick={handlePinChat}
+                    onDeleteClick={handleDeleteClick}
+                  />
                 ))}
               </div>
             </div>
@@ -201,18 +265,70 @@ export function Sidebar({
               </div>
               <div className="space-y-1">
                 {chatGroups.today.map((chat) => (
-                  <Button
+                  <ChatItem
                     key={chat._id}
-                    variant="ghost"
-                    className={`justify-start w-full text-left font-sans text-sm h-auto py-2 px-3 rounded-lg ${
-                      selectedChatId === chat._id
-                        ? "bg-secondary text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    }`}
-                    onClick={() => setSelectedChatId(chat._id)}
-                  >
-                    <span className="truncate">{chat.title}</span>
-                  </Button>
+                    chat={chat}
+                    isSelected={selectedChatIdString === chat._id}
+                    onPinClick={handlePinChat}
+                    onDeleteClick={handleDeleteClick}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {chatGroups.yesterday.length > 0 && (
+            <div className="mb-4">
+              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+                Yesterday
+              </div>
+              <div className="space-y-1">
+                {chatGroups.yesterday.map((chat) => (
+                  <ChatItem
+                    key={chat._id}
+                    chat={chat}
+                    isSelected={selectedChatIdString === chat._id}
+                    onPinClick={handlePinChat}
+                    onDeleteClick={handleDeleteClick}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {chatGroups.lastWeek.length > 0 && (
+            <div className="mb-4">
+              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+                Last 7 Days
+              </div>
+              <div className="space-y-1">
+                {chatGroups.lastWeek.map((chat) => (
+                  <ChatItem
+                    key={chat._id}
+                    chat={chat}
+                    isSelected={selectedChatIdString === chat._id}
+                    onPinClick={handlePinChat}
+                    onDeleteClick={handleDeleteClick}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {chatGroups.older.length > 0 && (
+            <div className="mb-4">
+              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+                Older
+              </div>
+              <div className="space-y-1">
+                {chatGroups.older.map((chat) => (
+                  <ChatItem
+                    key={chat._id}
+                    chat={chat}
+                    isSelected={selectedChatIdString === chat._id}
+                    onPinClick={handlePinChat}
+                    onDeleteClick={handleDeleteClick}
+                  />
                 ))}
               </div>
             </div>
@@ -276,6 +392,18 @@ export function Sidebar({
           </div>
         )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <ChatDeleteDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setChatToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+        chatTitle={chatToDelete?.title || ""}
+      />
     </div>
   );
 }
