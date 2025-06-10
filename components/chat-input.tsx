@@ -8,25 +8,28 @@ import { Button } from "components/ui/button";
 import { Textarea } from "components/ui/textarea";
 import { Send, ChevronDown, Paperclip, Search } from "lucide-react";
 import { useAIGeneration } from "state/ai";
-import { useSettingsState } from "state/ui/settings";
+import { useChatState } from "state/chat";
+import { useSettingsState } from "state/settings";
 import { getAIErrorMessage } from "lib/ai/error-handler";
 import { providerModels, getDefaultModel, getModelName } from "lib/ai/types";
-import React from "react";
 
 interface ChatInputProps {
-  chatId: Id<"chats">;
+  chatId: Id<"chats"> | null;
 }
 
 export function ChatInput({ chatId }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
-  const [streamingMessageId, setStreamingMessageId] = useState<Id<"messages"> | null>(null);
-  
+  const [streamingMessageId, setStreamingMessageId] =
+    useState<Id<"messages"> | null>(null);
+
   const sendMessage = useMutation(api.messages.send);
   const updateMessage = useMutation(api.messages.update);
+  const createChat = useMutation(api.chats.create);
+  const setSelectedChatId = useChatState().setSelectedChatId;
   const setSelectedModelMutation = useMutation(api.settings.setSelectedModel);
-  
+
   const { generateResponse } = useAIGeneration();
   const { apiKeys, selectedProvider } = useSettingsState();
 
@@ -52,7 +55,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
 
   // Get available models for current provider
   const availableModels = providerModels[selectedProvider] || [];
-  
+
   // Get current model (selected or default)
   const currentModel = selectedModel || getDefaultModel(selectedProvider);
   const currentModelName = getModelName(selectedProvider, currentModel);
@@ -66,16 +69,27 @@ export function ChatInput({ chatId }: ChatInputProps) {
     setIsGenerating(true);
 
     try {
+      let currentChatId = chatId;
+      // If no chatId, create a new chat
+      if (!chatId) {
+        currentChatId = await createChat({ title: "New Chat" });
+        setSelectedChatId(currentChatId);
+      }
+
+      if (!currentChatId) {
+        throw new Error("Failed to create or retrieve chat ID");
+      }
+
       // Send user message
       await sendMessage({
-        chatId,
+        chatId: currentChatId,
         content: userMessage,
         role: "user",
       });
 
       // Create initial AI message placeholder
       const aiMessageId = await sendMessage({
-        chatId,
+        chatId: currentChatId,
         content: "",
         role: "assistant",
       });
@@ -96,7 +110,6 @@ export function ChatInput({ chatId }: ChatInputProps) {
           });
         }
       );
-
     } catch (error) {
       console.error("Error generating response:", error);
 
@@ -108,9 +121,18 @@ export function ChatInput({ chatId }: ChatInputProps) {
           messageId: streamingMessageId,
           content: errorMessage,
         });
-      } else {
+      } else if (chatId) {
         await sendMessage({
           chatId,
+          content: errorMessage,
+          role: "assistant",
+        });
+      } else {
+        // If no chatId and error before creating one, create a new chat for the error message
+        const newChatId = await createChat({ title: "New Chat" });
+        setSelectedChatId(newChatId);
+        await sendMessage({
+          chatId: newChatId,
           content: errorMessage,
           role: "assistant",
         });
@@ -124,7 +146,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
   const handleModelSelect = async (modelId: string) => {
     setSelectedModel(modelId);
     setShowModelDropdown(false);
-    
+
     // Save to Convex if user is logged in
     if (userId) {
       try {
@@ -151,7 +173,11 @@ export function ChatInput({ chatId }: ChatInputProps) {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isGenerating ? "Generating response..." : "Type your message here..."}
+              placeholder={
+                isGenerating
+                  ? "Generating response..."
+                  : "Type your message here..."
+              }
               disabled={isGenerating}
               className="w-full pr-20 pb-12 pt-4 px-4 min-h-[80px] max-h-[300px] resize-none !border-0 bg-transparent font-sans text-sm focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
               onKeyDown={(e) => {
@@ -174,31 +200,39 @@ export function ChatInput({ chatId }: ChatInputProps) {
                     disabled={isGenerating}
                   >
                     <span className="mr-1">{currentModelName}</span>
-                    <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showModelDropdown ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-3 h-3 transition-transform duration-200 ${showModelDropdown ? "rotate-180" : ""}`}
+                    />
                   </Button>
 
                   {showModelDropdown && (
-                    <div className="absolute bottom-full left-0 mb-2 w-80 bg-popover border border-border rounded-lg shadow-lg z-50">
+                    <div className="absolute left-0 z-50 mb-2 border rounded-lg shadow-lg bottom-full w-80 bg-popover border-border">
                       <div className="p-2">
-                        <div className="px-2 py-1 text-xs font-medium text-muted-foreground border-b border-border mb-2">
-                          {selectedProvider.toUpperCase()} Models
+                        <div className="px-2 py-1 mb-2 text-xs font-medium border-b text-muted-foreground border-border">
+                          {selectedProvider.charAt(0).toUpperCase() +
+                            selectedProvider.slice(1)}{" "}
+                          Models
                         </div>
-                        <div className="space-y-1 max-h-64 overflow-y-auto">
+                        <div className="space-y-1 overflow-y-auto max-h-64">
                           {availableModels.map((model) => (
                             <button
                               key={model.id}
                               type="button"
                               className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
                                 currentModel === model.id
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'hover:bg-accent hover:text-accent-foreground'
+                                  ? "bg-accent text-accent-foreground"
+                                  : "hover:bg-accent hover:text-accent-foreground"
                               }`}
                               onClick={() => void handleModelSelect(model.id)}
                             >
                               <div className="font-medium">{model.name}</div>
-                              <div className="text-xs text-muted-foreground truncate">{model.id}</div>
+                              <div className="text-xs truncate text-muted-foreground">
+                                {model.id}
+                              </div>
                               {model.description && (
-                                <div className="text-xs text-muted-foreground/80 mt-1">{model.description}</div>
+                                <div className="mt-1 text-xs text-muted-foreground/80">
+                                  {model.description}
+                                </div>
                               )}
                             </button>
                           ))}
@@ -236,7 +270,7 @@ export function ChatInput({ chatId }: ChatInputProps) {
                 className="w-8 h-8 p-0 rounded-lg bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
               >
                 {isGenerating ? (
-                  <div className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 rounded-full border-background border-t-transparent animate-spin" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
@@ -247,8 +281,8 @@ export function ChatInput({ chatId }: ChatInputProps) {
 
         {/* Click outside to close dropdown */}
         {showModelDropdown && (
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setShowModelDropdown(false)}
           />
         )}
