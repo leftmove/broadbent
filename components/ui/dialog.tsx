@@ -4,7 +4,7 @@ import { cn } from "lib/utils";
 const Dialog = ({
   children,
   open,
-  onOpenChange: _onOpenChange,
+  onOpenChange,
 }: {
   children: React.ReactNode;
   open: boolean;
@@ -12,8 +12,18 @@ const Dialog = ({
 }) => {
   if (!open) return null;
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // Close only if clicking the backdrop, not its children
+    if (e.target === e.currentTarget) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
       <div className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
         {children}
       </div>

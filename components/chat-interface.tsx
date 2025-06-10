@@ -5,6 +5,7 @@ import { Authenticated, Unauthenticated } from "convex/react";
 import { Sidebar } from "components/sidebar";
 import { AuthForm } from "components/auth-form";
 import { ThemeToggle } from "components/theme-toggle";
+import { SignOutButton } from "components/sign-out-button";
 // import { useChatState } from "state/chat";
 import { useUIState } from "state/ui";
 
@@ -21,7 +22,8 @@ export function ChatInterface({ children }: ChatInterfaceProps) {
         <Sidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
         <div className="flex flex-col flex-1 min-h-0">
           <header className="flex items-center justify-end flex-shrink-0 px-6 py-4 border-b border-border/30 bg-background/80 backdrop-blur-sm">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
+              <SignOutButton />
               <ThemeToggle />
             </div>
           </header>

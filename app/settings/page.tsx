@@ -3,6 +3,8 @@
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { Label } from "components/ui/label";
+import { RouteGuard } from "components/route-guard";
+import { ChatInterface } from "components/chat-interface";
 
 import { useSettingsState } from "state/settings";
 import { AIProvider } from "lib/ai/types";
@@ -14,11 +16,16 @@ import {
   Shield,
   Bell,
   Check,
+  Eye,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect, SVGProps } from "react";
+import React, { useState, useEffect, SVGProps } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
+import { cn } from "lib/utils";
+import { toast } from "sonner";
 
 // SVG Icon Components
 const OpenAIIcon = (props: SVGProps<SVGSVGElement>) => (
@@ -101,27 +108,27 @@ const GrokIcon = (props: SVGProps<SVGSVGElement>) => (
   >
     <polygon
       className="fill-gray-900 dark:fill-white"
-      fill-rule="evenodd"
+      fillRule="evenodd"
       points="24.032,28.919 40.145,5.989 33.145,5.989 20.518,23.958"
-      clip-rule="evenodd"
+      clipRule="evenodd"
     ></polygon>
     <polygon
       className="fill-gray-900 dark:fill-white"
-      fill-rule="evenodd"
+      fillRule="evenodd"
       points="14.591,32.393 7.145,42.989 14.145,42.989 18.105,37.354"
-      clip-rule="evenodd"
+      clipRule="evenodd"
     ></polygon>
     <polygon
       className="fill-gray-900 dark:fill-white"
-      fill-rule="evenodd"
+      fillRule="evenodd"
       points="14.547,18.989 7.547,18.989 24.547,42.989 31.547,42.989"
-      clip-rule="evenodd"
+      clipRule="evenodd"
     ></polygon>
     <polygon
       className="fill-gray-900 dark:fill-white"
-      fill-rule="evenodd"
+      fillRule="evenodd"
       points="35,16.789 35,43 41,43 41,8.251"
-      clip-rule="evenodd"
+      clipRule="evenodd"
     ></polygon>
   </svg>
 );
@@ -137,15 +144,15 @@ const OpenRouterIcon = (props: SVGProps<SVGSVGElement>) => (
     aria-label="Logo"
     {...props}
   >
-    <g clip-path="url(#clip0_205_3)">
+    <g clipPath="url(#clip0_205_3)">
       <path
         d="M3 248.945C18 248.945 76 236 106 219C136 202 136 202 198 158C276.497 102.293 332 120.945 423 120.945"
-        stroke-width="90"
+        strokeWidth="90"
       ></path>
       <path d="M511 121.5L357.25 210.268L357.25 32.7324L511 121.5Z"></path>
       <path
         d="M0 249C15 249 73 261.945 103 278.945C133 295.945 133 295.945 195 339.945C273.497 395.652 329 377 420 377"
-        stroke-width="90"
+        strokeWidth="90"
       ></path>
       <path d="M508 376.445L354.25 287.678L354.25 465.213L508 376.445Z"></path>
     </g>
@@ -212,10 +219,10 @@ const providersInfo: Record<
     },
   },
   grok: {
-    name: "Grok",
+    name: "xAI",
     logo: GrokIcon,
     href: "https://x.ai/",
-    apiKeyName: "Grok API Key",
+    apiKeyName: "xAI API Key",
     apiKeyPlaceholder: "...",
     style: {
       default:
@@ -250,308 +257,265 @@ export default function SettingsPage() {
   );
   const setProviderPref = useMutation(api.settings.setProvider);
 
-  // Local fallback for provider (until Convex loads)
-  const { apiKeys, selectedProvider, setApiKey, setSelectedProvider } =
-    useSettingsState();
-  const [showKeys, setShowKeys] = useState({
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(
+    null
+  );
+  const [apiKeyVisibility, setApiKeyVisibility] = useState<
+    Record<AIProvider, boolean>
+  >({
     openai: false,
     anthropic: false,
     google: false,
     grok: false,
     openrouter: false,
   });
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-    "idle"
-  );
-  const [provider, setProvider] = useState<AIProvider>(selectedProvider);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showApiKeySection, setShowApiKeySection] = useState(false);
 
-  // Sync provider from Convex when loaded
+  // Local state for API keys and provider
+  const { apiKeys, setApiKey } = useSettingsState();
+
   useEffect(() => {
     if (providerPref) {
-      setProvider(providerPref as AIProvider);
       setSelectedProvider(providerPref as AIProvider);
     }
-  }, [providerPref, setSelectedProvider]);
+  }, [providerPref]);
 
-  const handleProviderChange = async (value: AIProvider) => {
-    console.log("Provider change triggered:", value);
-    setProvider(value);
+  const handleProviderChange = (value: AIProvider) => {
     setSelectedProvider(value);
+    setShowApiKeySection(true);
     if (userId) {
-      await setProviderPref({ userId, provider: value });
+      void setProviderPref({ userId, provider: value });
     }
   };
 
   const toggleKeyVisibility = (provider: AIProvider) => {
-    setShowKeys((prev) => ({
+    setApiKeyVisibility((prev) => ({
       ...prev,
       [provider]: !prev[provider],
     }));
   };
 
+  const handleApiKeyChange = (value: string) => {
+    if (selectedProvider) {
+      setApiKey(selectedProvider, value);
+    }
+  };
+
   const handleSave = () => {
-    setSaveStatus("saving");
+    setIsSaving(true);
 
     // Simulate save delay
     setTimeout(() => {
-      setSaveStatus("saved");
-
-      // Reset to idle after showing success
-      setTimeout(() => {
-        setSaveStatus("idle");
-      }, 2000);
+      setIsSaving(false);
+      toast.success(
+        `${selectedProvider ? providersInfo[selectedProvider].name : "API"} key saved successfully`,
+        {
+          description: "Your API key has been securely saved in your browser.",
+          position: "bottom-right",
+        }
+      );
     }, 500);
   };
 
-  const hasAnyApiKey =
-    apiKeys.openai ||
-    apiKeys.anthropic ||
-    apiKeys.google ||
-    apiKeys.grok ||
-    apiKeys.openrouter;
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div className="flex items-center space-x-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="p-2">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-semibold">Settings</h1>
-              <div className="text-sm text-muted-foreground">
-                Manage your preferences and API configurations
+    <RouteGuard>
+      <div className="space-y-8">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold">Settings</h2>
+          <p className="text-sm text-muted-foreground">
+            Manage your application settings and preferences.
+          </p>
+        </div>
+
+        {/* AI Providers Section */}
+        <div className="p-6 border rounded-lg shadow-sm bg-card">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h3 className="text-xl font-medium flex items-center">
+                  <Brain className="w-5 h-5 mr-2 text-primary" />
+                  AI Providers
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose your preferred AI provider for generating responses.
+                </p>
               </div>
+            </div>
+
+            {/* Provider Selection */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {Object.entries(providersInfo).map(([key, provider]) => {
+                const isSelected = selectedProvider === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={cn(
+                      "flex flex-col items-center justify-center rounded-lg border p-4 text-center transition-all hover:shadow-md relative",
+                      isSelected
+                        ? provider.style.selected
+                        : provider.style.default
+                    )}
+                    onClick={() => handleProviderChange(key as AIProvider)}
+                  >
+                    <provider.logo className="w-10 h-10 mb-3" />
+                    <div className="font-medium">{provider.name}</div>
+                    {isSelected && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        <div className="flex">
-          {/* Sidebar Navigation */}
-          <div className="w-64 p-6 border-r border-border">
-            <nav className="space-y-2">
+        {/* API Key Management */}
+        <div className="p-6 border rounded-lg shadow-sm bg-card">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Button
-                  variant="secondary"
-                  className="justify-start w-full font-sans text-sm"
-                >
-                  <Key className="w-4 h-4 mr-3" />
+                <h3 className="text-xl font-medium flex items-center">
+                  <Key className="w-5 h-5 mr-2 text-primary" />
                   API Keys
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="justify-start w-full font-sans text-sm text-muted-foreground"
-                  disabled
-                >
-                  <Brain className="w-4 h-4 mr-3" />
-                  AI Models
-                  <span className="px-2 py-1 ml-auto text-xs rounded bg-muted">
-                    Soon
-                  </span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="justify-start w-full font-sans text-sm text-muted-foreground"
-                  disabled
-                >
-                  <Palette className="w-4 h-4 mr-3" />
-                  Appearance
-                  <span className="px-2 py-1 ml-auto text-xs rounded bg-muted">
-                    Soon
-                  </span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="justify-start w-full font-sans text-sm text-muted-foreground"
-                  disabled
-                >
-                  <Shield className="w-4 h-4 mr-3" />
-                  Privacy
-                  <span className="px-2 py-1 ml-auto text-xs rounded bg-muted">
-                    Soon
-                  </span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="justify-start w-full font-sans text-sm text-muted-foreground"
-                  disabled
-                >
-                  <Bell className="w-4 h-4 mr-3" />
-                  Notifications
-                  <span className="px-2 py-1 ml-auto text-xs rounded bg-muted">
-                    Soon
-                  </span>
-                </Button>
-              </div>
-            </nav>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1 p-6">
-            <div className="max-w-2xl space-y-8">
-              {/* AI Provider Selection */}
-              <div className="space-y-4">
-                <div>
-                  <h2 className="mb-2 text-lg font-semibold">Provider</h2>
-                  <div className="mb-4 text-sm text-muted-foreground">
-                    Choose your preferred AI provider for generating responses.
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="provider">Default Provider</Label>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {(Object.keys(providersInfo) as AIProvider[]).map(
-                      (prov) => {
-                        const info = providersInfo[prov];
-                        const isSelected = provider === prov;
-                        return (
-                          <Button
-                            key={prov}
-                            type="button"
-                            variant="outline"
-                            className={`flex items-center justify-start gap-3 p-4 text-left transition-all duration-200 ${
-                              isSelected
-                                ? info.style.selected
-                                : info.style.default
-                            }`}
-                            onClick={() => {
-                              void handleProviderChange(prov);
-                            }}
-                            aria-pressed={isSelected}
-                          >
-                            <info.logo className="w-6 h-6" />
-                            <span className="font-semibold">{info.name}</span>
-                          </Button>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* API Keys Section */}
-              <div className="space-y-6">
-                <div>
-                  <h2 className="mb-2 text-lg font-semibold">API Keys</h2>
-                  <div className="mb-4 text-sm text-muted-foreground">
-                    Add your API keys to enable AI chat functionality. Keys are
-                    stored locally in your browser.
-                  </div>
-                </div>
-
-                {(Object.keys(providersInfo) as AIProvider[]).map((prov) => {
-                  const info = providersInfo[prov];
-                  return (
-                    <div
-                      key={prov}
-                      className="p-4 space-y-3 border rounded-lg border-border"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label
-                            htmlFor={`${prov}-key`}
-                            className="text-sm font-medium"
-                          >
-                            {info.apiKeyName}
-                          </Label>
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            Get your key from{" "}
-                            <a
-                              href={info.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline dark:text-blue-400"
-                            >
-                              {new URL(info.href).hostname}
-                            </a>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleKeyVisibility(prov)}
-                          className="text-xs"
-                        >
-                          {showKeys[prov] ? "Hide" : "Show"}
-                        </Button>
-                      </div>
-                      <Input
-                        id={`${prov}-key`}
-                        type={showKeys[prov] ? "text" : "password"}
-                        value={apiKeys[prov]}
-                        onChange={(e) => setApiKey(prov, e.target.value)}
-                        placeholder={info.apiKeyPlaceholder}
-                        className="font-mono text-sm"
-                        autoComplete="off"
-                        spellCheck={false}
-                      />
-                    </div>
-                  );
-                })}
-
-                {/* Save Button */}
-                {hasAnyApiKey && (
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleSave}
-                      disabled={saveStatus === "saving"}
-                      className={`relative overflow-hidden transition-all duration-300 ${
-                        saveStatus === "saved"
-                          ? "bg-green-600 hover:bg-green-700 text-white border-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-                          : ""
-                      }`}
-                    >
-                      {saveStatus === "saving" && (
-                        <span className="flex items-center">
-                          <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin" />
-                          Saving...
-                        </span>
-                      )}
-                      {saveStatus === "saved" && (
-                        <span className="flex items-center">
-                          <Check className="w-4 h-4 mr-2" />
-                          Saved!
-                        </span>
-                      )}
-                      {saveStatus === "idle" && "Save Settings"}
-
-                      {/* Green success animation overlay */}
-                      {saveStatus === "saved" && (
-                        <div className="absolute inset-0 bg-green-500/20 animate-pulse" />
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Security Notice */}
-              <div className="overflow-hidden border border-blue-100 rounded-lg shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-950 dark:to-indigo-950">
-                <div className="p-5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full shrink-0 dark:bg-blue-900">
-                      <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="font-sans text-base font-medium text-blue-900 dark:text-blue-100">
-                        Security Notice
-                      </h3>
-                      <div className="text-sm leading-relaxed text-blue-700 dark:text-blue-300">
-                        Your API keys are stored locally in your browser and are
-                        never sent to our servers. They are only used to make
-                        direct requests to the respective AI providers.
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Manage API keys for various AI providers.
+                </p>
               </div>
             </div>
+
+            {selectedProvider ? (
+              <div className="flex flex-col md:flex-row items-start p-4 border rounded-lg bg-muted/30 gap-4">
+                <div
+                  className="p-3 rounded-md shrink-0"
+                  style={{
+                    backgroundColor:
+                      selectedProvider === "openai"
+                        ? "#E7F7F0"
+                        : selectedProvider === "anthropic"
+                          ? "#FFEBD9"
+                          : selectedProvider === "google"
+                            ? "#E8F0FE"
+                            : selectedProvider === "grok"
+                              ? "#F1F3F5"
+                              : "#F4EEFF",
+                  }}
+                >
+                  {selectedProvider &&
+                    (() => {
+                      const ProviderLogo = providersInfo[selectedProvider].logo;
+                      return <ProviderLogo className="w-10 h-10" />;
+                    })()}
+                </div>
+                <div className="flex-1 w-full">
+                  <h4 className="text-lg font-medium">
+                    {providersInfo[selectedProvider].name}
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Enter your API key to enable integration with{" "}
+                    {providersInfo[selectedProvider].name}.
+                  </p>
+
+                  <div className="grid gap-4">
+                    <div className="relative">
+                      <Label
+                        htmlFor="apiKey"
+                        className="text-sm font-medium mb-1.5 block"
+                      >
+                        {providersInfo[selectedProvider].apiKeyName}
+                      </Label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            id="apiKey"
+                            value={apiKeys[selectedProvider] || ""}
+                            type={
+                              apiKeyVisibility[selectedProvider]
+                                ? "text"
+                                : "password"
+                            }
+                            placeholder={
+                              providersInfo[selectedProvider].apiKeyPlaceholder
+                            }
+                            onChange={(e) => handleApiKeyChange(e.target.value)}
+                            className="pr-10 font-mono text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              toggleKeyVisibility(selectedProvider)
+                            }
+                            className="absolute -translate-y-1/2 right-3 top-1/2 text-muted-foreground hover:text-foreground"
+                            aria-label={
+                              apiKeyVisibility[selectedProvider]
+                                ? "Hide API Key"
+                                : "Show API Key"
+                            }
+                          >
+                            {apiKeyVisibility[selectedProvider] ? (
+                              <Eye className="w-4 h-4" />
+                            ) : (
+                              <EyeOff className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={handleSave}
+                          className="shrink-0"
+                          disabled={isSaving}
+                        >
+                          {isSaving ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4 mr-2" />
+                          )}
+                          Save
+                        </Button>
+                      </div>
+                      <div className="flex flex-col sm:flex-row justify-between gap-2 mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Your API key is stored securely in your browser.
+                        </p>
+                        <a
+                          href={providersInfo[selectedProvider].href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center"
+                        >
+                          Get API Key
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="w-3 h-3 ml-1"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 text-center border rounded-lg bg-muted/30">
+                <p className="text-muted-foreground">
+                  Select an AI provider above to configure its API key.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 }

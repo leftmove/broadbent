@@ -82,6 +82,26 @@ module.exports = {
             transform: "scale(1)", 
             opacity: 1 
           }
+        },
+        "slide-in-from-top": {
+          "0%": {
+            transform: "translateY(-10px)",
+            opacity: 0
+          },
+          "100%": {
+            transform: "translateY(0)",
+            opacity: 1
+          }
+        },
+        "slide-in-from-bottom": {
+          "0%": {
+            transform: "translateY(10px)",
+            opacity: 0
+          },
+          "100%": {
+            transform: "translateY(0)",
+            opacity: 1
+          }
         }
       },
       animation: {
@@ -90,9 +110,28 @@ module.exports = {
         "pop-in": "pop-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "pop-in-delay-1": "pop-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards",
         "pop-in-delay-2": "pop-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards",
-        "pop-in-delay-3": "pop-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards"
+        "pop-in-delay-3": "pop-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards",
+        "in": "fade-in 0.2s ease-in-out",
+        "out": "fade-out 0.2s ease-in-out",
+        "slide-in-from-top": "slide-in-from-top 0.15s ease-in-out",
+        "slide-in-from-bottom": "slide-in-from-bottom 0.15s ease-in-out"
       },
     },
   },
-  plugins: [require('@tailwindcss/typography')],
+  plugins: [
+    require('@tailwindcss/typography'),
+    function({ addUtilities }) {
+      addUtilities({
+        ".animate-in": {
+          animationDuration: "0.2s",
+          animationFillMode: "forwards",
+          animationTimingFunction: "ease-in-out"
+        },
+        ".slide-in-from-top-2": {
+          animationName: "slide-in-from-top"
+        }
+      });
+    }
+  ],
 }
+

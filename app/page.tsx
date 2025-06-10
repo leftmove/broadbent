@@ -1,10 +1,13 @@
-import { HomePlaceholder } from "components/home-placeholder";
+import { RouteGuard } from "components/route-guard";
 import { ChatInterface } from "components/chat-interface";
+import { HomePlaceholder } from "components/home-placeholder";
 
 export default function Home() {
   return (
-    <ChatInterface>
-      <HomePlaceholder />
-    </ChatInterface>
+    <RouteGuard>
+      <ChatInterface>
+        <HomePlaceholder />
+      </ChatInterface>
+    </RouteGuard>
   );
 }

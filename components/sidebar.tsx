@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import { ChatDeleteDialog } from "components/chat-delete-dialog";
 import { ChatItem } from "components/chat-item";
+import { UserProfile } from "components/user-profile";
 // import { useChatState } from "state/chat";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "lib/utils";
@@ -40,7 +40,6 @@ export function Sidebar({
   const createChat = useMutation(api.chats.create);
   const togglePinChat = useMutation(api.chats.togglePin);
   const deleteChatMutation = useMutation(api.chats.deleteChat);
-  const { signOut } = useAuthActions();
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
   const router = useRouter();
@@ -124,10 +123,6 @@ export function Sidebar({
     }
   };
 
-  const handleSignOut = () => {
-    void signOut();
-  };
-
   const groupChatsByTime = (chats: Doc<"chats">[]) => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -180,23 +175,26 @@ export function Sidebar({
       )}
     >
       <div className="p-4">
-        <div className="flex items-center justify-start mb-4">
-          {!collapsed && (
-            <div className="flex items-center space-x-2">
-              <span className="mx-auto font-sans text-lg font-bold">
-                Broadbent
-              </span>
-            </div>
-          )}
+        <div className="flex items-center mb-4">
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0 ml-auto rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            className="w-8 h-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             onClick={toggleSidebar}
           >
             <PanelLeft className="w-5 h-5" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
+          <div
+            className={cn(
+              "flex items-center space-x-2 transition-all duration-150 ease-in-out overflow-hidden",
+              collapsed ? "max-w-0" : "max-w-full"
+            )}
+          >
+            <span className="mx-auto font-serif text-lg font-bold">
+              Broadbent
+            </span>
+          </div>
         </div>
 
         {!collapsed ? (
@@ -342,19 +340,13 @@ export function Sidebar({
             <Link href="/settings">
               <Button
                 variant="ghost"
-                className="justify-start w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                className="justify-center w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
               >
                 <Settings className="w-4 h-4 mr-3" />
                 Settings
               </Button>
             </Link>
-            <Button
-              variant="ghost"
-              className="w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              onClick={handleSignOut}
-            >
-              Sign Out
-            </Button>
+            <UserProfile collapsed={collapsed} />
           </div>
         ) : (
           <div className="flex flex-col items-center space-y-2">
@@ -367,28 +359,7 @@ export function Sidebar({
                 <span className="sr-only">Settings</span>
               </Button>
             </Link>
-            <Button
-              variant="ghost"
-              className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              onClick={handleSignOut}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-              <span className="sr-only">Sign Out</span>
-            </Button>
+            <UserProfile collapsed={collapsed} />
           </div>
         )}
       </div>

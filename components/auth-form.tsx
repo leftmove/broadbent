@@ -1,69 +1,35 @@
 "use client";
 
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
-import { Button } from "components/ui/button";
-import { Input } from "components/ui/input";
+import { SignInForm } from "components/forms/sign-in-form";
+import { SignUpForm } from "components/forms/sign-up-form";
 
 export function AuthForm() {
-  const { signIn } = useAuthActions();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      await signIn("password", {
-        email,
-        password,
-        flow: isSignUp ? "signUp" : "signIn",
-      });
-    } catch (error) {
-      console.error("Auth error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
-      <div className="space-y-4">
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="font-sans"
-          required
-        />
-        <Input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="font-sans"
-          required
-        />
-      </div>
-      <div className="space-y-3">
-        <Button type="submit" className="w-full font-sans" disabled={loading}>
-          {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="w-full font-sans text-sm"
-          onClick={() => setIsSignUp(!isSignUp)}
+  return isSignUp ? (
+    <div className="space-y-4">
+      <SignUpForm />
+      <div className="text-center text-sm">
+        <button
+          className="underline underline-offset-4 hover:text-primary"
+          onClick={() => setIsSignUp(false)}
         >
-          {isSignUp
-            ? "Already have an account? Sign In"
-            : "Need an account? Sign Up"}
-        </Button>
+          Already have an account? Sign In
+        </button>
       </div>
-    </form>
+    </div>
+  ) : (
+    <div className="space-y-4">
+      <SignInForm />
+      <div className="text-center text-sm">
+        <button
+          className="underline underline-offset-4 hover:text-primary"
+          onClick={() => setIsSignUp(true)}
+        >
+          Need an account? Sign Up
+        </button>
+      </div>
+    </div>
   );
 }

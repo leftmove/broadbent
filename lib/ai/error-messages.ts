@@ -4,14 +4,18 @@ export const DEFAULT_ERROR_MESSAGE =
   "Sorry, I couldn't generate a response due to an error.";
 
 export const getApiKeyMissingErrorMessage = (provider: AIProvider) => `
-**API Key Required**: I need an API key to respond. Please go to Settings and add your ${provider.toUpperCase()} API key.
+It looks like you don't have an API key set for this model yet.
 
-**How to get an API key:**
-* **OpenAI**: Visit https://platform.openai.com/api-keys
-* **Anthropic**: Visit https://console.anthropic.com/
-* **Google**: Visit https://aistudio.google.com/app/apikey
+If you're new here, before you can use the chat, you need to get an API key from one of several providers. Here are some possible options.
 
-Once you have your key, click the Settings button to add it.
+* **[OpenAI](https://platform.openai.com/api-keys)**: ChatGPT.
+* **[Anthropic](https://console.anthropic.com/)**: Claude.
+* **[Google](https://aistudio.google.com/app/apikey)**: Gemini.
+* **[xAI](https://console.x.ai)**: Grok.
+
+Click the provider's name to go to their API key page. Once your there, if you've setup an account, you can setup billing and get an API key.
+
+With your API key setup, click the settings button in the bottom left and navigate to *Settings > API Keys* and add your key to the provider you chose. You can then set that provider as your default by clicking the provider you want above the API keys.
 `;
 
 export const getRateLimitErrorMessage = (provider: AIProvider) => `
