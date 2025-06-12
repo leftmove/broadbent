@@ -2,6 +2,8 @@ import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createXai } from "@ai-sdk/xai";
+import { createGroq } from "@ai-sdk/groq";
 import { AIProvider, ApiKeys, getDefaultModel } from "lib/ai/types";
 
 export const useAIGeneration = () => {
@@ -39,20 +41,12 @@ export const useAIGeneration = () => {
 
       case "xai":
         if (!apiKeys.xai) throw new Error("xAI API key not set");
-        // xAI's Grok model uses OpenAI-compatible API
-        llm = createOpenAI({
-          apiKey: apiKeys.xai,
-          baseURL: "https://api.x.ai/v1",
-        });
+        llm = createXai({ apiKey: apiKeys.xai });
         model = llm(selectedModel);
         break;
-
-      case "openrouter":
-        if (!apiKeys.openrouter) throw new Error("OpenRouter API key not set");
-        llm = createOpenAI({
-          apiKey: apiKeys.openrouter,
-          baseURL: "https://openrouter.ai/api/v1",
-        });
+      case "groq":
+        if (!apiKeys.groq) throw new Error("Groq API key not set");
+        llm = createGroq({ apiKey: apiKeys.groq });
         model = llm(selectedModel);
         break;
 
