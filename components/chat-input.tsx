@@ -68,6 +68,7 @@ export function ChatInput({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllProviders, setShowAllProviders] = useState(false);
+  const [possibleModels, setPossibleModels] = useState<ProviderModel[]>([]);
   const [streamingMessageId, setStreamingMessageId] =
     useState<Id<"messages"> | null>(null);
 
@@ -99,7 +100,7 @@ export function ChatInput({
     userId ? { userId } : "skip"
   );
 
-  const currentProvider = savedProvider || selectedProvider;
+  const currentProvider = selectedProvider || savedProvider;
   const currentProviderMap = providerModels[currentProvider];
   const defaultModel = currentProviderMap.get("default")!;
 
@@ -127,22 +128,25 @@ export function ChatInput({
 
   const ref = useClickOutside(handleClose);
 
+  const fuckingProviders = [...currentProviderMap.values()]
+    .filter((model) => !model.id?.startsWith("_deprecated"))
+    .filter((model) => model.provider === currentProvider);
+
   const handleProviderSelect = async (provider: AIProvider) => {
+    if (userId) {
+      await setSelectedModelMutation({
+        userId,
+        provider,
+        modelId: defaultModel.id,
+      }).catch((error) => {
+        console.error(error);
+      });
+    }
+
     setSelectedProvider(provider);
     setSelectedModel(defaultModel.id);
     setShowAllProviders(false);
-
-    if (userId) {
-      try {
-        await setSelectedModelMutation({
-          userId,
-          provider,
-          modelId: defaultModel.id,
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    }
+    setPossibleModels(fuckingProviders);
   };
 
   const handleModelSelect = async (modelId: string) => {
@@ -183,35 +187,6 @@ export function ChatInput({
       case "streaming":
         return <Zap {...iconProps} />;
     }
-  };
-
-  const renderCapabilities = (model: ProviderModel) => {
-    const { capabilities, input, context } = model;
-
-    return (
-      <div className="flex items-center gap-3 p-2 mt-3 rounded-md bg-secondary/20">
-        <div className="flex items-center gap-1">
-          <CapabilityIcon
-            capability="thinking"
-            enabled={capabilities.thinking}
-          />
-          <span className="text-xs text-muted-foreground">Think</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <CapabilityIcon capability="image" enabled={input.image} />
-          <span className="text-xs text-muted-foreground">Vision</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <CapabilityIcon capability="tool" enabled={capabilities.tool} />
-          <span className="text-xs text-muted-foreground">Tools</span>
-        </div>
-        <div className="ml-auto text-xs text-muted-foreground">
-          {context.window
-            ? `${(context.window / 1000).toFixed(0)}K context`
-            : "N/A"}
-        </div>
-      </div>
-    );
   };
 
   const processSubmission = useCallback(
@@ -327,6 +302,22 @@ export function ChatInput({
     void processSubmission(input);
   };
 
+  console.log(
+    "currentProvider",
+    currentProviderMap,
+    currentProviderMap.values()
+  );
+  console.log(
+    "poop",
+    Array.from(currentProviderMap.values() as unknown as ProviderModel[])
+  );
+  console.log(
+    "poop2",
+    Array.from(currentProviderMap.values() as unknown as ProviderModel[])
+      .filter((model) => !model.id?.startsWith("_deprecated"))
+      .filter((model) => model.provider === currentProvider)
+  );
+
   return (
     <div
       ref={ref}
@@ -434,8 +425,7 @@ export function ChatInput({
                 className={`px-4 pb-4 border-t border-border/50 ${isHomePage ? "max-h-[50vh]" : ""}`}
               >
                 <div className="mt-4">
-                  {!showAllProviders ? (
-                    // Current provider's models view
+                  {showAllProviders === false ? (
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -458,8 +448,8 @@ export function ChatInput({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log("Switch Provider clicked");
                               setShowAllProviders(true);
+                              setPossibleModels([]);
                             }}
                           >
                             Switch Provider
@@ -485,21 +475,14 @@ export function ChatInput({
                         style={{ scrollbarWidth: "thin" }}
                       >
                         <div className="grid grid-cols-1 gap-3 pb-4 overflow-y-scroll">
-                          {Array.from(
-                            currentProviderMap.values() as unknown as ProviderModel[]
-                          )
-                            .filter(
-                              (model) => !model.id?.startsWith("_deprecated")
-                            )
-                            .map((model) => {
-                              const isSelected = currentModel === model;
-
+                          {showAllProviders === false &&
+                            possibleModels.map((model) => {
                               return (
                                 <button
                                   key={model.id}
                                   type="button"
                                   className={`text-left p-4 rounded-lg transition-colors border cursor-pointer ${
-                                    isSelected
+                                    model.id === currentModel.id
                                       ? "bg-accent text-accent-foreground border-accent"
                                       : "hover:bg-accent hover:text-accent-foreground border-border"
                                   }`}
@@ -522,9 +505,44 @@ export function ChatInput({
                                           {model.description}
                                         </div>
                                       )}
-                                      {renderCapabilities(model)}
+                                      <div className="flex items-center gap-3 p-2 mt-3 rounded-md bg-secondary/20">
+                                        <div className="flex items-center gap-1">
+                                          <CapabilityIcon
+                                            capability="thinking"
+                                            enabled={
+                                              model.capabilities.thinking
+                                            }
+                                          />
+                                          <span className="text-xs text-muted-foreground">
+                                            Think
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <CapabilityIcon
+                                            capability="image"
+                                            enabled={model.input.image}
+                                          />
+                                          <span className="text-xs text-muted-foreground">
+                                            Vision
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <CapabilityIcon
+                                            capability="tool"
+                                            enabled={model.capabilities.tool}
+                                          />
+                                          <span className="text-xs text-muted-foreground">
+                                            Tools
+                                          </span>
+                                        </div>
+                                        <div className="ml-auto text-xs text-muted-foreground">
+                                          {model.context.window
+                                            ? `${(model.context.window / 1000).toFixed(0)}K context`
+                                            : "N/A"}
+                                        </div>
+                                      </div>
                                     </div>
-                                    {isSelected && (
+                                    {model.id === currentModel.id && (
                                       <Check className="flex-shrink-0 w-5 h-5 ml-3 text-accent-foreground" />
                                     )}
                                   </div>
@@ -535,7 +553,6 @@ export function ChatInput({
                       </div>
                     </div>
                   ) : (
-                    // All providers view
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -553,7 +570,7 @@ export function ChatInput({
                             <ArrowLeft className="w-4 h-4" />
                           </Button>
                           <div className="text-sm font-medium text-muted-foreground">
-                            All AI Providers
+                            All Providers
                           </div>
                         </div>
                         <Button
