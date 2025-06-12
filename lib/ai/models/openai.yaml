@@ -1,0 +1,259 @@
+provider: openai
+name: OpenAI
+links:
+  - name: Home
+    link: https://openai.com
+  - name: Models
+    link: https://platform.openai.com/docs/models
+  - name: Pricing
+    link: https://platform.openai.com/docs/pricing
+  - name: Documentation
+    link: https://platform.openai.com/docs/overview
+  - name: Console
+    link: https://platform.openai.com/api-keys
+models:
+  - name: GPT-4o
+    id: gpt-4o
+    description: OpenAI's general purpose model. Fast, intelligent, and flexible.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 128_000
+      - output: 16_384
+  - name: GPT-4o mini
+    id: gpt-4o-mini
+    description: OpenAI's smaller, faster, and more affordable general purpose model. Made for focused tasks.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    context:
+      - window: 128_000
+      - output: 16_384
+  - name: GPT-4o Audio
+    id: gpt-4o-audio-preview
+    description: OpenAI's general purpose voice model. Capable of speaking and understanding.
+    capabilities:
+    input:
+      text: true
+      audio: true
+    output:
+      text: true
+      audio: true
+    context:
+      - window: 200_000
+      - output: 100_000
+  - name: o1
+    id: o1
+    description: Previous full o-series reasoning model. Powerful and accurate, but less so than its successor.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 100_000
+  - name: o1-mini
+    id: o1-mini
+    description: Smaller and more affordable alternative to o1. Capable of reasoning, with a smaller context window.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 128_000
+      - output: 65_536
+  - name: o3
+    id: o3
+    description: OpenAI's latest and most powerful reasoning model. Most intelligent and accurate model.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 100_000
+  - name: o3-pro
+    id: o3-pro
+    description: Version of o3 with more computer for better responses. More expensive, but better performance.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+  - name: o3-mini
+    id: o3-mini
+    description: Smaller and more affordable alternative to o3. Capable of reasoning.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 100_000
+  - name: o4-mini
+    id: o4-mini
+    description: Faster, more affordable reasoning model. High-intelligence and accuracy.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 100_000
+  - name: GPT-4.1
+    id: gpt-4.1
+    description: OpenAI's flagship model for complex tasks.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 1_047_576
+      - output: 32_768
+  - name: GPT-4.1 mini
+    id: gpt-4.1-mini
+    description: Flagship model balanced for intelligence, speed, and cost.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 1_047_576
+      - output: 32_768
+  - name: GPT-4.1 nano
+    id: gpt-4.1-nano
+    description: Fastest and most cost-effective flagship model.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 1_047_576
+      - output: 32_768
+  - name: GPT-4.5
+    id: gpt-4.5-preview
+    description: Largest and most capable GPT model.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 128_000
+      - output: 16_384
+  - name: ChatGPT-4o
+    id: chatgpt-4o-latest
+    description: ChatGPT's general purpose model. Modified version of GPT-4o.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 128_000
+      - output: 16_384
+  - name: GPT-4
+    id: gpt-4
+    description: Older high-intelligence model. Less powerful than current models.
+    capabilities:
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 8_192
+      - output: 8_192
+  - name: GPT-4 Turbo
+    id: gpt-4-turbo
+    description: Older high-intelligence model. Better and more capable than GPT-4, but less powerful than current models.
+    capabilities:
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 128_000
+      - output: 4_096
+  - name: GPT-3.5
+    id: gpt-3.5
+    description: Legacy GPT model for cheaper chat and non-chat tasks.
+    capabilities:
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 16_385
+      - output: 4_096
+  - name: DALL-E 2
+    id: dall-e-2
+    description: Legacy text-to-image model.
+    capabilities:
+    input:
+      text: true
+    output:
+      image: true
+    context:
+      unit: "image"
+  - name: DALL-E 3
+    id: dall-e-3
+    description: Previous generation text-to-image model.
+    capabilities:
+    input:
+      text: true
+    output:
+      image: true
+    context:
+      unit: "image"
+  - name: GPT Image 1
+    id: gpt-image-1
+    description: OpenAI's latest state-of-the-art image generation model.
+    capabilities:
+    input:
+      text: true
+      image: true
+    output:
+      image: true
+    context:
+      unit: "image"
+      output: 1

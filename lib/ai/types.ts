@@ -3,31 +3,43 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { xai } from "@ai-sdk/xai";
 
-export type AIProvider =
-  | "openai"
-  | "anthropic"
-  | "google"
-  | "grok"
-  | "openrouter";
+export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "groq";
 
 export interface ApiKeys {
   openai: string;
   anthropic: string;
   google: string;
-  grok: string;
-  openrouter: string;
+  xai: string;
+  groq: string;
 }
 
 // Extract model ID types from AI SDK providers
 type OpenAIModelId = Parameters<typeof openai>[0];
 type AnthropicModelId = Parameters<typeof anthropic>[0];
 type GoogleModelId = Parameters<typeof google>[0];
-type GrokModelId = Parameters<typeof xai>[0];
+type XAIModelId = Parameters<typeof xai>[0];
 
 const OPENAI_DEFAULT_MODEL = "gpt-4o";
 const ANTHROPIC_DEFAULT_MODEL = "claude-3-5-sonnet-20241022";
 const GOOGLE_DEFAULT_MODEL = "gemini-1.5-flash";
 const XAI_DEFAULT_MODEL = "grok-2";
+
+export const getProviderName = (provider: AIProvider): string => {
+  switch (provider) {
+    case "openai":
+      return "OpenAI";
+    case "anthropic":
+      return "Anthropic";
+    case "google":
+      return "Google";
+    case "xai":
+      return "xAI";
+    case "groq":
+      return "Groq";
+    default:
+      return "Unknown";
+  }
+};
 
 function setDefaultModel(ids: string[], defaultModel: string) {
   const defaultIdx = ids.indexOf(defaultModel);
@@ -40,42 +52,58 @@ function setDefaultModel(ids: string[], defaultModel: string) {
   return ids;
 }
 
-function getPossibleModelIds(provider: AIProvider) {
-  switch (provider) {
-    case "openai": {
-      const ids = Object.keys(openai).filter(
-        (key) => typeof key === "string"
-      ) as OpenAIModelId[];
-      return setDefaultModel(ids, OPENAI_DEFAULT_MODEL as OpenAIModelId);
-    }
-    case "anthropic": {
-      const ids = Object.keys(anthropic).filter(
-        (key) => typeof key === "string"
-      ) as AnthropicModelId[];
-      return setDefaultModel(ids, ANTHROPIC_DEFAULT_MODEL as AnthropicModelId);
-    }
-    case "google": {
-      const ids = Object.keys(google).filter(
-        (key) => typeof key === "string"
-      ) as GoogleModelId[];
-      return setDefaultModel(ids, GOOGLE_DEFAULT_MODEL as GoogleModelId);
-    }
-    case "grok": {
-      const ids = Object.keys(xai).filter(
-        (key) => typeof key === "string"
-      ) as GrokModelId[];
-      return setDefaultModel(ids, XAI_DEFAULT_MODEL as GrokModelId);
-    }
-    default:
-      return [];
-  }
-}
+// function getPossibleModelIds(provider: AIProvider) {
+//   switch (provider) {
+//     case "openai": {
+//       const ids = Object.keys(OPENAI_MODEL_IDS).filter(
+//         (key) => typeof key === "string"
+//       ) as OpenAIModelId[];
+//       return setDefaultModel(ids, OPENAI_DEFAULT_MODEL as OpenAIModelId);
+//     }
+//     case "anthropic": {
+//       const ids = Object.keys(anthropic).filter(
+//         (key) => typeof key === "string"
+//       ) as AnthropicModelId[];
+//       return setDefaultModel(ids, ANTHROPIC_DEFAULT_MODEL as AnthropicModelId);
+//     }
+//     case "google": {
+//       const ids = Object.keys(google).filter(
+//         (key) => typeof key === "string"
+//       ) as GoogleModelId[];
+//       return setDefaultModel(ids, GOOGLE_DEFAULT_MODEL as GoogleModelId);
+//     }
+//     case "xai": {
+//       const ids = Object.keys(xai).filter(
+//         (key) => typeof key === "string"
+//       ) as XAIModelId[];
+//       return setDefaultModel(ids, XAI_DEFAULT_MODEL as XAIModelId);
+//     }
+//     default:
+//       return [];
+//   }
+// }
 
-const OPENAI_MODEL_IDS = getPossibleModelIds("openai");
-const ANTHROPIC_MODEL_IDS = getPossibleModelIds("anthropic");
-const GOOGLE_MODEL_IDS = getPossibleModelIds("google");
-const GROK_MODEL_IDS = getPossibleModelIds("grok");
-
+const OPENAI_MODEL_IDS = [
+  "gpt-4o",
+  "gpt-4o-mini",
+  "gpt-4-turbo",
+  "gpt-4",
+  "gpt-3.5-turbo",
+] as const;
+const ANTHROPIC_MODEL_IDS = [
+  "claude-3-5-sonnet-20241022",
+  "claude-3-5-haiku-20241022",
+  "claude-3-opus-20240229",
+  "claude-3-sonnet-20240229",
+  "claude-3-haiku-20240307",
+] as const;
+const GOOGLE_MODEL_IDS = [
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+  "gemini-pro",
+  "gemini-pro-vision",
+] as const;
+const GROK_MODEL_IDS = ["grok-beta", "grok-2"] as const;
 const OPENROUTER_MODEL_IDS = [
   "openai/gpt-4o",
   "anthropic/claude-3.5-sonnet",
@@ -297,7 +325,7 @@ export const providerModels: Record<AIProvider, ModelConfig[]> = {
     description: getGoogleModelDescription(id),
     capabilities: GOOGLE_CAPABILITIES[id],
   })),
-  grok: GROK_MODEL_IDS.map((id) => ({
+  xai: GROK_MODEL_IDS.map((id) => ({
     name: getGrokModelName(id),
     id,
     description: getGrokModelDescription(id),

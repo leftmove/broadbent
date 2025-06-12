@@ -1,0 +1,108 @@
+provider: anthropic
+name: Anthropic
+links:
+  - name: Home
+    link: https://www.anthropic.com/
+  - name: Models
+    link: https://docs.anthropic.com/en/docs/about-claude/models/overview
+  - name: Pricing
+    link: https://www.anthropic.com/pricing
+  - name: Documentation
+    link: https://docs.anthropic.com/en/docs/api
+  - name: Console
+    link: https://console.anthropic.com/
+models:
+  - name: Claude Opus 4
+    id: claude-opus-4
+    description: Anthropic's most powerful model. Highest level of intelligence and capability.
+    capabilities:
+      thinking: true
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 32_000
+  - name: Claude Sonnet 4
+    id: claude-sonnet-4
+    description: Effective model with exceptional reasoning capabilities. High intelligence and balanced performance
+    capabilities:
+      thinking: true
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 64_000
+  - name: Claude Sonnet 3.7
+    id: claude-3-7-sonnet
+    description: High-performance and high-intelligence model with early extended thinking. Extended thinking is toggleable.
+    capabilities:
+      thinking: true
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 64_000
+  - name: Claude Sonnet 3.5
+    id: claude-3-5-sonnet
+    description: Previous, less powerful intelligence model. On the higher end of intelligence and capability.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 8_192
+  - name: Claude Haiku 3.5
+    id: claude-3-5-haiku
+    description: Fastest model. Less powerful, but has mid-level intelligence at blazing speeds.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 8_192
+  - name: Claude Opus 3
+    id: claude-3-opus
+    description: Previous power model. Top-level intelligence, fluency, and understanding.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 4_096
+  - name: Claude Haiku 3
+    id: claude-3-haiku
+    description: Least powerful model, but fast. Quick and accurate targeted performance.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 200_000
+      - output: 4_096

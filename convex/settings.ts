@@ -1,28 +1,26 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+import { providers, modelIds } from "./schema";
+
 export const getProvider = query({
   args: { userId: v.id("users") },
-  returns: v.union(
-    v.literal("openai"),
-    v.literal("anthropic"),
-    v.literal("google"),
-    v.literal("grok"),
-    v.literal("openrouter"),
-    v.null()
-  ),
+  returns: v.union(providers, v.null()),
   handler: async (ctx, args) => {
     const pref = await ctx.db
       .query("settings")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
-    return pref ? pref.provider : null;
+
+    if (!pref) return null;
+    const provider = pref.provider;
+    return provider;
   },
 });
 
 export const getSelectedModel = query({
   args: { userId: v.id("users") },
-  returns: v.union(v.string(), v.null()),
+  returns: v.union(modelIds, v.null()),
   handler: async (ctx, args) => {
     const pref = await ctx.db
       .query("settings")
@@ -35,13 +33,7 @@ export const getSelectedModel = query({
 export const setProvider = mutation({
   args: {
     userId: v.id("users"),
-    provider: v.union(
-      v.literal("openai"),
-      v.literal("anthropic"),
-      v.literal("google"),
-      v.literal("grok"),
-      v.literal("openrouter")
-    ),
+    provider: providers,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -64,7 +56,8 @@ export const setProvider = mutation({
 export const setSelectedModel = mutation({
   args: {
     userId: v.id("users"),
-    modelId: v.string(),
+    provider: providers,
+    modelId: modelIds,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -89,14 +82,8 @@ export const getSettings = query({
   args: { userId: v.id("users") },
   returns: v.union(
     v.object({
-      provider: v.union(
-        v.literal("openai"),
-        v.literal("anthropic"),
-        v.literal("google"),
-        v.literal("grok"),
-        v.literal("openrouter")
-      ),
-      selectedModel: v.union(v.string(), v.null()),
+      provider: providers,
+      selectedModel: v.union(modelIds, v.null()),
     }),
     v.null()
   ),
@@ -105,9 +92,12 @@ export const getSettings = query({
       .query("settings")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
+
     if (!pref) return null;
+
+    const provider = pref.provider;
     return {
-      provider: pref.provider,
+      provider,
       selectedModel: pref.selectedModel || null,
     };
   },

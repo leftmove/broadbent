@@ -1,0 +1,72 @@
+provider: groq
+name: Groq
+links:
+  - name: Home
+    link: https://groq.com
+  - name: Models
+    link: https://console.groq.com/docs/models
+  - name: Pricing
+    link: https://groq.com/pricing/
+  - name: Documentation
+    link: https://console.groq.com/docs/overview
+  - name: Console
+    link: https://console.groq.com/keys
+models:
+  - name: Gemma 2
+    id: gemma2-9b-it
+    description: Lightweight, open-weight model well-suited for a variety of text generation tasks. From Google, and built from the same research and technology used to create the Gemini models.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 8_192
+  - name: Llama 3.3 Versatile
+    id: llama-3.3-70b-versatile
+    description: Meta's most advanced multilingual large language model, optimized for a wide range of natural language processing tasks. High performance and efficiency.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 128_000
+      - output: 32_768
+  - name: Llama 3.1 8b Instant
+    id: llama-3.1-8b-instant
+    description: Model with a balance of speed and performance with significant cost savings compared to larger models. Low-latency, high-quality responses.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 128_000
+      - output: 8_192
+  - name: Llama 3 70b 8192
+    id: llama3-70b-8192
+    description:  Model with a balance of performance and speed as a reliable foundation model that excels at dialogue and content-generation for tasks requiring smaller context windows.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 8_192
+  - name: Llama 3 8b 8192
+    id: llama3-8b-8192
+    description: Economical model with great performance, industry-leading speed, and cost-efficiency.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 8_192

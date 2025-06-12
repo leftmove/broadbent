@@ -21,10 +21,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+      <div className="flex items-center justify-center w-screen h-screen">
+        <div className="flex flex-col items-center justify-center gap-2">
+          <Loader className="w-8 h-8 animate-spin text-primary" />
         </div>
       </div>
     );

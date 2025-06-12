@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -21,8 +21,6 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
   const { signOut } = useAuthActions();
   const [expanded, setExpanded] = useState(false);
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
-  const accountSwitcherRef = useRef<HTMLDivElement>(null);
-  const accountSwitcherHeight = useRef(0);
 
   const { accounts, switchToAccount, isValidatingAccount } = useAccounts();
 
@@ -30,27 +28,8 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
   const handleToggleExpand = () => setExpanded((prev) => !prev);
 
   const handleToggleAccountSwitcher = () => {
-    // Measure height before animation starts
-    if (!showAccountSwitcher && accountSwitcherRef.current) {
-      accountSwitcherRef.current.style.height = "auto";
-      accountSwitcherHeight.current = accountSwitcherRef.current.scrollHeight;
-      accountSwitcherRef.current.style.height = "0px";
-    }
     setShowAccountSwitcher((prev) => !prev);
   };
-
-  // Effect to animate height
-  useEffect(() => {
-    if (!accountSwitcherRef.current) return;
-
-    if (showAccountSwitcher) {
-      // Trigger animation by setting the final height
-      accountSwitcherRef.current.style.height = `${accountSwitcherHeight.current}px`;
-    } else {
-      // Collapse animation
-      accountSwitcherRef.current.style.height = "0px";
-    }
-  }, [showAccountSwitcher]);
 
   if (!user) {
     return null;
@@ -152,7 +131,7 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
           <p className="text-sm font-medium leading-none truncate">
             {currentAccount.name}
           </p>
-          <p className="text-xs leading-none text-muted-foreground truncate">
+          <p className="h-4 text-xs leading-none truncate text-muted-foreground">
             {currentAccount.email}
           </p>
         </div>
@@ -176,7 +155,7 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-left px-3 text-sm"
+              className="justify-start w-full px-3 text-sm text-left"
               onClick={handleToggleAccountSwitcher}
             >
               <Users className="w-4 h-4 mr-2" />
@@ -189,55 +168,63 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
               />
             </Button>
 
-            <div
-              ref={accountSwitcherRef}
-              className="ml-2 pl-2 border-l border-border overflow-hidden transition-all duration-200 ease-out"
-              style={{ height: 0 }}
-            >
-              {isValidatingAccount ? (
-                <div className="py-2 flex justify-center">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <>
-                  {accounts
-                    .filter((account) => !account.current)
-                    .map((account) => (
+            <AnimatePresence>
+              {showAccountSwitcher && (
+                <motion.div
+                  className="pl-2 ml-2 overflow-hidden border-l border-border will-change-transform"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                >
+                  {isValidatingAccount ? (
+                    <div className="flex justify-center py-2">
+                      <div className="w-4 h-4 border-2 rounded-full animate-spin border-primary border-t-transparent"></div>
+                    </div>
+                  ) : (
+                    <>
+                      {accounts
+                        .filter((account) => !account.current)
+                        .map((account) => (
+                          <Button
+                            key={account.id}
+                            variant="ghost"
+                            size="sm"
+                            className="justify-start w-full h-auto px-3 py-1 my-1 text-xs text-left"
+                            onClick={() => handleSwitchAccount(account.id)}
+                          >
+                            <div className="flex flex-col items-start">
+                              <span>{account.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {account.email}
+                              </span>
+                            </div>
+                          </Button>
+                        ))}
+
                       <Button
-                        key={account.id}
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-start text-left px-3 py-1 h-auto text-xs my-1"
-                        onClick={() => handleSwitchAccount(account.id)}
+                        className="justify-start w-full px-3 mt-1 text-xs text-left text-primary"
+                        onClick={() =>
+                          (window.location.href = "/settings/profile")
+                        }
                       >
-                        <div className="flex flex-col items-start">
-                          <span>{account.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {account.email}
-                          </span>
-                        </div>
+                        <PlusCircle className="w-3 h-3 mr-2" />
+                        <span>Add another account</span>
                       </Button>
-                    ))}
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-left px-3 text-xs mt-1 text-primary"
-                    onClick={() => (window.location.href = "/settings/profile")}
-                  >
-                    <PlusCircle className="w-3 h-3 mr-2" />
-                    <span>Add another account</span>
-                  </Button>
-                </>
+                    </>
+                  )}
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
 
             <div className="my-1 border-t border-border"></div>
 
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-left px-3 text-sm text-destructive hover:bg-destructive/10 dark:text-red-400 dark:hover:bg-red-950/30"
+              className="justify-start w-full px-3 text-sm text-left text-destructive hover:bg-destructive/10 dark:text-red-400 dark:hover:bg-red-950/30"
               onClick={handleSignOut}
             >
               <LogOut className="w-4 h-4 mr-2" />

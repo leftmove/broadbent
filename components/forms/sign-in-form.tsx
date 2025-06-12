@@ -10,8 +10,7 @@ import { useAccounts } from "state/accounts";
 import { useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import { Alert, AlertDescription } from "components/ui/alert";
-import { AlertCircle, Github, Mail } from "lucide-react";
-
+import { AlertCircle } from "lucide-react";
 interface SignInFormProps {
   mode?: "signIn" | "addAccount";
   showLinks?: boolean;
@@ -85,14 +84,14 @@ export function SignInForm({
         <Button
           type="button"
           variant="outline"
-          className="w-full relative"
+          className="relative w-full"
           onClick={() => void handleOAuthSignIn("github")}
           disabled={isLoading}
         >
           {activeProvider === "github" ? (
             <span className="flex items-center">
               <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                className="w-4 h-4 mr-2 -ml-1 animate-spin"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -133,14 +132,14 @@ export function SignInForm({
         <Button
           type="button"
           variant="outline"
-          className="w-full relative"
+          className="relative w-full"
           onClick={() => void handleOAuthSignIn("google")}
           disabled={isLoading}
         >
           {activeProvider === "google" ? (
             <span className="flex items-center">
               <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                className="w-4 h-4 mr-2 -ml-1 animate-spin"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"

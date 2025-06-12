@@ -37,21 +37,21 @@ export const useAIGeneration = () => {
         model = llm(selectedModel);
         break;
 
-      case "grok":
-        if (!apiKeys.grok) throw new Error("Grok API key not set");
-        // Grok uses OpenAI-compatible API
-        llm = createOpenAI({ 
-          apiKey: apiKeys.grok,
-          baseURL: "https://api.x.ai/v1"
+      case "xai":
+        if (!apiKeys.xai) throw new Error("xAI API key not set");
+        // xAI's Grok model uses OpenAI-compatible API
+        llm = createOpenAI({
+          apiKey: apiKeys.xai,
+          baseURL: "https://api.x.ai/v1",
         });
         model = llm(selectedModel);
         break;
 
       case "openrouter":
         if (!apiKeys.openrouter) throw new Error("OpenRouter API key not set");
-        llm = createOpenAI({ 
+        llm = createOpenAI({
           apiKey: apiKeys.openrouter,
-          baseURL: "https://openrouter.ai/api/v1"
+          baseURL: "https://openrouter.ai/api/v1",
         });
         model = llm(selectedModel);
         break;
@@ -62,7 +62,7 @@ export const useAIGeneration = () => {
 
     // Use streaming if onChunk callback is provided
     if (onChunk) {
-      const { textStream } = await streamText({
+      const { textStream } = streamText({
         model,
         prompt,
       });
@@ -76,7 +76,7 @@ export const useAIGeneration = () => {
       return fullText;
     } else {
       // Fallback to non-streaming for compatibility
-      const { streamText: stream } = await streamText({
+      const { textStream: stream } = streamText({
         model,
         prompt,
       });

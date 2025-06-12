@@ -14,7 +14,12 @@ import { Send, Search, ChevronDown, Paperclip } from "lucide-react";
 // import { useChatState } from "state/chat";
 import { useAIGeneration } from "state/ai";
 import { useSettingsState } from "state/settings";
-import { providerModels, getDefaultModel, getModelName } from "lib/ai/types";
+import {
+  providerModels,
+  getDefaultModel,
+  getModelName,
+  getProviderName,
+} from "lib/ai/types";
 import { getApiKeyMissingErrorMessage } from "lib/ai/error-messages";
 
 interface ChatWindowProps {
@@ -351,9 +356,7 @@ function HomeScreenInput() {
                   <div className="absolute left-0 z-50 mb-2 border rounded-lg shadow-lg bottom-full w-80 bg-popover border-border">
                     <div className="p-2">
                       <div className="px-2 py-1 mb-2 text-xs font-medium border-b text-muted-foreground border-border">
-                        {selectedProvider.charAt(0).toUpperCase() +
-                          selectedProvider.slice(1)}{" "}
-                        Models
+                        {getProviderName(selectedProvider)} Models
                       </div>
                       <div className="space-y-1 overflow-y-auto max-h-64">
                         {availableModels.map(
@@ -461,7 +464,7 @@ export function ChatWindow({ chatId, prompt = null }: ChatWindowProps) {
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur-sm border-border/50">
+      <div className="flex-shrink-0">
         <ChatInput chatId={chatId} />
       </div>
     </div>

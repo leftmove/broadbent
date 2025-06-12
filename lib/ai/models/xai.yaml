@@ -1,0 +1,94 @@
+provider: xai
+name: xAI
+links:
+  - name: Home
+    link: https://x.ai/
+  - name: Models
+    link: https://docs.x.ai/docs/models
+  - name: Pricing
+    link: https://docs.x.ai/docs/models
+  - name: Documentation
+    link: https://docs.x.ai/docs/overview
+  - name: Console
+    link: https://console.x.ai/team/default/api-keys
+models:
+  - name: Grok 3
+    id: grok-3
+    description: xAI's latest and most powerful model. Excels at various tasks with strong domain knowledge.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 131_072
+  - name: Grok 3 Fast
+    id: grok-3-fast
+    description: Same model with identical performance as Grok 3, but faster in exchange for higher costs.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 131_072
+  - name: Grok 3 Mini (with Thinking)
+    id: grok-3-mini
+    description: Lighter weight model with reasoning. Fast, smart, and great for logic-based tasks that do not require deep domain knowledge
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 131_072
+  - name: Grok 3 Mini Fast (with Thinking)
+    id: grok-3-mini-fast
+    description: Same model with identical performance as Grok 3 Mini, but faster in exchange for higher costs.
+    capabilities:
+      tool: true
+      thinking: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 131_072
+  - name: Grok 2 Vision
+    id: grok-2-vision
+    description: Previous generation model with vision capabilities. Less capable than current models, but still powerful.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+    output:
+      text: true
+    context:
+      - window: 8_192
+  - name: Grok 2 Image
+    id: grok-2-image
+    description: Previous generation model with image capabilities. Less capable than current models, but still powerful.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      image: true
+    context:
+      - window: 131_072
+  - name: Grok 2
+    id: grok-2
+    description: Previous generation general purpose model. Less capable than current models, but still powerful.
+    capabilities:
+      tool: true
+    input:
+      text: true
+    output:
+      text: true
+    context:
+      - window: 131_072

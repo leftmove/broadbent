@@ -2,6 +2,19 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
+import {
+  AIProvider,
+  availableProviders,
+  availableModels,
+} from "../lib/ai/providers";
+
+export const providers = v.union(
+  ...availableProviders.map((provider: AIProvider) => v.literal(provider))
+);
+export const modelIds = v.union(
+  ...availableModels.map((model: string) => v.literal(model))
+);
+
 const applicationTables = {
   chats: defineTable({
     title: v.string(),
@@ -18,14 +31,8 @@ const applicationTables = {
 
   settings: defineTable({
     userId: v.id("users"),
-    provider: v.union(
-      v.literal("openai"),
-      v.literal("anthropic"),
-      v.literal("google"),
-      v.literal("grok"),
-      v.literal("openrouter")
-    ),
-    selectedModel: v.optional(v.string()),
+    provider: providers,
+    selectedModel: v.optional(modelIds),
   }).index("by_user", ["userId"]),
 };
 

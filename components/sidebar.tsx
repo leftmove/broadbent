@@ -1,28 +1,20 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
 import { Doc, Id } from "convex/_generated/dataModel";
+
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
-import {
-  Plus,
-  Settings,
-  MessageSquare,
-  Search,
-  PanelLeft,
-  ChevronLeft,
-  ChevronRight,
-  Pin,
-  Trash2,
-} from "lucide-react";
+import { Settings, MessageSquare, Search, PanelLeft } from "lucide-react";
 import { ChatDeleteDialog } from "components/chat-delete-dialog";
 import { ChatItem } from "components/chat-item";
 import { UserProfile } from "components/user-profile";
-// import { useChatState } from "state/chat";
-import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
-import Link from "next/link";
+
 import { cn } from "lib/utils";
 
 interface SidebarProps {
@@ -31,13 +23,8 @@ interface SidebarProps {
   toggleSidebar?: () => void;
 }
 
-export function Sidebar({
-  onSettingsClick,
-  collapsed = false,
-  toggleSidebar,
-}: SidebarProps) {
+export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   const chats = useQuery(api.chats.list) || [];
-  const createChat = useMutation(api.chats.create);
   const togglePinChat = useMutation(api.chats.togglePin);
   const deleteChatMutation = useMutation(api.chats.deleteChat);
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,16 +43,6 @@ export function Sidebar({
   const selectedChatIdString = pathname?.startsWith("/conversation/")
     ? pathname.split("/").pop()
     : null;
-
-  const handleNewChat = async () => {
-    try {
-      const chatId = await createChat({ title: "New Chat" });
-      // Navigate to the conversation page using the router
-      router.push(`/conversation/${chatId}`);
-    } catch (error) {
-      console.error("Error creating new chat:", error);
-    }
-  };
 
   const handlePinChat = (chatId: Id<"chats">, event: React.MouseEvent) => {
     event.preventDefault();
@@ -171,21 +148,26 @@ export function Sidebar({
     <div
       className={cn(
         "flex flex-col h-full border-r bg-card border-border transition-all duration-150 ease-in-out",
-        collapsed ? "w-16" : "w-72"
+        collapsed ? "max-w-18" : "max-w-72"
       )}
     >
       <div className="p-4">
-        <div className="flex items-center mb-4">
+        <div
+          className={cn(
+            "flex items-center mb-2 overflow-hidden transition-all duration-150 ease-in-out",
+            collapsed ? "max-w-full" : "max-w-0 -mb-8"
+          )}
+        >
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             onClick={toggleSidebar}
           >
             <PanelLeft className="w-5 h-5" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
-          <div
+          {/* <div
             className={cn(
               "flex items-center space-x-2 transition-all duration-150 ease-in-out overflow-hidden",
               collapsed ? "max-w-0" : "max-w-full"
@@ -194,17 +176,27 @@ export function Sidebar({
             <span className="mx-auto font-serif text-lg font-bold">
               Broadbent
             </span>
-          </div>
+          </div> */}
         </div>
-
         {!collapsed ? (
           <>
-            <Link href="/" className="block w-full">
-              <Button className="w-full h-10 mb-4 font-sans text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
-                New Chat
+            <div className="flex items-center justify-between">
+              <Link href="/" className="block w-full">
+                <Button className="w-full h-10 mb-4 font-sans text-sm rounded-lg rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90">
+                  New Chat
+                </Button>
+              </Link>
+              {/* <div className="w-[0.1px] -ml-2 border-[0.15px] h-4 border-opacity-20 opacity-20 p-0 mb-4 rounded-lg text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary" /> */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-3/12 h-10 p-0 mb-4 rounded-lg rounded-l-none border-l-1 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary/95"
+                onClick={toggleSidebar}
+              >
+                <PanelLeft className="w-6 h-6" />
+                <span className="sr-only">Toggle Sidebar</span>
               </Button>
-            </Link>
-
+            </div>
             <div className="relative">
               <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
               <Input
@@ -220,7 +212,7 @@ export function Sidebar({
             <Link href="/">
               <Button className="w-10 h-10 p-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
                 <MessageSquare className="w-5 h-5" />
-                <span className="sr-only">Chat</span>
+                <span className="sr-only">New Chat</span>
               </Button>
             </Link>
 

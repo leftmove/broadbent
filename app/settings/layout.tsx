@@ -25,9 +25,9 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
 
   const navItems = [
     {
-      name: "General",
+      name: "Appearance",
       href: "/settings",
-      icon: Settings,
+      icon: Palette,
       active: pathname === "/settings",
     },
     {
@@ -41,14 +41,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
       href: "/settings/api-keys",
       icon: Key,
       active: pathname === "/settings/api-keys",
-      disabled: true,
-    },
-    {
-      name: "Appearance",
-      href: "/settings/appearance",
-      icon: Palette,
-      active: pathname === "/settings/appearance",
-      disabled: true,
+      disabled: false,
     },
     {
       name: "Privacy",

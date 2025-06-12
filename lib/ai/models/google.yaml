@@ -1,0 +1,143 @@
+provider: google
+name: Google
+links:
+  - name: Home
+    link: https://gemini.google.com
+  - name: Models
+    link: https://ai.google.dev/gemini-api/docs/models
+  - name: Pricing
+    link: https://ai.google.dev/gemini-api/docs/pricing
+  - name: Documentation
+    link: https://ai.google.dev/gemini-api/docs
+  - name: Console
+    link: https://aistudio.google.com
+models:
+  - name: Gemini 2.5 Pro
+    id: gemini-2.5-pro-preview-06-05
+    description: Google's most powerful model, with enhanced thinking and reasoning, multimodal understanding, and state-of-the-art performance.
+    capabilities:
+      thinking: true
+      tool: true
+    input:
+      text: true
+      image: true
+      audio: true
+      video: true
+    output:
+      text: true
+    context:
+      - input: 1_048_576
+      - output: 65_536
+  - name: Gemini 2.5 Flash
+    id: gemini-2.5-flash-preview-05-20
+    description: Google's best model in terms of price-performance, offering well-rounded capabilities. Offers the same features as its predecessor.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+      audio: true
+      video: true
+    output:
+      text: true
+    context:
+      - input: 1_048_576
+      - output: 65_536
+  - name: Gemini 2.0 Flash
+    id: gemini-2.0-flash
+    description: Well-rounded model with next-gen features and improved capabilities, including superior speed, native tool usage, and a wider context window. Still near the top of the price-performance spectrum, but worse than its successor.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+      audio: true
+      video: true
+    output:
+      text: true
+    context:
+      - input: 1_048_576
+      - output: 8_192
+  - name: Gemini 2.0 Flash Lite
+    id: gemini-2.0-flash-lite
+    description: Lite version of this generation's flash, with reduced capabilities in exchange for cost efficiency and lower latency.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+      audio: true
+      video: true
+    output:
+      text: true
+    context:
+      - input: 1_048_576
+      - output: 8_192
+  - name: Gemini 1.5 Pro
+    id: gemini-1.5-pro
+    description: Mid-size multimodal model that is optimized for a wide-range of reasoning tasks. Has the largest context window overall, but worse capabilities than its successor.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+      audio: true
+      video: true
+    output:
+      text: true
+    context:
+      - input: 2_097_152
+      - output: 8_192
+  - name: Gemini 1.5 Flash
+    id: gemini-1.5-flash
+    description: Smaller and less powerful with reduced capabilities, but still a fast and versatile multimodal model for scaling across diverse tasks.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+      audio: true
+      video: true
+    output:
+      text: true
+    context:
+      - input: 1_048_576
+      - output: 8_192
+  - name: Gemini 1.5 Flash 8B
+    id: gemini-1.5-flash-8b
+    description: Lite version of this generation's flash. Smallest model, designed for low intelligence tasks.
+    capabilities:
+      tool: true
+    input:
+      text: true
+      image: true
+      audio: true
+      video: true
+    output:
+      text: true
+    context:
+      - input: 1_048_576
+      - output: 8_192
+  - name: Imagen 3
+    id: imagen-3.0-generate-002
+    description: Google's highest quality text-to-image model, capable of generating images with even better detail, richer lighting and fewer distracting artifacts than our previous models.
+    capabilities:
+    input:
+      text: true
+    output:
+      image: true
+    context:
+      - unit: image
+      - output: 4
+  - name: Veo 2
+    id: veo-2.0-generate-001
+    description: Google's best video model, offering high quality text- and image-to-video. Capable of generating detailed videos, and capturing nuance within prompts.
+    capabilities:
+    input:
+      text: true
+      image: true
+    output:
+      video: true
+    context:
+      - unit: video
+      - output: 2
