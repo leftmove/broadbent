@@ -1,10 +1,13 @@
 import { z } from "zod";
 
-import openAIModels from "lib/ai/models/openai.yaml";
-import anthropicModels from "lib/ai/models/anthropic.yaml";
-import googleModels from "lib/ai/models/google.yaml";
-import xAIModels from "lib/ai/models/xai.yaml";
-import groqModels from "lib/ai/models/groq.yaml";
+import { openai, anthropic, google, xai, groq } from "./spec";
+
+export interface ModelYAML {
+  provider: string;
+  name: string;
+  links: { name: string; link: string }[];
+  models: any[]; // Use any for the raw YAML data
+}
 
 // Taken directly from Vercel's AI SDK type
 export const OPENAI_MODEL_IDS = [
@@ -198,13 +201,6 @@ type ProviderModel =
   | XAIModel
   | GroqModel;
 
-interface ModelYAML {
-  provider: string;
-  name: string;
-  links: { name: string; link: string }[];
-  models: ModelConfig[];
-}
-
 function fillOptions<T extends z.ZodObject<any>>(
   options: Record<string, boolean> = {},
   schema: T
@@ -299,9 +295,9 @@ function createProviderFromYAML<T extends ProviderModel>(
   return models as Map<string, T>;
 }
 
-export const OpenAIProvider = createProviderFromYAML<OpenAIModel>(openAIModels);
+export const OpenAIProvider = createProviderFromYAML<OpenAIModel>(openai);
 export const AnthropicProvider =
-  createProviderFromYAML<AnthropicModel>(anthropicModels);
-export const GoogleProvider = createProviderFromYAML<GoogleModel>(googleModels);
-export const XAIProvider = createProviderFromYAML<XAIModel>(xAIModels);
-export const GroqProvider = createProviderFromYAML<GroqModel>(groqModels);
+  createProviderFromYAML<AnthropicModel>(anthropic);
+export const GoogleProvider = createProviderFromYAML<GoogleModel>(google);
+export const XAIProvider = createProviderFromYAML<XAIModel>(xai);
+export const GroqProvider = createProviderFromYAML<GroqModel>(groq);

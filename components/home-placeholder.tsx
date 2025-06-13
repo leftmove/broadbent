@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles, BrainCircuit, Compass, Telescope } from "lucide-react";
-import { ChatInput } from "components/chat-input";
+import { ChatInput } from "@/components/chat/chat-input";
 import { useState } from "react";
 
 const placeholderPhrases: string[] = [
@@ -39,7 +39,7 @@ export function HomePlaceholder() {
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 px-4">
-      <h3 className="mb-4 font-serif text-lg font-bold opacity-50">
+      <h3 className="mb-4 font-serif text-lg font-bold opacity-30">
         Broadbent
       </h3>
       <div className="max-w-3xl mx-auto space-y-8 text-center">
@@ -52,7 +52,7 @@ export function HomePlaceholder() {
             }
           </h1>
         </div>
-
+        {/* 
         <div className="grid w-full max-w-2xl grid-cols-1 gap-4 font-serif md:grid-cols-2">
           <button
             onClick={() =>
@@ -143,7 +143,7 @@ export function HomePlaceholder() {
               </div>
             </div>
           </button>
-        </div>
+        </div> */}
 
         <div className="max-w-lg mx-auto space-y-4 font-sans text-sm opacity-0 animate-pop-in-delay-3">
           <button

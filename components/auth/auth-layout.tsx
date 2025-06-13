@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import { AuthHeader } from "./auth-header";
-import { AuthRedirect } from "components/auth-redirect";
+import { AuthRedirect } from "@/components/auth/auth-redirect";
 
 interface AuthLayoutProps {
   children: ReactNode;

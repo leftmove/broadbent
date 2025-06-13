@@ -11,9 +11,10 @@ import { Doc, Id } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { Settings, MessageSquare, Search, PanelLeft } from "lucide-react";
-import { ChatDeleteDialog } from "components/chat-delete-dialog";
-import { ChatItem } from "components/chat-item";
+import { ChatDeleteDialog } from "@/components/chat/chat-delete-dialog";
+import { ChatItem } from "@/components/chat/chat-item";
 import { UserProfile } from "components/user-profile";
+import { useUIState } from "state/ui";
 
 import { cn } from "lib/utils";
 
@@ -30,6 +31,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
   const router = useRouter();
+  const { isMobile } = useUIState();
 
   // State for delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -167,16 +169,6 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
             <PanelLeft className="w-5 h-5" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
-          {/* <div
-            className={cn(
-              "flex items-center space-x-2 transition-all duration-150 ease-in-out overflow-hidden",
-              collapsed ? "max-w-0" : "max-w-full"
-            )}
-          >
-            <span className="mx-auto font-serif text-lg font-bold">
-              Broadbent
-            </span>
-          </div> */}
         </div>
         {!collapsed ? (
           <>
@@ -186,16 +178,17 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                   New Chat
                 </Button>
               </Link>
-              {/* <div className="w-[0.1px] -ml-2 border-[0.15px] h-4 border-opacity-20 opacity-20 p-0 mb-4 rounded-lg text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary" /> */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-3/12 h-10 p-0 mb-4 rounded-lg rounded-l-none border-l-1 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary/95"
-                onClick={toggleSidebar}
-              >
-                <PanelLeft className="w-6 h-6" />
-                <span className="sr-only">Toggle Sidebar</span>
-              </Button>
+              {!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-3/12 h-10 p-0 mb-4 rounded-lg rounded-l-none border-l-1 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary/95"
+                  onClick={toggleSidebar}
+                >
+                  <PanelLeft className="w-6 h-6" />
+                  <span className="sr-only">Toggle Sidebar</span>
+                </Button>
+              )}
             </div>
             <div className="relative">
               <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
@@ -325,6 +318,9 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
         </div>
       )}
+
+      {/* Spacer for collapsed state to push bottom section down */}
+      {collapsed && <div className="flex-1" />}
 
       <div className={cn("border-t border-border", collapsed ? "p-2" : "p-4")}>
         {!collapsed ? (

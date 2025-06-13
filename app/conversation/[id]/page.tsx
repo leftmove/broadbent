@@ -2,8 +2,8 @@
 
 import { useParams } from "next/navigation";
 import { Id } from "convex/_generated/dataModel";
-import { ChatWindow } from "components/chat-window";
-import { ChatInterface } from "components/chat-interface";
+import { ChatWindow } from "@/components/chat/chat-window";
+import { ChatInterface } from "@/components/chat/chat-interface";
 import { RouteGuard } from "components/route-guard";
 
 export default function ConversationPage() {

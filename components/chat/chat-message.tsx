@@ -1,8 +1,11 @@
 "use client";
 
 import { Doc } from "convex/_generated/dataModel";
-import { cn } from "lib/utils";
+
 import ReactMarkdown from "react-markdown";
+
+import { Code } from "components/codeblock";
+import { cn } from "lib/utils";
 
 interface ChatMessageProps {
   message: Doc<"messages">;
@@ -12,10 +15,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
 
   return (
-    <div className="flex w-full px-4">
+    <div className="flex w-full min-w-0 px-4">
       <div
         className={cn(
-          "rounded-lg px-4 py-3 max-w-[85%] break-words",
+          "rounded-lg px-4 py-3 max-w-[85%] break-words min-w-0",
           isUser
             ? "bg-primary text-primary-foreground ml-auto"
             : "bg-secondary text-secondary-foreground mr-auto"
@@ -23,7 +26,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       >
         <div
           className={cn(
-            "prose prose-sm max-w-none break-words overflow-wrap-anywhere",
+            "prose prose-sm max-w-none break-words overflow-wrap-anywhere min-w-0",
             isUser
               ? "prose-invert text-primary-foreground [&_*]:text-primary-foreground"
               : "text-secondary-foreground [&_*]:text-secondary-foreground"
@@ -32,36 +35,27 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <ReactMarkdown
             components={{
               p: ({ children }) => (
-                <p className="mb-3 leading-relaxed last:mb-0 break-words">{children}</p>
+                <p className="mb-3 leading-relaxed break-words last:mb-0">
+                  {children}
+                </p>
               ),
               strong: ({ children }) => (
                 <strong className="font-semibold">{children}</strong>
               ),
               em: ({ children }) => <em className="italic">{children}</em>,
-              code: ({ children }) => (
-                <code
-                  className={cn(
-                    "px-1.5 py-0.5 rounded text-sm font-mono break-all",
-                    isUser
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {children}
-                </code>
-              ),
-              pre: ({ children }) => (
-                <pre
-                  className={cn(
-                    "p-3 rounded-md mt-2 mb-2 overflow-x-auto font-mono text-sm whitespace-pre-wrap break-words",
-                    isUser
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {children}
-                </pre>
-              ),
+              // code: ({ children }) => (
+              //   <code
+              //     className={cn(
+              //       " rounded text-sm font-mono break-all",
+              //       isUser
+              //         ? "bg-primary-foreground/20 text-primary-foreground"
+              //         : "bg-muted text-muted-foreground"
+              //     )}
+              //   >
+              //     {children}
+              //   </code>
+              // ),
+              pre: ({ children }) => <Code>{children}</Code>,
               ul: ({ children }) => (
                 <ul className="mb-3 space-y-1 list-disc list-inside last:mb-0">
                   {children}
@@ -103,17 +97,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 </a>
               ),
               h1: ({ children }) => (
-                <h1 className="mt-4 mb-3 text-xl font-bold first:mt-0 break-words">
+                <h1 className="mt-4 mb-3 text-xl font-bold break-words first:mt-0">
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="mt-3 mb-2 text-lg font-bold first:mt-0 break-words">
+                <h2 className="mt-3 mb-2 text-lg font-bold break-words first:mt-0">
                   {children}
                 </h2>
               ),
               h3: ({ children }) => (
-                <h3 className="mt-3 mb-2 text-base font-bold first:mt-0 break-words">
+                <h3 className="mt-3 mb-2 text-base font-bold break-words first:mt-0">
                   {children}
                 </h3>
               ),

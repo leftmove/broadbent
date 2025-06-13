@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 interface UIState {
   sidebar: {
     collapsed: boolean;
+    forceCollapsed: boolean; // For responsive behavior
   };
   // Add more UI state categories as needed
   modals: {
@@ -21,6 +22,7 @@ interface UIState {
 const DEFAULT_UI_STATE: UIState = {
   sidebar: {
     collapsed: false,
+    forceCollapsed: false,
   },
   modals: {},
 };
@@ -43,6 +45,11 @@ if (typeof window !== "undefined") {
       uiState.set({
         ...DEFAULT_UI_STATE,
         ...parsed,
+        sidebar: {
+          ...DEFAULT_UI_STATE.sidebar,
+          ...parsed.sidebar,
+          forceCollapsed: false, // Always reset forceCollapsed on page load
+        },
       });
     } catch (e) {
       console.error("Failed to parse saved UI state:", e);
@@ -50,11 +57,28 @@ if (typeof window !== "undefined") {
   }
 }
 
-// Save the current state to localStorage
+// Save the current state to localStorage (but don't save forceCollapsed)
 const persistState = () => {
   if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(uiState.get()));
+    const currentState = uiState.get();
+    const stateToPersist = {
+      ...currentState,
+      sidebar: {
+        ...currentState.sidebar,
+        forceCollapsed: false, // Don't persist forceCollapsed
+      },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
   }
+};
+
+// Responsive breakpoint (768px = md breakpoint in Tailwind)
+const MOBILE_BREAKPOINT = 768;
+
+// Check if screen is mobile size
+const isMobileSize = () => {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth < MOBILE_BREAKPOINT;
 };
 
 // Hook for accessing UI state
@@ -72,11 +96,46 @@ export const useUIState = () => {
     return unsubscribe;
   }, []);
 
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = isMobileSize();
+      const currentForceCollapsed = uiState.sidebar.forceCollapsed.get();
+
+      if (isMobile && !currentForceCollapsed) {
+        // Force collapse on mobile
+        uiState.sidebar.forceCollapsed.set(true);
+      } else if (!isMobile && currentForceCollapsed) {
+        // Remove force collapse on desktop
+        uiState.sidebar.forceCollapsed.set(false);
+      }
+    };
+
+    // Check on mount
+    handleResize();
+
+    // Add resize listener
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   // Get the latest state directly from the observable
   const currentState = uiState.get();
 
+  // Calculate if sidebar should be collapsed (either user preference or forced by screen size)
+  const isSidebarCollapsed =
+    currentState.sidebar.collapsed || currentState.sidebar.forceCollapsed;
+
   // Direct sidebar toggle function that works with the observable directly
   const toggleSidebar = () => {
+    // Don't allow toggle if force collapsed (mobile)
+    if (currentState.sidebar.forceCollapsed) {
+      return;
+    }
+
     const current = uiState.sidebar.collapsed.get();
     uiState.sidebar.collapsed.set(!current);
     persistState();
@@ -84,6 +143,11 @@ export const useUIState = () => {
 
   // Direct setter for sidebar collapsed state
   const setSidebarCollapsed = (collapsed: boolean) => {
+    // Don't allow changing if force collapsed (mobile)
+    if (currentState.sidebar.forceCollapsed) {
+      return;
+    }
+
     uiState.sidebar.collapsed.set(collapsed);
     persistState();
   };
@@ -116,7 +180,8 @@ export const useUIState = () => {
     state: currentState,
 
     // Direct access to sidebar state for convenience
-    sidebarCollapsed: uiState.sidebar.collapsed.get(),
+    sidebarCollapsed: isSidebarCollapsed,
+    isMobile: currentState.sidebar.forceCollapsed,
     toggleSidebar,
     setSidebarCollapsed,
 

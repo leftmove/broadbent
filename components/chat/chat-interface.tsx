@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { Sidebar } from "components/sidebar";
-import { AuthForm } from "components/auth-form";
-// import { ThemeToggle } from "components/theme-toggle";
-// import { SignOutButton } from "components/sign-out-button";
+import { AuthForm } from "components/auth/auth-form";
+
 import { useUIState } from "state/ui";
 
 interface ChatInterfaceProps {

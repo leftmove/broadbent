@@ -1,9 +1,9 @@
-import { AIProvider } from "lib/ai/types";
+import { AIProvider } from "lib/ai/providers";
 
-export const DEFAULT_ERROR_MESSAGE =
+export const DEFAULT_ERROR_MESSAGE = () =>
   "Sorry, I couldn't generate a response due to an error.";
 
-export const getApiKeyMissingErrorMessage = (provider: AIProvider) => `
+export const NO_API_KEY_SET_ERROR_MESSAGE = (provider: AIProvider) => `
 It looks like you don't have an API key set for this model yet.
 
 If you're new here, before you can use the chat, you need to get an API key from one of several providers. Here are some possible options.
@@ -18,12 +18,12 @@ Click the provider's name to go to their API key page. Once your there, if you'v
 With your API key setup, click the settings button in the bottom left and navigate to *Settings > API Keys* and add your key to the provider you chose. You can then set that provider as your default by clicking the provider you want above the API keys.
 `;
 
-export const getRateLimitErrorMessage = (provider: AIProvider) => `
+export const RATE_LIMIT_ERROR_MESSAGE = (provider: AIProvider) => `
 ## Rate 
 
 Your API key has reached its usage limit. Please check your ${provider.toUpperCase()} account or wait before trying again.
 `;
 
-export const getInvalidApiKeyErrorMessage = (provider: AIProvider) => `
+export const INVALID_API_KEY_ERROR_MESSAGE = (provider: AIProvider) => `
 ❌ **Invalid API Key**: The ${provider.toUpperCase()} API key appears to be invalid. Please check your Settings and update the key.
 `;

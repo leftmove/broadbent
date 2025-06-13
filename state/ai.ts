@@ -4,7 +4,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createXai } from "@ai-sdk/xai";
 import { createGroq } from "@ai-sdk/groq";
-import { AIProvider, ApiKeys, getDefaultModel } from "lib/ai/types";
+import { AIProvider, ApiKeys, providerModels } from "lib/ai/providers";
 
 export const useAIGeneration = () => {
   const generateResponse = async (
@@ -18,7 +18,8 @@ export const useAIGeneration = () => {
     let model;
 
     // Use provided model or default for provider
-    const selectedModel = modelId || getDefaultModel(provider);
+    const selectedProvider = providerModels[provider];
+    const selectedModel = modelId || selectedProvider.get("default")!.id;
 
     switch (provider) {
       case "openai":
@@ -26,7 +27,6 @@ export const useAIGeneration = () => {
         llm = createOpenAI({ apiKey: apiKeys.openai });
         model = llm(selectedModel);
         break;
-
       case "anthropic":
         if (!apiKeys.anthropic) throw new Error("Anthropic API key not set");
         llm = createAnthropic({ apiKey: apiKeys.anthropic });
