@@ -2,7 +2,7 @@
 
 import { Doc } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
-import { Pin, Trash2, MessageSquare } from "lucide-react";
+import { Pin, Trash2 } from "lucide-react";
 import { cn } from "lib/utils";
 import Link from "next/link";
 
@@ -25,20 +25,19 @@ export function ChatItem({
         <Button
           variant="ghost"
           className={cn(
-            "w-full justify-start text-left h-auto p-3 text-sm font-normal transition-all duration-200 rounded-lg border border-transparent hover:bg-secondary/70",
+            "w-full justify-start text-left h-auto py-2 px-3 text-sm font-normal transition-all duration-200 rounded-lg border border-transparent hover:bg-secondary/70",
             isSelected &&
               "bg-secondary/50 border-secondary text-secondary-foreground"
           )}
         >
-          <div className="flex items-center w-full gap-2 min-w-0">
-            <MessageSquare className="w-4 h-4 shrink-0 text-muted-foreground" />
+          <div className="flex items-center w-full min-w-0">
             <span className="flex-1 truncate text-left">{chat.title}</span>
           </div>
         </Button>
       </Link>
 
       {/* Action buttons overlay */}
-      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="absolute top-1.5 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <Button
           variant="ghost"
           size="sm"

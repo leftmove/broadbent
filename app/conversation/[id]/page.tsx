@@ -1,19 +1,18 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Id } from "convex/_generated/dataModel";
-import { ChatWindow } from "@/components/chat/chat-window";
-import { ChatInterface } from "@/components/chat/chat-interface";
+import { ChatWindow } from "components/chat/chat-window";
+import { ChatInterface } from "components/chat/chat-interface";
 import { RouteGuard } from "components/route-guard";
 
 export default function ConversationPage() {
   const params = useParams();
-  const chatId = params.id as Id<"chats">;
+  const chatSlug = params.id as string;
 
   return (
     <RouteGuard>
       <ChatInterface>
-        <ChatWindow chatId={chatId} prompt={null} />
+        <ChatWindow chatSlug={chatSlug} prompt={null} />
       </ChatInterface>
     </RouteGuard>
   );

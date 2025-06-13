@@ -91,9 +91,10 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
     image: getAvatar(),
   };
 
+  // Always render both versions, but using CSS to show/hide
   if (collapsed) {
     return (
-      <div className="px-1 py-2">
+      <div className="px-1 py-2 transition-all duration-150 ease-in-out">
         <button
           className="w-10 h-10 mx-auto rounded-full focus:outline-none"
           onClick={handleToggleExpand}
@@ -113,7 +114,7 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
   }
 
   return (
-    <div className="px-2 py-2">
+    <div className="px-2 py-2 transition-all duration-150 ease-in-out">
       <button
         onClick={handleToggleExpand}
         className="flex items-center w-full p-2 space-x-3 rounded-lg hover:bg-secondary/50 focus:outline-none"
@@ -127,7 +128,7 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
             {getInitials(currentAccount.name, currentAccount.email)}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden transition-all duration-150 ease-in-out">
           <p className="text-sm font-medium leading-none truncate">
             {currentAccount.name}
           </p>
@@ -137,7 +138,7 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
         </div>
         <ChevronUp
           className={cn(
-            "h-4 w-4 text-muted-foreground transition-transform",
+            "h-4 w-4 text-muted-foreground transition-transform duration-150 ease-in-out",
             !expanded && "rotate-180"
           )}
         />

@@ -259,13 +259,13 @@ export function ChatInput({
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
         <button
           onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
-          className="flex items-center gap-2 px-2 py-1 text-sm transition-all duration-200 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-md text-foreground hover:bg-secondary/70 border border-transparent hover:border-border/50"
         >
           <span className="font-medium">{getCurrentModelName()}</span>
           {isModelSelectorOpen ? (
-            <ChevronUp className="w-4 h-4 transition-transform duration-200" />
+            <ChevronUp className="w-4 h-4 transition-transform duration-200 ml-1" />
           ) : (
-            <ChevronDown className="w-4 h-4 transition-transform duration-200" />
+            <ChevronDown className="w-4 h-4 transition-transform duration-200 ml-1" />
           )}
         </button>
       </div>
@@ -275,46 +275,69 @@ export function ChatInput({
         className={cn(
           "overflow-hidden border-b border-border/30 bg-background/50 transition-all duration-300 ease-in-out",
           isModelSelectorOpen
-            ? "max-h-64 opacity-100 transform translate-y-0"
+            ? "max-h-[32rem] opacity-100 transform translate-y-0"
             : "max-h-0 opacity-0 transform -translate-y-2"
         )}
       >
-        <div className="overflow-y-auto max-h-64">
-          {Object.entries(providerModels).map(([providerId, models]) => (
-            <div key={providerId} className="p-3">
-              <div className="mb-2 text-xs font-medium tracking-wider uppercase text-muted-foreground">
-                {getProviderName(providerId as AIProvider)}
-              </div>
-              <div className="space-y-1">
-                {Array.from(models.entries() as Iterable<[string, any]>)
-                  .filter(([id]) => id !== "default")
-                  .map(([modelId, model]) => (
-                    <button
-                      key={modelId}
-                      onClick={() =>
-                        void handleModelChange(
-                          providerId as AIProvider,
-                          modelId
-                        )
-                      }
-                      className={cn(
-                        "w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200",
+        <div className="overflow-y-auto max-h-[32rem] p-2">
+          {Object.entries(providerModels).map(([providerId, models]) => {
+            const providerName = getProviderName(providerId as AIProvider);
+
+            return (
+              <div key={providerId} className="mb-6">
+                <div className="px-3 py-3 mb-3 flex items-center justify-between border-b border-border/20">
+                  <div className="text-sm font-medium tracking-wide text-foreground/90">
+                    {providerName}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 px-1">
+                  {Array.from(models.entries() as Iterable<[string, any]>)
+                    .filter(([id]) => id !== "default")
+                    .map(([modelId, model]) => {
+                      const isSelected =
                         currentModel === modelId &&
-                          currentProvider === providerId &&
-                          "bg-secondary/70 ring-1 ring-primary/20"
-                      )}
-                    >
-                      <div className="font-medium">{model.name}</div>
-                      {model.description && (
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {model.description}
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                        currentProvider === providerId;
+
+                      return (
+                        <button
+                          key={modelId}
+                          onClick={() =>
+                            void handleModelChange(
+                              providerId as AIProvider,
+                              modelId
+                            )
+                          }
+                          className={cn(
+                            "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent",
+                            isSelected
+                              ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20"
+                              : "hover:border-primary/10"
+                          )}
+                        >
+                          <div className="flex items-center min-h-[4rem]">
+                            <div className="flex-1">
+                              <div className="font-medium text-foreground">
+                                {model.name}
+                              </div>
+                              {model.description && (
+                                <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                  {model.description}
+                                </div>
+                              )}
+                            </div>
+                            {isSelected && (
+                              <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
+                                <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

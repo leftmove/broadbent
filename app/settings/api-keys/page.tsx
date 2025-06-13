@@ -308,7 +308,7 @@ export default function ApiKeysPage() {
 
   useEffect(() => {
     if (providerPref) {
-      setSelectedProvider(providerPref as AIProvider);
+      setSelectedProvider(providerPref);
     }
   }, [providerPref]);
 

@@ -152,7 +152,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
     <div
       className={cn(
         "flex flex-col h-full border-r bg-card border-border transition-all duration-150 ease-in-out",
-        collapsed ? "max-w-18" : "max-w-72"
+        collapsed ? "max-w-18 w-18" : "max-w-72 w-72"
       )}
     >
       <div className="p-4">
@@ -225,11 +225,11 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
       {!collapsed && (
         <div className="flex-1 px-2 overflow-y-auto">
           {chatGroups.pinned.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+            <div className="mb-2">
+              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
                 Pinned
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {chatGroups.pinned.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -244,11 +244,11 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.today.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+            <div className="mb-2">
+              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
                 Today
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {chatGroups.today.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -263,11 +263,11 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.yesterday.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+            <div className="mb-2">
+              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
                 Yesterday
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {chatGroups.yesterday.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -282,11 +282,11 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.lastWeek.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+            <div className="mb-2">
+              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
                 Last week
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {chatGroups.lastWeek.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -301,11 +301,11 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.older.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
+            <div className="mb-2">
+              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
                 Older
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {chatGroups.older.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -322,36 +322,55 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
       )}
 
       {/* Spacer for collapsed state to push bottom section down */}
-      {collapsed && <div className="flex-1" />}
+      <div className={cn("flex-1", { hidden: !collapsed })}></div>
 
-      <div className={cn("border-t border-border", collapsed ? "p-2" : "p-4")}>
-        {!collapsed ? (
-          <div className="space-y-1">
-            <Link href="/settings">
-              <Button
-                variant="ghost"
-                className="justify-center w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              >
-                <Settings className="w-4 h-4 mr-3" />
-                Settings
-              </Button>
-            </Link>
-            <UserProfile collapsed={collapsed} />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center space-y-2">
-            <Link href="/settings">
-              <Button
-                variant="ghost"
-                className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              >
-                <Settings className="w-5 h-5" />
-                <span className="sr-only">Settings</span>
-              </Button>
-            </Link>
-            <UserProfile collapsed={collapsed} />
-          </div>
+      <div
+        className={cn(
+          "border-t border-border transition-all duration-150 ease-in-out",
+          collapsed ? "p-2" : "p-4"
         )}
+      >
+        {/* Expanded view */}
+        <div
+          className={cn(
+            "space-y-1 transition-all duration-150 ease-in-out",
+            collapsed
+              ? "opacity-0 max-h-0 overflow-hidden"
+              : "opacity-100 max-h-40"
+          )}
+        >
+          <Link href="/settings">
+            <Button
+              variant="ghost"
+              className="justify-center w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            >
+              <Settings className="w-4 h-4 mr-3" />
+              Settings
+            </Button>
+          </Link>
+          <UserProfile collapsed={false} />
+        </div>
+
+        {/* Collapsed view */}
+        <div
+          className={cn(
+            "flex flex-col items-center space-y-2 transition-all duration-150 ease-in-out",
+            collapsed
+              ? "opacity-100 max-h-40"
+              : "opacity-0 max-h-0 overflow-hidden"
+          )}
+        >
+          <Link href="/settings">
+            <Button
+              variant="ghost"
+              className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="sr-only">Settings</span>
+            </Button>
+          </Link>
+          <UserProfile collapsed={true} />
+        </div>
       </div>
 
       {/* Delete confirmation dialog */}
