@@ -1,13 +1,15 @@
+"use client";
+
+import { Doc } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
-import { Pin, Trash2 } from "lucide-react";
-import { Doc, Id } from "convex/_generated/dataModel";
-import Link from "next/link";
+import { Pin, Trash2, MessageSquare } from "lucide-react";
 import { cn } from "lib/utils";
+import Link from "next/link";
 
 interface ChatItemProps {
   chat: Doc<"chats">;
   isSelected: boolean;
-  onPinClick: (chatId: Id<"chats">, event: React.MouseEvent) => void;
+  onPinClick: (chatSlug: string, event: React.MouseEvent) => void;
   onDeleteClick: (chat: Doc<"chats">, event: React.MouseEvent) => void;
 }
 
@@ -18,65 +20,60 @@ export function ChatItem({
   onDeleteClick,
 }: ChatItemProps) {
   return (
-    <Link href={`/conversation/${chat._id}`} className="group block relative">
-      <Button
-        variant="ghost"
-        className={cn(
-          "justify-start w-full text-left font-sans text-sm h-auto py-2 pr-12 pl-3 rounded-lg",
-          isSelected
-            ? "bg-secondary text-foreground"
-            : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-        )}
-      >
-        <span className="truncate">{chat.title}</span>
-      </Button>
-
-      {/* Action buttons (visible on hover or if pinned) */}
-      <div
-        className={cn(
-          "absolute right-1 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-0 transition-opacity duration-150",
-          (chat.pinned || isSelected) && "opacity-100",
-          "group-hover:opacity-100"
-        )}
-      >
+    <div className="relative group">
+      <Link href={`/c/${chat.slug}`} className="group block relative">
         <Button
-          size="icon"
           variant="ghost"
           className={cn(
-            "h-6 w-6 rounded-full p-0",
-            chat.pinned
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
+            "w-full justify-start text-left h-auto p-3 text-sm font-normal transition-all duration-200 rounded-lg border border-transparent hover:bg-secondary/70",
+            isSelected &&
+              "bg-secondary/50 border-secondary text-secondary-foreground"
           )}
+        >
+          <div className="flex items-center w-full gap-2 min-w-0">
+            <MessageSquare className="w-4 h-4 shrink-0 text-muted-foreground" />
+            <span className="flex-1 truncate text-left">{chat.title}</span>
+          </div>
+        </Button>
+      </Link>
+
+      {/* Action buttons overlay */}
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 hover:bg-secondary/70"
           onClick={(e) => {
-            console.log(
-              "Pin clicked for chat:",
-              chat._id,
-              "Current pinned status:",
-              chat.pinned
-            );
-            onPinClick(chat._id, e);
+            e.preventDefault();
+            e.stopPropagation();
+            console.log("Pin button clicked for chat:", chat.slug);
+            onPinClick(chat.slug, e);
           }}
-          title={chat.pinned ? "Unpin chat" : "Pin chat"}
         >
           <Pin
-            className="h-3.5 w-3.5"
-            fill={chat.pinned ? "currentColor" : "none"}
+            className={cn(
+              "h-3 w-3",
+              chat.pinned
+                ? "fill-current text-primary"
+                : "text-muted-foreground"
+            )}
           />
         </Button>
+
         <Button
-          size="icon"
           variant="ghost"
-          className="h-6 w-6 rounded-full p-0 text-muted-foreground hover:text-destructive"
+          size="sm"
+          className="h-7 w-7 p-0 hover:bg-destructive/20 hover:text-destructive"
           onClick={(e) => {
-            console.log("Delete clicked for chat:", chat._id);
+            e.preventDefault();
+            e.stopPropagation();
+            console.log("Delete clicked for chat:", chat.slug);
             onDeleteClick(chat, e);
           }}
-          title="Delete chat"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-3 w-3" />
         </Button>
       </div>
-    </Link>
+    </div>
   );
 }

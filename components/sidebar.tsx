@@ -24,6 +24,11 @@ interface SidebarProps {
   toggleSidebar?: () => void;
 }
 
+interface ChatToDelete {
+  slug: string;
+  title: string;
+}
+
 export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   const chats = useQuery(api.chats.list) || [];
   const togglePinChat = useMutation(api.chats.togglePin);
@@ -35,25 +40,22 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
   // State for delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [chatToDelete, setChatToDelete] = useState<{
-    id: Id<"chats">;
-    title: string;
-  } | null>(null);
+  const [chatToDelete, setChatToDelete] = useState<ChatToDelete | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Determine which chat is currently selected based on the URL
-  const selectedChatIdString = pathname?.startsWith("/conversation/")
+  const selectedChatSlug = pathname?.startsWith("/c/")
     ? pathname.split("/").pop()
     : null;
 
-  const handlePinChat = (chatId: Id<"chats">, event: React.MouseEvent) => {
+  const handlePinChat = (chatSlug: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
 
-    console.log("Toggling pin for chat:", chatId);
+    console.log("Toggling pin for chat:", chatSlug);
 
     try {
-      togglePinChat({ chatId })
+      togglePinChat({ slug: chatSlug })
         .then(() => console.log("Pin toggled successfully"))
         .catch((error) => {
           console.error("Error toggling chat pin:", error);
@@ -68,7 +70,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
     event.stopPropagation();
 
     setChatToDelete({
-      id: chat._id,
+      slug: chat.slug,
       title: chat.title,
     });
     setDeleteDialogOpen(true);
@@ -79,16 +81,16 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
     setIsDeleting(true);
     try {
-      console.log("Deleting chat:", chatToDelete.id);
+      console.log("Deleting chat:", chatToDelete.slug);
 
-      await deleteChatMutation({ chatId: chatToDelete.id });
+      await deleteChatMutation({ slug: chatToDelete.slug });
       console.log("Chat deleted successfully");
 
       // If the deleted chat is the current one, navigate to home
       if (
-        selectedChatIdString &&
+        selectedChatSlug &&
         chatToDelete &&
-        selectedChatIdString === String(chatToDelete.id)
+        selectedChatSlug === chatToDelete.slug
       ) {
         router.push("/");
       }
@@ -232,7 +234,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                   <ChatItem
                     key={chat._id}
                     chat={chat}
-                    isSelected={selectedChatIdString === chat._id}
+                    isSelected={selectedChatSlug === chat.slug}
                     onPinClick={handlePinChat}
                     onDeleteClick={handleDeleteClick}
                   />
@@ -251,7 +253,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                   <ChatItem
                     key={chat._id}
                     chat={chat}
-                    isSelected={selectedChatIdString === chat._id}
+                    isSelected={selectedChatSlug === chat.slug}
                     onPinClick={handlePinChat}
                     onDeleteClick={handleDeleteClick}
                   />
@@ -270,7 +272,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                   <ChatItem
                     key={chat._id}
                     chat={chat}
-                    isSelected={selectedChatIdString === chat._id}
+                    isSelected={selectedChatSlug === chat.slug}
                     onPinClick={handlePinChat}
                     onDeleteClick={handleDeleteClick}
                   />
@@ -282,14 +284,14 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           {chatGroups.lastWeek.length > 0 && (
             <div className="mb-4">
               <div className="px-3 py-2 font-sans text-xs font-medium text-muted-foreground">
-                Last 7 Days
+                Last week
               </div>
               <div className="space-y-1">
                 {chatGroups.lastWeek.map((chat) => (
                   <ChatItem
                     key={chat._id}
                     chat={chat}
-                    isSelected={selectedChatIdString === chat._id}
+                    isSelected={selectedChatSlug === chat.slug}
                     onPinClick={handlePinChat}
                     onDeleteClick={handleDeleteClick}
                   />
@@ -308,7 +310,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                   <ChatItem
                     key={chat._id}
                     chat={chat}
-                    isSelected={selectedChatIdString === chat._id}
+                    isSelected={selectedChatSlug === chat.slug}
                     onPinClick={handlePinChat}
                     onDeleteClick={handleDeleteClick}
                   />

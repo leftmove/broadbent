@@ -3,27 +3,31 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
-import { Id } from "convex/_generated/dataModel";
 
 import { ChatMessage } from "components/chat/chat-message";
 import { ChatInput } from "components/chat/chat-input";
+import { cn } from "lib/utils";
 
 interface ChatWindowProps {
-  chatId: Id<"chats">;
+  chatSlug: string;
   prompt?: string | null;
 }
 
-export function ChatWindow({ chatId, prompt }: ChatWindowProps) {
+export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const [streamingMessage, setStreamingMessage] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingChatId, setStreamingChatId] = useState<Id<"chats"> | null>(
+  const [streamingChatSlug, setStreamingChatSlug] = useState<string | null>(
     null
   );
 
-  const messages = useQuery(api.messages.list, { chatId });
+  const chat = useQuery(api.chats.getBySlug, { slug: chatSlug });
+  const messages = useQuery(
+    api.messages.list,
+    chat ? { chatId: chat._id } : "skip"
+  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,20 +40,22 @@ export function ChatWindow({ chatId, prompt }: ChatWindowProps) {
   const handleStreamingUpdate = (
     streaming: boolean,
     content: string,
-    chatId: Id<"chats"> | null
+    chatSlug: string | null
   ) => {
     setIsStreaming(streaming);
     setStreamingMessage(content);
-    setStreamingChatId(chatId);
+    setStreamingChatSlug(chatSlug);
   };
 
-  if (!messages) {
+  if (!chat || !messages) {
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-center flex-1">
           <div className="text-center">
             <div className="w-8 h-8 mx-auto mb-4 border-2 rounded-full border-primary border-t-transparent animate-spin"></div>
-            <p className="text-muted-foreground">Loading messages...</p>
+            <p className="text-muted-foreground">
+              {!chat ? "Loading chat..." : "Loading messages..."}
+            </p>
           </div>
         </div>
       </div>
@@ -57,57 +63,62 @@ export function ChatWindow({ chatId, prompt }: ChatWindowProps) {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="relative flex flex-col h-full overflow-hidden">
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-x-hidden overflow-y-auto"
+        className="flex-1 px-4 pb-40 overflow-x-hidden overflow-y-auto"
       >
-        <div className="max-w-full p-4 space-y-4">
+        <div className="max-w-full space-y-1">
           {messages.map((message) => (
             <ChatMessage key={message._id} message={message} />
           ))}
 
           {/* Streaming Message */}
-          {isStreaming && streamingMessage && streamingChatId === chatId && (
-            <div className="flex w-full px-4">
-              <div className="rounded-lg px-4 py-3 max-w-[85%] break-words bg-secondary text-secondary-foreground mr-auto">
-                <div className="prose prose-sm max-w-none break-words overflow-wrap-anywhere text-secondary-foreground [&_*]:text-secondary-foreground">
-                  <p className="mb-3 leading-relaxed break-words last:mb-0">
-                    {streamingMessage}
-                  </p>
+          {isStreaming &&
+            streamingMessage &&
+            streamingChatSlug === chatSlug && (
+              <div className="flex w-full px-4 py-2">
+                <div className="w-full break-words max-w-none">
+                  <div className="prose prose-sm max-w-none break-words text-foreground [&_*]:text-foreground">
+                    <p className="mb-3 leading-relaxed break-words last:mb-0">
+                      {streamingMessage}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Loading Indicator */}
-          {isStreaming && !streamingMessage && streamingChatId === chatId && (
-            <div className="flex w-full px-4">
-              <div className="px-4 py-3 mr-auto rounded-lg bg-secondary text-secondary-foreground">
+          {isStreaming &&
+            !streamingMessage &&
+            streamingChatSlug === chatSlug && (
+              <div className="flex w-full px-4 py-2">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 rounded-full bg-secondary-foreground animate-bounce"></div>
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"></div>
                   <div
-                    className="w-2 h-2 rounded-full bg-secondary-foreground animate-bounce"
+                    className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
                     style={{ animationDelay: "0.1s" }}
                   ></div>
                   <div
-                    className="w-2 h-2 rounded-full bg-secondary-foreground animate-bounce"
+                    className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
                     style={{ animationDelay: "0.2s" }}
                   ></div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Input */}
-      <div className="p-4">
+      {/* Floating Chat Input */}
+      <div
+        className={cn(
+          "absolute w-full max-w-4xl px-4 transform -translate-x-1/2 bottom-4 transition-all duration-300 left-1/2"
+        )}
+      >
         <ChatInput
-          chatId={chatId}
-          className="max-w-4xl mx-auto"
+          chatSlug={chatSlug}
           onStreamingUpdate={handleStreamingUpdate}
         />
       </div>

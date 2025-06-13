@@ -1,30 +1,29 @@
 import { observable, observe } from "@legendapp/state";
-import { Id } from "convex/_generated/dataModel";
 import { useEffect, useState } from "react";
 
 interface ChatState {
-  selectedChatId: Id<"chats"> | null;
+  selectedChatSlug: string | null;
 }
 
 const chatState = observable<ChatState>({
-  selectedChatId: null,
+  selectedChatSlug: null,
 });
 
 export const useChatState = () => {
-  const [selectedChatId, setSelectedChatIdState] = useState<Id<"chats"> | null>(
-    chatState.selectedChatId.get()
+  const [selectedChatSlug, setSelectedChatSlugState] = useState<string | null>(
+    chatState.selectedChatSlug.get()
   );
 
   useEffect(() => {
     const dispose = observe(() => {
-      setSelectedChatIdState(chatState.selectedChatId.get());
+      setSelectedChatSlugState(chatState.selectedChatSlug.get());
     });
     return dispose;
   }, []);
 
   return {
-    selectedChatId,
-    setSelectedChatId: (id: Id<"chats"> | null) =>
-      chatState.selectedChatId.set(id),
+    selectedChatSlug,
+    setSelectedChatSlug: (slug: string | null) =>
+      chatState.selectedChatSlug.set(slug),
   };
 };

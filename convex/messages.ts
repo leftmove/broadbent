@@ -29,6 +29,37 @@ export const send = mutation({
   },
 });
 
+export const sendBySlug = mutation({
+  args: {
+    chatSlug: v.string(),
+    content: v.string(),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get the chat by slug and verify ownership
+    const chat = await ctx.db
+      .query("chats")
+      .withIndex("by_slug", (q) => q.eq("slug", args.chatSlug))
+      .first();
+
+    if (!chat || chat.userId !== userId) {
+      throw new Error("Chat not found or access denied");
+    }
+
+    return await ctx.db.insert("messages", {
+      chatId: chat._id,
+      content: args.content,
+      role: args.role,
+      userId,
+    });
+  },
+});
+
 export const update = mutation({
   args: {
     messageId: v.id("messages"),

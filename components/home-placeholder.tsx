@@ -28,6 +28,7 @@ const placeholderPhrases: string[] = [
 
 export function HomePlaceholder() {
   const [prompt, setPrompt] = useState("");
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handlePromptClick = (text: string) => {
     setPrompt(text);
@@ -37,13 +38,25 @@ export function HomePlaceholder() {
     setPrompt("");
   };
 
+  const handleChatStart = () => {
+    setIsTransitioning(true);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center flex-1 px-4">
-      <h3 className="mb-4 font-serif text-lg font-bold opacity-30">
+      <h3
+        className={`mb-4 font-serif text-lg font-bold opacity-30 transition-all duration-700 ease-out ${
+          isTransitioning ? "transform -translate-y-8 opacity-0" : ""
+        }`}
+      >
         Broadbent
       </h3>
-      <div className="max-w-3xl mx-auto space-y-8 text-center">
-        <div className="space-y-6 opacity-0 animate-pop-in">
+      <div className="w-full mx-auto space-y-8 text-center ">
+        <div
+          className={`space-y-6 opacity-0 animate-pop-in transition-all duration-700 ease-out ${
+            isTransitioning ? "transform -translate-y-12 opacity-0" : ""
+          }`}
+        >
           <h1 className="font-sans text-4xl font-semibold text-foreground">
             {
               placeholderPhrases[
@@ -145,16 +158,22 @@ export function HomePlaceholder() {
           </button>
         </div> */}
 
-        <div className="max-w-lg mx-auto space-y-4 font-sans text-sm opacity-0 animate-pop-in-delay-3">
+        <div
+          className={`max-w-lg mx-auto space-y-4 font-sans text-sm opacity-0 animate-pop-in-delay-3 transition-all duration-700 ease-out ${
+            isTransitioning ? "transform -translate-y-16 opacity-0" : ""
+          }`}
+        >
           <button
             onClick={() => handlePromptClick("How does AI work?")}
             className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            disabled={isTransitioning}
           >
             How does AI work?
           </button>
           <button
             onClick={() => handlePromptClick("Are black holes real?")}
             className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            disabled={isTransitioning}
           >
             Are black holes real?
           </button>
@@ -163,23 +182,30 @@ export function HomePlaceholder() {
               handlePromptClick('How many Rs are in the word "strawberry"?')
             }
             className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            disabled={isTransitioning}
           >
             How many Rs are in the word "strawberry"?
           </button>
           <button
             onClick={() => handlePromptClick("What is the meaning of life?")}
             className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            disabled={isTransitioning}
           >
             What is the meaning of life?
           </button>
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto transition-transform duration-500 ease-in-out opacity-0 animate-pop-in-delay-3">
+        <div
+          className={`relative z-10 max-w-4xl mx-auto transition-all duration-500 ease-in-out opacity-0 animate-pop-in-delay-3 ${
+            isTransitioning ? "transform translate-y-4 scale-105" : ""
+          }`}
+        >
           <ChatInput
             isHomePage={true}
             className="p-3"
             promptToSubmit={prompt}
             onPromptHandled={handlePromptHandled}
+            onChatStart={handleChatStart}
           />
         </div>
       </div>

@@ -17,10 +17,13 @@ export const modelIds = v.union(
 
 const applicationTables = {
   chats: defineTable({
+    slug: v.string(),
     title: v.string(),
     userId: v.id("users"),
     pinned: v.optional(v.boolean()),
-  }).index("by_user", ["userId"]),
+  })
+    .index("by_user", ["userId"])
+    .index("by_slug", ["slug"]),
 
   messages: defineTable({
     chatId: v.id("chats"),

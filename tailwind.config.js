@@ -102,6 +102,30 @@ module.exports = {
             transform: "translateY(0)",
             opacity: 1
           }
+        },
+        "float-away": {
+          "0%": {
+            transform: "translateY(0) scale(1)",
+            opacity: 1
+          },
+          "50%": {
+            transform: "translateY(-20px) scale(1.02)",
+            opacity: 0.7
+          },
+          "100%": {
+            transform: "translateY(-40px) scale(1.05)",
+            opacity: 0
+          }
+        },
+        "slide-up-and-fade": {
+          "0%": {
+            transform: "translateY(0)",
+            opacity: 1
+          },
+          "100%": {
+            transform: "translateY(-30px)",
+            opacity: 0
+          }
         }
       },
       animation: {
