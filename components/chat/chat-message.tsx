@@ -18,7 +18,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
     return (
       <div className="flex w-full justify-end px-4 py-2">
         <div className="rounded-lg px-3 py-2 max-w-[80%] break-words bg-primary text-primary-foreground">
-          <div className="text-sm leading-relaxed">{message.content}</div>
+          <div className="text-base leading-relaxed">{message.content}</div>
         </div>
       </div>
     );
@@ -28,7 +28,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className="flex w-full px-4 py-2">
       <div className="w-full max-w-none break-words">
-        <div className="prose prose-sm max-w-none break-words text-foreground [&_*]:text-foreground">
+        <div className="prose prose-base max-w-none break-words text-foreground [&_*]:text-foreground">
           <ReactMarkdown
             components={{
               p: ({ children }) => (

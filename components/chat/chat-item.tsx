@@ -21,7 +21,7 @@ export function ChatItem({
 }: ChatItemProps) {
   return (
     <div className="relative group">
-      <Link href={`/c/${chat.slug}`} className="group block relative">
+      <Link href={`/c/${chat.slug}`} className="relative block group">
         <Button
           variant="ghost"
           className={cn(
@@ -31,7 +31,7 @@ export function ChatItem({
           )}
         >
           <div className="flex items-center w-full min-w-0">
-            <span className="flex-1 truncate text-left">{chat.title}</span>
+            <span className="flex-1 text-left truncate">{chat.title}</span>
           </div>
         </Button>
       </Link>
@@ -41,11 +41,10 @@ export function ChatItem({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 hover:bg-secondary/70"
+          className="p-0 h-7 w-7 hover:bg-secondary/70"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log("Pin button clicked for chat:", chat.slug);
             onPinClick(chat.slug, e);
           }}
         >
@@ -62,15 +61,14 @@ export function ChatItem({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 hover:bg-destructive/20 hover:text-destructive"
+          className="p-0 h-7 w-7 hover:bg-destructive/20 hover:text-destructive"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log("Delete clicked for chat:", chat.slug);
             onDeleteClick(chat, e);
           }}
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="w-3 h-3" />
         </Button>
       </div>
     </div>

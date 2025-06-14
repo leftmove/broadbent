@@ -878,7 +878,7 @@ export const groq: ModelYAML = {
       ]
     },
     {
-      name: "Llama 3.1 8b Instant",
+      name: "Llama 3.1 8B Instant",
       id: "llama-3.1-8b-instant",
       description: "Model with a balance of speed and performance with significant cost savings compared to larger models. Low-latency, high-quality responses.",
       capabilities: {
@@ -919,7 +919,7 @@ export const groq: ModelYAML = {
       ]
     },
     {
-      name: "Llama 3 8b 8192",
+      name: "Llama 3 8B 8192",
       id: "llama3-8b-8192",
       description: "Economical model with great performance, industry-leading speed, and cost-efficiency.",
       capabilities: {

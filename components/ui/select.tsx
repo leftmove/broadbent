@@ -15,14 +15,15 @@ const Select = ({ value, onValueChange, children }: SelectProps) => {
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest('[data-select-root]')) {
+      if (!target.closest("[data-select-root]")) {
         setOpen(false);
       }
     };
 
     if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [open]);
 
@@ -62,7 +63,12 @@ const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronDown className={cn("w-4 h-4 opacity-50 transition-transform duration-200", open && "rotate-180")} />
+    <ChevronDown
+      className={cn(
+        "w-4 h-4 opacity-50 transition-transform duration-200",
+        open && "rotate-180"
+      )}
+    />
   </button>
 ));
 SelectTrigger.displayName = "SelectTrigger";
@@ -89,7 +95,7 @@ const SelectContent = ({
   if (!open) return null;
 
   return (
-    <div className="absolute left-0 right-0 z-50 mt-1 border rounded-md shadow-lg top-full bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-200">
+    <div className="absolute left-0 right-0 z-50 mt-1 duration-200 border rounded-md shadow-lg top-full bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95">
       <div className="p-1">
         {React.Children.map(children, (child) => {
           if (React.isValidElement(child)) {
@@ -117,11 +123,10 @@ const SelectItem = ({
   setOpen?: (open: boolean) => void;
 }) => (
   <div
-    className="relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors duration-150"
+    className="relative flex items-center px-3 py-2 text-sm transition-colors duration-150 rounded-sm outline-none cursor-pointer select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
     onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('SelectItem clicked:', value); // Debug log
       onValueChange?.(value);
       setOpen?.(false);
     }}

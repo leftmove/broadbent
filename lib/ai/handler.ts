@@ -1,28 +1,52 @@
-import { AIProvider, ProviderModel } from "lib/ai/providers";
+import { AIProvider } from "lib/ai/providers";
 import {
   DEFAULT_ERROR_MESSAGE,
   NO_API_KEY_SET_ERROR_MESSAGE,
-  INVALID_API_KEY_ERROR_MESSAGE,
-  RATE_LIMIT_ERROR_MESSAGE,
-} from "./errors";
+  INVALID_MODEL_ERROR_MESSAGE,
+  INVALID_PROVIDER_ERROR_MESSAGE,
+  GOOGLE_MODEL_NOT_FOUND_ERROR_MESSAGE,
+} from "lib/ai/errors";
+import {
+  APIKeyError,
+  InvalidModelError,
+  InvalidProviderError,
+} from "lib/errors";
 
-export function errorHandler(
-  error: unknown,
-  provider: AIProvider,
-  model: ProviderModel
-): string {
-  if (error instanceof Error) {
-    const errorMessage = error.message.toLowerCase();
+function match(regex: RegExp, message: string): boolean {
+  return regex.test(message);
+}
 
-    if (errorMessage.includes("api key not set")) {
-      return NO_API_KEY_SET_ERROR_MESSAGE(provider);
+export function handleError(error: Error, details: any): string {
+  const supplementals: Record<string, string> = {};
+  Object.keys(details).forEach((key) => {
+    if (details[key]) {
+      supplementals[key] = details[key];
+    } else {
+      supplementals[key] = "Unknown";
     }
-    if (errorMessage.includes("rate limit") || errorMessage.includes("quota")) {
-      return RATE_LIMIT_ERROR_MESSAGE(provider);
-    }
-    if (errorMessage.includes("invalid") && errorMessage.includes("key")) {
-      return INVALID_API_KEY_ERROR_MESSAGE(provider);
-    }
+  });
+  console.error(error);
+
+  if (error instanceof APIKeyError) {
+    return NO_API_KEY_SET_ERROR_MESSAGE(supplementals.provider as AIProvider);
   }
+
+  if (error instanceof InvalidModelError) {
+    return INVALID_MODEL_ERROR_MESSAGE(supplementals.model);
+  }
+
+  if (error instanceof InvalidProviderError) {
+    return INVALID_PROVIDER_ERROR_MESSAGE(supplementals.model);
+  }
+
+  if (
+    match(
+      /models\/([^/\s]+) is not found for API version [^,]+, or is not supported for generateContent/,
+      error.message
+    )
+  ) {
+    return GOOGLE_MODEL_NOT_FOUND_ERROR_MESSAGE(supplementals.model);
+  }
+
   return DEFAULT_ERROR_MESSAGE();
 }

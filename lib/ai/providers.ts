@@ -40,6 +40,31 @@ type GoogleModelId = Parameters<typeof google>[0];
 type XAIModelId = Parameters<typeof xai>[0];
 type GroqModelId = Parameters<typeof groq>[0];
 
+export const getModel = (id: ModelId): ProviderModel | undefined => {
+  if (!id) return undefined;
+
+  const providers = Object.entries(providerModels);
+  const mapProviders = [
+    ...providers.map(([_, providerMap]) => providerMap),
+  ].flat();
+  const providerFind = mapProviders.find((map) => map.get(id))!;
+  const modelFind = providerFind.get(id) || undefined;
+
+  return modelFind;
+};
+
+export const getProvider = (id: ModelId): AIProvider | undefined => {
+  const providers = Object.entries(providerModels);
+  const mapProviders = [
+    ...providers.map(([_, providerMap]) => providerMap),
+  ].flat();
+  const providerFind = mapProviders.find((map) => map.get(id))!;
+  const defaultModel = providerFind.get("default")!;
+  const provider = defaultModel.provider || undefined;
+
+  return provider;
+};
+
 export const getProviderName = (provider: AIProvider): string => {
   switch (provider) {
     case "openai":

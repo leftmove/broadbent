@@ -109,3 +109,31 @@ export const list = query({
       .collect();
   },
 });
+
+export const listBySlug = query({
+  args: {
+    chatSlug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    // Get the chat by slug and verify ownership
+    const chat = await ctx.db
+      .query("chats")
+      .withIndex("by_slug", (q) => q.eq("slug", args.chatSlug))
+      .first();
+
+    if (!chat || chat.userId !== userId) {
+      return [];
+    }
+
+    return await ctx.db
+      .query("messages")
+      .withIndex("by_chat", (q) => q.eq("chatId", chat._id))
+      .order("asc")
+      .collect();
+  },
+});

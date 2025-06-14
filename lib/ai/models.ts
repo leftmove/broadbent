@@ -9,136 +9,6 @@ export interface ModelYAML {
   models: any[]; // Use any for the raw YAML data
 }
 
-// Taken directly from Vercel's AI SDK type
-export const OPENAI_MODEL_IDS = [
-  "o1",
-  "o1-2024-12-17",
-  "o1-mini",
-  "o1-mini-2024-09-12",
-  "o1-preview",
-  "o1-preview-2024-09-12",
-  "o3-mini",
-  "o3-mini-2025-01-31",
-  "o3",
-  "o3-2025-04-16",
-  "o4-mini",
-  "o4-mini-2025-04-16",
-  "gpt-4.1",
-  "gpt-4.1-2025-04-14",
-  "gpt-4.1-mini",
-  "gpt-4.1-mini-2025-04-14",
-  "gpt-4.1-nano",
-  "gpt-4.1-nano-2025-04-14",
-  "gpt-4o",
-  "gpt-4o-2024-05-13",
-  "gpt-4o-2024-08-06",
-  "gpt-4o-2024-11-20",
-  "gpt-4o-audio-preview",
-  "gpt-4o-audio-preview-2024-10-01",
-  "gpt-4o-audio-preview-2024-12-17",
-  "gpt-4o-search-preview",
-  "gpt-4o-search-preview-2025-03-11",
-  "gpt-4o-mini-search-preview",
-  "gpt-4o-mini-search-preview-2025-03-11",
-  "gpt-4o-mini",
-  "gpt-4o-mini-2024-07-18",
-  "gpt-4-turbo",
-  "gpt-4-turbo-2024-04-09",
-  "gpt-4-turbo-preview",
-  "gpt-4-0125-preview",
-  "gpt-4-1106-preview",
-  "gpt-4",
-  "gpt-4-0613",
-  "gpt-4.5-preview",
-  "gpt-4.5-preview-2025-02-27",
-  "gpt-3.5-turbo-0125",
-  "gpt-3.5-turbo",
-  "gpt-3.5-turbo-1106",
-  "chatgpt-4o-latest",
-];
-export const ANTHROPIC_MODEL_IDS = [
-  "claude-4-opus-20250514",
-  "claude-4-sonnet-20250514",
-  "claude-3-7-sonnet-20250219",
-  "claude-3-5-sonnet-latest",
-  "claude-3-5-sonnet-20241022",
-  "claude-3-5-sonnet-20240620",
-  "claude-3-5-haiku-latest",
-  "claude-3-5-haiku-20241022",
-  "claude-3-opus-latest",
-  "claude-3-opus-20240229",
-  "claude-3-sonnet-20240229",
-  "claude-3-haiku-20240307",
-];
-export const GOOGLE_MODEL_IDS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-flash-001",
-  "gemini-1.5-flash-002",
-  "gemini-1.5-flash-8b",
-  "gemini-1.5-flash-8b-latest",
-  "gemini-1.5-flash-8b-001",
-  "gemini-1.5-pro",
-  "gemini-1.5-pro-latest",
-  "gemini-1.5-pro-001",
-  "gemini-1.5-pro-002",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-001",
-  "gemini-2.0-flash-live-001",
-  "gemini-2.0-flash-lite",
-  "gemini-2.0-pro-exp-02-05",
-  "gemini-2.0-flash-thinking-exp-01-21",
-  "gemini-2.0-flash-exp",
-  "gemini-2.5-pro-exp-03-25",
-  "gemini-2.5-pro-preview-05-06",
-  "gemini-2.5-flash-preview-04-17",
-  "gemini-exp-1206",
-  "gemma-3-27b-it",
-  "learnlm-1.5-pro-experimental",
-];
-export const XAI_MODEL_IDS = [
-  "grok-3",
-  "grok-3-latest",
-  "grok-3-fast",
-  "grok-3-fast-latest",
-  "grok-3-mini",
-  "grok-3-mini-latest",
-  "grok-3-mini-fast",
-  "grok-3-mini-fast-latest",
-  "grok-2-vision-1212",
-  "grok-2-vision",
-  "grok-2-vision-latest",
-  "grok-2-image-1212",
-  "grok-2-image",
-  "grok-2-image-latest",
-  "grok-2-1212",
-  "grok-2",
-  "grok-2-latest",
-  "grok-vision-beta",
-  "grok-beta",
-];
-export const GROQ_MODEL_IDS = [
-  "gemma2-9b-it",
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "llama-guard-3-8b",
-  "llama3-70b-8192",
-  "llama3-8b-8192",
-  "mixtral-8x7b-32768",
-  "meta-llama/llama-4-scout-17b-16e-instruct",
-  "qwen-qwq-32b",
-  "mistral-saba-24b",
-  "qwen-2.5-32b",
-  "deepseek-r1-distill-qwen-32b",
-  "deepseek-r1-distill-llama-70b",
-];
-
-export const OPENAI_DEFAULT_MODEL = "gpt-4o";
-export const ANTHROPIC_DEFAULT_MODEL = "claude-3-5-sonnet";
-export const GOOGLE_DEFAULT_MODEL = "gemini-1.5-flash";
-export const XAI_DEFAULT_MODEL = "grok-2";
-export const GROQ_DEFAULT_MODEL = "llama-3.1-8b-instant";
-
 const ModelCapabilities = z.object({
   thinking: z.boolean(),
   tool: z.boolean(),
@@ -266,7 +136,6 @@ function createProviderFromYAML<T extends ProviderModel>(
       defaultModelId = OPENAI_DEFAULT_MODEL;
       break;
     case "anthropic":
-      console.log("anthropic");
       defaultModelId = ANTHROPIC_DEFAULT_MODEL;
       break;
     case "google":
@@ -274,7 +143,6 @@ function createProviderFromYAML<T extends ProviderModel>(
       break;
     case "xai":
       defaultModelId = XAI_DEFAULT_MODEL;
-      console.log(models);
       break;
     case "groq":
       defaultModelId = GROQ_DEFAULT_MODEL;
@@ -295,9 +163,30 @@ function createProviderFromYAML<T extends ProviderModel>(
   return models as Map<string, T>;
 }
 
+export const OPENAI_DEFAULT_MODEL = "gpt-4o";
+export const ANTHROPIC_DEFAULT_MODEL = "claude-3-5-sonnet";
+export const GOOGLE_DEFAULT_MODEL = "gemini-1.5-flash";
+export const XAI_DEFAULT_MODEL = "grok-2";
+export const GROQ_DEFAULT_MODEL = "llama-3.1-8b-instant";
+
 export const OpenAIProvider = createProviderFromYAML<OpenAIModel>(openai);
 export const AnthropicProvider =
   createProviderFromYAML<AnthropicModel>(anthropic);
 export const GoogleProvider = createProviderFromYAML<GoogleModel>(google);
 export const XAIProvider = createProviderFromYAML<XAIModel>(xai);
 export const GroqProvider = createProviderFromYAML<GroqModel>(groq);
+
+export const OpenAIModels = [...OpenAIProvider.keys()];
+export const AnthropicModels = [...AnthropicProvider.keys()];
+export const GoogleModels = [...GoogleProvider.keys()];
+export const XAIModels = [...XAIProvider.keys()];
+export const GroqModels = [...GroqProvider.keys()];
+
+export type OpenAIModelId = keyof typeof OpenAIProvider;
+export type AnthropicModelId = keyof typeof AnthropicProvider;
+export type GoogleModelId = keyof typeof GoogleProvider;
+export type XAIModelId = keyof typeof XAIProvider;
+export type GroqModelId = keyof typeof GroqProvider;
+
+// The real type is a union of the above types.
+export type ModelId = string;

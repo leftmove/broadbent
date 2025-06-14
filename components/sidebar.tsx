@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
-import { Doc, Id } from "convex/_generated/dataModel";
+import { Doc } from "convex/_generated/dataModel";
 
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
@@ -52,17 +52,9 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
     event.preventDefault();
     event.stopPropagation();
 
-    console.log("Toggling pin for chat:", chatSlug);
-
-    try {
-      togglePinChat({ slug: chatSlug })
-        .then(() => console.log("Pin toggled successfully"))
-        .catch((error) => {
-          console.error("Error toggling chat pin:", error);
-        });
-    } catch (error) {
-      console.error("Error in pin handler:", error);
-    }
+    togglePinChat({ slug: chatSlug }).catch((error) => {
+      console.error("Error toggling chat pin:", error);
+    });
   };
 
   const handleDeleteClick = (chat: Doc<"chats">, event: React.MouseEvent) => {
@@ -81,12 +73,8 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
     setIsDeleting(true);
     try {
-      console.log("Deleting chat:", chatToDelete.slug);
-
       await deleteChatMutation({ slug: chatToDelete.slug });
-      console.log("Chat deleted successfully");
 
-      // If the deleted chat is the current one, navigate to home
       if (
         selectedChatSlug &&
         chatToDelete &&
@@ -151,8 +139,8 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col h-full border-r bg-card border-border transition-all duration-150 ease-in-out",
-        collapsed ? "max-w-18 w-18" : "max-w-72 w-72"
+        "flex flex-col h-full bg-card relative transition-all duration-150 pt-2 ease-in-out",
+        collapsed ? "max-w-16 w-16" : "max-w-72 w-72"
       )}
     >
       <div className="p-4">
@@ -373,7 +361,6 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
         </div>
       </div>
 
-      {/* Delete confirmation dialog */}
       <ChatDeleteDialog
         isOpen={deleteDialogOpen}
         onClose={() => {

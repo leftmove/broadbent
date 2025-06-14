@@ -63,13 +63,12 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
   }
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden">
-      {/* Messages Container */}
+    <div className="relative flex flex-col h-full mt-8 -mb-4 overflow-hidden border-2 border-r-0 rounded-tl-xl border-border">
       <div
         ref={messagesContainerRef}
-        className="flex-1 px-4 pb-40 overflow-x-hidden overflow-y-auto"
+        className="flex-1 px-4 pt-4 pb-48 overflow-x-hidden overflow-y-auto"
       >
-        <div className="max-w-full space-y-1">
+        <div className="w-11/12 mx-auto space-y-6">
           {messages.map((message) => (
             <ChatMessage key={message._id} message={message} />
           ))}
@@ -110,8 +109,6 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
         </div>
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Floating Chat Input */}
       <div
         className={cn(
           "absolute w-full max-w-4xl px-4 transform -translate-x-1/2 bottom-4 transition-all duration-300 left-1/2"

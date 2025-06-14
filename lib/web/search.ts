@@ -274,8 +274,6 @@ function cleanContentForLLM(doc: Document): string {
 
 async function fetchPageContent(url: string) {
   try {
-    console.log(`Fetching content from: ${url}`);
-
     // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout

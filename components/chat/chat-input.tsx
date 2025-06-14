@@ -3,24 +3,24 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
-import { ArrowUp, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "lib/utils";
 import { api } from "convex/_generated/api";
 import { Textarea } from "components/ui/textarea";
 import { Button } from "components/ui/button";
+import { ErrorMessage } from "components/error-message";
 import { useChatState } from "state/chat";
 import { useAIGeneration } from "state/ai";
-import { useUIState } from "state/ui";
 import { useSettingsState } from "state/settings";
-import { errorHandler } from "lib/ai/handler";
 import {
   providerModels,
   getProviderName,
+  getModel,
+  getProvider,
   type AIProvider,
-  ProviderModel,
 } from "lib/ai/providers";
 
-const placeholderPhrases: string[] = [
+const placeholderPhrases = [
   "Words optional.",
   "Talk is cheap. Typing is cheaper.",
   "Fill me up.",
@@ -39,7 +39,7 @@ const placeholderPhrases: string[] = [
   "Put a thought in the box.",
   "This is the way.",
   "Ask me anything.",
-];
+] as const;
 
 interface ChatInputProps {
   isHomePage?: boolean;
@@ -67,45 +67,44 @@ export function ChatInput({
   const [input, setInput] = useState("");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [streamingResponse, setStreamingResponse] = useState("");
-  const [currentStreamingChatSlug, setCurrentStreamingChatSlug] = useState<
-    string | null
-  >(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
   const user = useQuery(api.auth.loggedInUser);
-  const { setSelectedChatSlug } = useChatState();
-  const { generateResponse } = useAIGeneration();
-  const { apiKeys } = useSettingsState();
-
-  const createChat = useMutation(api.chats.create);
-  const sendMessage = useMutation(api.messages.sendBySlug);
   const userSettings = useQuery(
     api.settings.getSettings,
     user ? { userId: user._id } : "skip"
   );
+  const messages = useQuery(
+    api.messages.listBySlug,
+    chatSlug ? { chatSlug } : "skip"
+  );
+
+  const { setSelectedChatSlug } = useChatState();
+  const { generateResponse, streaming, error } = useAIGeneration();
+  const { apiKeys } = useSettingsState();
+
+  const createChat = useMutation(api.chats.create);
+  const sendMessage = useMutation(api.messages.sendBySlug);
   const setProvider = useMutation(api.settings.setProvider);
   const setSelectedModel = useMutation(api.settings.setSelectedModel);
 
-  const currentProvider = userSettings?.provider || "openai";
   const currentModel = userSettings?.selectedModel;
+  const currentProvider =
+    (currentModel && getProvider(currentModel)) ||
+    userSettings?.provider ||
+    "openai";
 
-  useEffect(() => {
-    if (promptToSubmit && promptToSubmit.trim()) {
-      setInput(promptToSubmit);
-      void handleSubmit(promptToSubmit);
-      onPromptHandled?.();
-    }
-  }, [promptToSubmit]);
+  const randomPlaceholder =
+    placeholderPhrases[Math.floor(Math.random() * placeholderPhrases.length)];
 
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-    }
-  }, [input]);
+  // useEffect(() => {
+  //   if (promptToSubmit?.trim()) {
+  //     setInput(promptToSubmit);
+  //     void handleSubmit(promptToSubmit);
+  //     onPromptHandled?.();
+  //   }
+  // }, [promptToSubmit, onPromptHandled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -113,6 +112,65 @@ export function ChatInput({
       if (input.trim() && !isSubmitting) {
         void handleSubmit(input);
       }
+    }
+  };
+
+  const createChatAndNavigate = async (title: string) => {
+    onChatStart?.();
+    const chatCreationPromise = createChat({ title });
+
+    setTimeout(() => {
+      void chatCreationPromise
+        .then((slug) => {
+          setSelectedChatSlug(slug);
+          router.push(`/c/${slug}`);
+        })
+        .catch((error) => {
+          console.error("Error navigating to chat:", error);
+        });
+    }, 200);
+
+    return await chatCreationPromise;
+  };
+
+  const generateAIResponse = async (message: string, chatSlug: string) => {
+    if (!userSettings?.provider) return;
+
+    try {
+      const selectedModel = userSettings.selectedModel;
+      if (!selectedModel) {
+        throw new Error("Invalid model.");
+      }
+
+      const messageHistory =
+        messages?.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })) || [];
+
+      onStreamingUpdate?.(true, "", chatSlug);
+
+      const response = await generateResponse(
+        message,
+        apiKeys,
+        selectedModel,
+        (chunk: string) => {
+          onStreamingUpdate?.(true, chunk, chatSlug);
+        },
+        messageHistory
+      );
+
+      if (response?.trim()) {
+        await sendMessage({
+          chatSlug,
+          content: response,
+          role: "assistant",
+        });
+      }
+
+      onStreamingUpdate?.(false, "", null);
+    } catch {
+      onStreamingUpdate?.(false, "", null);
     }
   };
 
@@ -126,28 +184,9 @@ export function ChatInput({
       let currentChatSlug = chatSlug;
 
       if (isHomePage || !currentChatSlug) {
-        // Start the transition animation immediately
-        onChatStart?.();
-
         const title =
           message.length > 50 ? `${message.slice(0, 50)}...` : message;
-
-        // Create chat and navigation optimistically in parallel
-        const chatCreationPromise = createChat({ title });
-
-        // Start navigation after a brief delay to allow animation to begin
-        setTimeout(() => {
-          void chatCreationPromise
-            .then((slug) => {
-              setSelectedChatSlug(slug);
-              router.push(`/c/${slug}`);
-            })
-            .catch((error) => {
-              console.error("Error navigating to chat:", error);
-            });
-        }, 200);
-
-        currentChatSlug = await chatCreationPromise;
+        currentChatSlug = await createChatAndNavigate(title);
       }
 
       await sendMessage({
@@ -156,62 +195,7 @@ export function ChatInput({
         role: "user",
       });
 
-      // Generate AI response with streaming
-      if (userSettings?.provider) {
-        try {
-          const selectedModel = userSettings.selectedModel;
-          const provider = userSettings.provider;
-
-          // Set up streaming state
-          setCurrentStreamingChatSlug(currentChatSlug);
-          setStreamingResponse("");
-          onStreamingUpdate?.(true, "", currentChatSlug);
-
-          const response = await generateResponse(
-            message,
-            provider,
-            apiKeys,
-            selectedModel || undefined,
-            (chunk: string) => {
-              // Update streaming response as chunks arrive
-              setStreamingResponse(chunk);
-              onStreamingUpdate?.(true, chunk, currentChatSlug);
-            }
-          );
-
-          // Send the final complete response
-          if (response && response.trim()) {
-            await sendMessage({
-              chatSlug: currentChatSlug,
-              content: response,
-              role: "assistant",
-            });
-          }
-
-          // Clear streaming state
-          setStreamingResponse("");
-          setCurrentStreamingChatSlug(null);
-          onStreamingUpdate?.(false, "", null);
-        } catch (error) {
-          // Clear streaming state on error
-          setStreamingResponse("");
-          setCurrentStreamingChatSlug(null);
-          onStreamingUpdate?.(false, "", null);
-
-          const errorMessage = errorHandler(
-            error,
-            userSettings.provider,
-            providerModels[userSettings.provider].get(
-              userSettings.selectedModel || "default"
-            ) as ProviderModel
-          );
-          await sendMessage({
-            chatSlug: currentChatSlug,
-            content: errorMessage,
-            role: "assistant",
-          });
-        }
-      }
+      await generateAIResponse(message, currentChatSlug);
     } catch (error) {
       console.error("Error sending message", error);
     } finally {
@@ -221,166 +205,162 @@ export function ChatInput({
 
   const handleProviderChange = async (provider: AIProvider) => {
     if (!user) return;
-
-    await setProvider({
-      userId: user._id,
-      provider,
-    });
+    await setProvider({ userId: user._id, provider });
     setIsModelSelectorOpen(false);
   };
 
   const handleModelChange = async (provider: AIProvider, modelId: string) => {
     if (!user) return;
-
-    await setSelectedModel({
-      userId: user._id,
-      provider,
-      modelId,
-    });
+    await setSelectedModel({ userId: user._id, provider, modelId });
     setIsModelSelectorOpen(false);
   };
 
   const getCurrentModelName = () => {
     if (!currentModel) return `${getProviderName(currentProvider)} (Default)`;
-
-    const models = providerModels[currentProvider];
-    const model = models.get(currentModel);
-    return model ? `${model.name}` : currentModel;
+    const modelFind = getModel(currentModel);
+    return modelFind?.name || `${getProviderName(currentProvider)} (Default)`;
   };
 
-  return (
+  const renderModelSelector = () => (
     <div
       className={cn(
-        "relative flex flex-col border rounded-xl shadow-lg bg-background/95 backdrop-blur-sm border-border/50",
-        className
+        "overflow-hidden border-b border-border/30 bg-background/50 transition-all duration-300 ease-in-out",
+        isModelSelectorOpen
+          ? "max-h-[32rem] opacity-100 transform translate-y-0"
+          : "max-h-0 opacity-0 transform -translate-y-2"
       )}
     >
-      {/* Model Selection Button */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-        <button
-          onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-md text-foreground hover:bg-secondary/70 border border-transparent hover:border-border/50"
-        >
-          <span className="font-medium">{getCurrentModelName()}</span>
-          {isModelSelectorOpen ? (
-            <ChevronUp className="w-4 h-4 transition-transform duration-200 ml-1" />
-          ) : (
-            <ChevronDown className="w-4 h-4 transition-transform duration-200 ml-1" />
-          )}
-        </button>
-      </div>
+      <div className="overflow-y-auto max-h-[32rem] p-2">
+        {Object.entries(providerModels).map(([providerId, models]) => {
+          const providerName = getProviderName(providerId as AIProvider);
 
-      {/* Model Selection Dropdown */}
-      <div
-        className={cn(
-          "overflow-hidden border-b border-border/30 bg-background/50 transition-all duration-300 ease-in-out",
-          isModelSelectorOpen
-            ? "max-h-[32rem] opacity-100 transform translate-y-0"
-            : "max-h-0 opacity-0 transform -translate-y-2"
-        )}
-      >
-        <div className="overflow-y-auto max-h-[32rem] p-2">
-          {Object.entries(providerModels).map(([providerId, models]) => {
-            const providerName = getProviderName(providerId as AIProvider);
-
-            return (
-              <div key={providerId} className="mb-6">
-                <div className="px-3 py-3 mb-3 flex items-center justify-between border-b border-border/20">
-                  <div className="text-sm font-medium tracking-wide text-foreground/90">
-                    {providerName}
-                  </div>
+          return (
+            <div key={providerId} className="mb-6">
+              <div className="flex items-center justify-between px-3 py-3 mb-3 border-b border-border/20">
+                <div className="text-sm font-medium tracking-wide text-foreground/90">
+                  {providerName}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 px-1">
-                  {Array.from(models.entries() as Iterable<[string, any]>)
-                    .filter(([id]) => id !== "default")
-                    .map(([modelId, model]) => {
-                      const isSelected =
-                        currentModel === modelId &&
-                        currentProvider === providerId;
+              </div>
+              <div className="grid grid-cols-1 gap-2 px-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from(models.entries() as Iterable<[string, any]>)
+                  .filter(([id]) => id !== "default")
+                  .map(([modelId, model]) => {
+                    const isSelected =
+                      currentModel === modelId &&
+                      currentProvider === providerId;
 
-                      return (
-                        <button
-                          key={modelId}
-                          onClick={() =>
-                            void handleModelChange(
-                              providerId as AIProvider,
-                              modelId
-                            )
-                          }
-                          className={cn(
-                            "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent",
-                            isSelected
-                              ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20"
-                              : "hover:border-primary/10"
-                          )}
-                        >
-                          <div className="flex items-center min-h-[4rem]">
-                            <div className="flex-1">
-                              <div className="font-medium text-foreground">
-                                {model.name}
-                              </div>
-                              {model.description && (
-                                <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                  {model.description}
-                                </div>
-                              )}
+                    return (
+                      <button
+                        key={modelId}
+                        onClick={() =>
+                          void handleModelChange(
+                            providerId as AIProvider,
+                            modelId
+                          )
+                        }
+                        className={cn(
+                          "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent",
+                          isSelected
+                            ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20"
+                            : "hover:border-primary/10"
+                        )}
+                      >
+                        <div className="flex items-center min-h-[4rem]">
+                          <div className="flex-1">
+                            <div className="font-medium text-foreground">
+                              {model.name}
                             </div>
-                            {isSelected && (
-                              <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
-                                <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                            {model.description && (
+                              <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                {model.description}
                               </div>
                             )}
                           </div>
-                        </button>
-                      );
-                    })}
-                </div>
+                          {isSelected && (
+                            <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
+                              <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
+    </div>
+  );
 
-      {/* Input Area */}
-      <div className="flex items-start h-20 gap-3 p-4">
-        <div className="relative flex items-center flex-1">
-          <Textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              placeholderPhrases[
-                Math.floor(Math.random() * placeholderPhrases.length)
-              ]
-            }
-            className="w-full h-16 px-0 text-sm leading-relaxed bg-transparent border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
-            disabled={isSubmitting}
+  return (
+    <div className="relative">
+      {error && (
+        <div className="absolute left-0 right-0 z-40 mb-2 bottom-full">
+          <ErrorMessage
+            error={error}
+            details={{ provider: currentProvider, model: currentModel }}
           />
         </div>
-        <div className="flex items-center pt-1">
-          <Button
-            onClick={() => void handleSubmit(input)}
-            disabled={!input.trim() || isSubmitting}
-            size="sm"
-            className="transition-all duration-200 rounded-lg h-9 w-9 shrink-0 hover:scale-105 disabled:scale-100"
+      )}
+      <div
+        className={cn(
+          "relative flex flex-col border rounded-xl shadow-lg bg-background/95 z-50 backdrop-blur-sm border-border/50",
+          className
+        )}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+          <button
+            onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-md text-foreground hover:bg-secondary/70 border border-transparent hover:border-border/50"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-5 h-5"
+            <span className="font-medium">{getCurrentModelName()}</span>
+            {isModelSelectorOpen ? (
+              <ChevronUp className="w-4 h-4 ml-1 transition-transform duration-200" />
+            ) : (
+              <ChevronDown className="w-4 h-4 ml-1 transition-transform duration-200" />
+            )}
+          </button>
+        </div>
+
+        {renderModelSelector()}
+
+        <div className="flex items-start h-20 gap-3 p-4">
+          <div className="relative flex items-center flex-1">
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={randomPlaceholder}
+              className="w-full h-16 px-0 text-sm leading-relaxed bg-transparent border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="flex items-center pt-1">
+            <Button
+              onClick={() => void handleSubmit(input)}
+              disabled={!input.trim() || isSubmitting}
+              size="sm"
+              className="transition-all duration-200 rounded-lg h-9 w-9 shrink-0 hover:scale-105 disabled:scale-100"
             >
-              <path d="m5 12 7-7 7 7"></path>
-              <path d="M12 19V5"></path>
-            </svg>
-          </Button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-5 h-5"
+              >
+                <path d="m5 12 7-7 7 7"></path>
+                <path d="M12 19V5"></path>
+              </svg>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

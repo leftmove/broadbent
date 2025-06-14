@@ -43,7 +43,7 @@ export function HomePlaceholder() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 px-4">
+    <div className="relative flex flex-col items-center justify-center flex-1 px-4">
       <h3
         className={`mb-4 font-serif text-lg font-bold opacity-30 transition-all duration-700 ease-out ${
           isTransitioning ? "transform -translate-y-8 opacity-0" : ""
@@ -209,6 +209,7 @@ export function HomePlaceholder() {
           />
         </div>
       </div>
+      <div className="absolute bottom-0 left-0 w-[0.5px] h-full bg-border"></div>
     </div>
   );
 }

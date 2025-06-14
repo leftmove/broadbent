@@ -3,20 +3,17 @@ import { AIProvider } from "lib/ai/providers";
 export const DEFAULT_ERROR_MESSAGE = () =>
   "Sorry, I couldn't generate a response due to an error.";
 
-export const NO_API_KEY_SET_ERROR_MESSAGE = (provider: AIProvider) => `
-It looks like you don't have an API key set for this model yet.
+export const NO_API_KEY_SET_ERROR_MESSAGE = (provider: AIProvider) =>
+  `No API key set for '${provider}'. Head to the API keys section in settings to learn how to set your API key.`;
 
-If you're new here, before you can use the chat, you need to get an API key from one of several providers. Here are some possible options.
+export const INVALID_MODEL_ERROR_MESSAGE = (model: string) =>
+  `Model '${model}' not found. Try again with a different model.`;
 
-* **[OpenAI](https://platform.openai.com/api-keys)**: ChatGPT
-* **[Anthropic](https://console.anthropic.com/)**: Claude
-* **[Google](https://aistudio.google.com/app/apikey)**: Gemini
-* **[xAI](https://console.x.ai)**: Grok
+export const INVALID_PROVIDER_ERROR_MESSAGE = (model: string) =>
+  `Provider '${model}' not found. Try again with a different provider.`;
 
-Click the provider's name to go to their API key page. Once your there, if you've setup an account, you can setup billing and get an API key.
-
-With your API key setup, click the settings button in the bottom left and navigate to *Settings > API Keys* and add your key to the provider you chose. You can then set that provider as your default by clicking the provider you want above the API keys.
-`;
+export const GOOGLE_MODEL_NOT_FOUND_ERROR_MESSAGE = (model: string) =>
+  `Model '${model}' not found. Request failed to Gemini API. Try again later or with a different model.`;
 
 export const RATE_LIMIT_ERROR_MESSAGE = (provider: AIProvider) => `
 ## Rate 
