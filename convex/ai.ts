@@ -9,6 +9,8 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createXai } from "@ai-sdk/xai";
 import { createGroq } from "@ai-sdk/groq";
 
+// import { webSearchTool } from "../lib/tools/web-search";
+
 import { llms } from "../lib/ai/providers";
 import { handleError, ErrorDetails } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
@@ -100,6 +102,7 @@ export const generateResponse = action({
 
     let llm;
     let model;
+    // const hasToolSupport = selectedModel.capabilities.tool;
 
     switch (selectedProvider) {
       case "openai":
@@ -162,6 +165,30 @@ export const generateResponse = action({
           : args.prompt,
       },
     ];
+
+    // Configure tools based on provider - DISABLED FOR DEPLOYMENT
+    // let tools: any = undefined;
+    // if (hasToolSupport) {
+    //   switch (selectedProvider) {
+    //     case "openai":
+    //       if (selectedModel.id.includes('gpt-4o')) {
+    //         // Use OpenAI's built-in web search for responses API
+    //         tools = { web_search_preview: (llm as any).tools?.webSearchPreview?.() };
+    //       } else {
+    //         // Use custom web search tool for regular OpenAI models
+    //         tools = { webSearch: webSearchTool };
+    //       }
+    //       break;
+    //     case "google":
+    //       // Google uses useSearchGrounding, no additional tools needed
+    //       tools = undefined;
+    //       break;
+    //     default:
+    //       // Use custom web search tool for other providers
+    //       tools = { webSearch: webSearchTool };
+    //       break;
+    //   }
+    // }
 
     try {
       if (isReasoningModel) {
