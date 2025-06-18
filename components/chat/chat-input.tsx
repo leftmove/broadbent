@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ChevronDown, ChevronUp, Send, ArrowUp, Brain, Square } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Send,
+  ArrowUp,
+  Brain,
+  Square,
+} from "lucide-react";
 
 import { useChatState } from "state/chat";
 import { useAIGeneration } from "state/ai";
@@ -121,7 +128,7 @@ export function ChatInput({
         currentChatSlug,
         assistantMessageId,
         message,
-        userSettings.selectedModel,
+        userSettings.selectedModel as ModelId,
         messageHistory
       ).catch(async (error: any) => {
         const errorMessage = handleError(error, {
@@ -165,7 +172,7 @@ export function ChatInput({
   // Auto-resize textarea based on content
   const autoResizeTextarea = () => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   };
@@ -176,7 +183,7 @@ export function ChatInput({
     } else if (isHomepage && input.trim()) {
       setInputHasContent(true);
     }
-    
+
     // Auto-resize textarea when input changes
     autoResizeTextarea();
   }, [isHomepage, input]);
@@ -286,7 +293,7 @@ export function ChatInput({
             ))}
           </div>
         </div>
-        <div className="flex items-start min-h-20 gap-3 p-4 transition-all duration-200">
+        <div className="flex items-start gap-3 p-4 transition-all duration-200 min-h-20">
           <div className="relative flex items-center flex-1 group">
             <Textarea
               ref={textareaRef}
@@ -298,7 +305,7 @@ export function ChatInput({
               }}
               onKeyDown={handleKeyboard}
               placeholder={streaming ? "Streaming..." : inputPhrase()}
-              className="w-full min-h-16 px-0 text-sm leading-relaxed transition-all duration-200 bg-transparent border-0 outline-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
+              className="w-full px-0 text-sm leading-relaxed transition-all duration-200 bg-transparent border-0 outline-none resize-none min-h-16 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
               disabled={isSubmitting || streaming}
             />
           </div>
@@ -312,8 +319,8 @@ export function ChatInput({
                 streaming
                   ? "bg-red-500 text-white hover:bg-red-600 hover:scale-105 hover:shadow-md active:scale-95"
                   : !input.trim() || isSubmitting
-                  ? "bg-muted text-muted-foreground cursor-not-allowed"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 hover:shadow-md active:scale-95"
+                    ? "bg-muted text-muted-foreground cursor-not-allowed"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 hover:shadow-md active:scale-95"
               )}
             >
               <div className="relative z-10 flex items-center justify-center">
@@ -326,7 +333,7 @@ export function ChatInput({
                 )}
               </div>
               {/* Subtle shine effect on hover */}
-              {(streaming || (!input.trim() || isSubmitting)) ? null : (
+              {streaming || !input.trim() || isSubmitting ? null : (
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-500 ease-out"></div>
               )}
             </Button>

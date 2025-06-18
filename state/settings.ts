@@ -43,7 +43,7 @@ class SettingsStorage {
 
   static loadModel(): ModelId {
     const stored = localStorage.getItem(STORAGE_KEYS.MODEL);
-    return stored || DEFAULT_SETTINGS.selectedModel;
+    return (stored as ModelId) || DEFAULT_SETTINGS.selectedModel;
   }
 
   static saveApiKeys(apiKeys: ApiKeys): void {
