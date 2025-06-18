@@ -60,3 +60,17 @@ export const cleanup = mutation({
     }
   },
 });
+
+export const isGenerating = query({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const generation = await ctx.db
+      .query("generations")
+      .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
+      .first();
+    
+    return !!generation;
+  },
+});

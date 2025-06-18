@@ -2,7 +2,7 @@ import { action, ActionCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
-import { streamText } from "ai";
+import { streamText, wrapLanguageModel, extractReasoningMiddleware } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
@@ -19,6 +19,15 @@ import { type ModelId } from "../lib/ai/models";
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+function stripThinkTags(text: string): string {
+  return text.replace(/<think>|<\/think>/g, "").trim();
+}
+
+function extractThinkingFromText(text: string): string {
+  const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+  return thinkMatch ? thinkMatch[1].trim() : "";
 }
 
 async function throwError(
@@ -127,11 +136,32 @@ export const generateResponse = action({
         );
     }
 
+    const isReasoningModel = selectedModel.capabilities.thinking;
+
+    // Wrap model with reasoning middleware for reasoning models that don't natively support it
+    if (isReasoningModel && selectedProvider !== "openai") {
+      model = wrapLanguageModel({
+        model,
+        middleware: extractReasoningMiddleware({
+          tagName: "think",
+          startWithReasoning: true,
+        }),
+      });
+    }
+
+    // Add reasoning instructions for non-OpenAI reasoning models
+    const shouldAddReasoningInstructions =
+      isReasoningModel && selectedProvider !== "openai";
+
     const messages: Message[] = [
       ...(args.messageHistory || []),
-      { role: "user", content: args.prompt },
+      {
+        role: "user",
+        content: shouldAddReasoningInstructions
+          ? `${args.prompt}\n\nPlease show your reasoning process by thinking through this step by step within <think></think> tags before providing your final answer.`
+          : args.prompt,
+      },
     ];
-    const isReasoningModel = selectedModel.capabilities.thinking;
 
     try {
       if (isReasoningModel) {
@@ -139,16 +169,19 @@ export const generateResponse = action({
           model,
           messages,
           maxRetries: 0,
-          onError: (error) => {
-            throw new ConvexError(
+          onError: async (error) => {
+            void (await throwError(
+              ctx,
               "RequestError",
               "Error occurred streaming text for model.",
               {
                 request: error.error,
                 provider: selectedProvider,
                 model: args.modelId,
-              }
-            );
+              },
+              args.chatSlug,
+              args.messageSlug
+            ));
           },
         });
 
@@ -178,27 +211,70 @@ export const generateResponse = action({
             );
           }
 
+          console.log("Chunk:", chunk.type, Object.keys(chunk));
+          if (chunk.type === "reasoning") {
+            console.log("Reasoning chunk:", chunk);
+          }
+          if (
+            chunk.type === "text-delta" &&
+            chunk.textDelta?.includes("<think>")
+          ) {
+            console.log("Text delta with think tag:", chunk.textDelta);
+          }
+
           if (chunk.type === "text-delta") {
             fullText += chunk.textDelta;
+
+            // Extract thinking from text stream for real-time streaming
+            const extractedThinking = extractThinkingFromText(fullText);
+            if (extractedThinking && extractedThinking !== fullThinking) {
+              fullThinking = extractedThinking;
+            }
+
             await ctx.runMutation(api.messages.updateBySlug, {
               chatSlug: args.chatSlug,
               messageSlug: args.messageSlug,
-              content: fullText,
+              content: stripThinkTags(fullText),
               thinking: fullThinking || undefined,
             });
-          } else if (
-            chunk.type === "step-finish" &&
-            chunk.providerMetadata?.openai?.reasoning
-          ) {
-            const reasoning = chunk.providerMetadata.openai.reasoning;
-            if (typeof reasoning === "string") {
-              fullThinking = reasoning;
+          } else if (chunk.type === "reasoning") {
+            // Handle reasoning chunks
+            if (chunk.textDelta) {
+              fullThinking += chunk.textDelta;
               await ctx.runMutation(api.messages.updateBySlug, {
                 chatSlug: args.chatSlug,
                 messageSlug: args.messageSlug,
                 content: fullText,
-                thinking: fullThinking,
+                thinking: stripThinkTags(fullThinking),
               });
+            }
+          } else if (chunk.type === "step-finish") {
+            console.log("Step finish:", chunk, Object.keys(chunk));
+            // Handle OpenAI native reasoning (overrides extracted thinking)
+            if (chunk.providerMetadata?.openai?.reasoning) {
+              const reasoning = chunk.providerMetadata.openai.reasoning;
+              if (typeof reasoning === "string") {
+                fullThinking = reasoning;
+                await ctx.runMutation(api.messages.updateBySlug, {
+                  chatSlug: args.chatSlug,
+                  messageSlug: args.messageSlug,
+                  content: stripThinkTags(fullText),
+                  thinking: fullThinking,
+                });
+              }
+            }
+            // Handle reasoning from extractReasoningMiddleware (use if we don't have extracted thinking)
+            else if (chunk?.providerMetadata?.reasoning && !fullThinking) {
+              const reasoning = chunk.providerMetadata.reasoning;
+              if (typeof reasoning === "string") {
+                fullThinking = stripThinkTags(reasoning);
+                await ctx.runMutation(api.messages.updateBySlug, {
+                  chatSlug: args.chatSlug,
+                  messageSlug: args.messageSlug,
+                  content: stripThinkTags(fullText),
+                  thinking: fullThinking,
+                });
+              }
             }
           }
         }
@@ -208,22 +284,28 @@ export const generateResponse = action({
           messageId: args.messageSlug,
         });
 
-        return { content: fullText, thinking: fullThinking };
+        return {
+          content: stripThinkTags(fullText),
+          thinking: fullThinking || undefined,
+        };
       } else {
         const { textStream } = streamText({
           model,
           messages,
           maxRetries: 0,
-          onError: (error) => {
-            throw new ConvexError(
+          onError: async (error) => {
+            void (await throwError(
+              ctx,
               "RequestError",
               "Error occurred streaming text for model.",
               {
                 request: error.error,
                 provider: selectedProvider,
                 model: args.modelId,
-              }
-            );
+              },
+              args.chatSlug,
+              args.messageSlug
+            ));
           },
         });
 

@@ -5,13 +5,14 @@ import { Doc } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import ReactMarkdown from "react-markdown";
-import { Copy, FileText, RotateCcw, Trash2, Check, Edit2, Brain, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, FileText, RotateCcw, Trash2, Check, Edit2 } from "lucide-react";
 import { markdownToTxt } from "markdown-to-txt";
 
 import { cn } from "lib/utils";
 import { CodeBlock } from "components/code-block";
 import { Button } from "components/ui/button";
 import { MessageEditor } from "components/chat/message-editor";
+import { ThinkingDisplay } from "components/chat/thinking-display";
 import { llms } from "lib/ai/providers";
 import { useAIGeneration } from "state/ai";
 
@@ -34,7 +35,6 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   const [deleteTimeout, setDeleteTimeout] = useState<NodeJS.Timeout | null>(
     null
   );
-  const [showReasoning, setShowReasoning] = useState(false);
 
   const user = useQuery(api.auth.loggedInUser);
   const messages = useQuery(api.messages.listBySlug, { chatSlug });
@@ -381,48 +381,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
 
             {/* Reasoning section - only show if model has reasoning */}
             {hasReasoning && (
-              <div className="mt-4 border-t border-border/20 pt-4">
-                <button
-                  onClick={() => setShowReasoning(!showReasoning)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all duration-200 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent hover:border-border/50"
-                >
-                  <Brain className="w-4 h-4" />
-                  <span>Reasoning</span>
-                  {showReasoning ? (
-                    <ChevronUp className="w-4 h-4 ml-1" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 ml-1" />
-                  )}
-                </button>
-                
-                {showReasoning && (
-                  <div className="mt-3 p-4 rounded-lg bg-secondary/30 border border-border/30">
-                    <div className="prose prose-sm max-w-none font-mono text-sm text-muted-foreground">
-                      <ReactMarkdown
-                        components={{
-                          p: ({ children }) => (
-                            <p className="mb-2 leading-relaxed break-words last:mb-0">
-                              {children}
-                            </p>
-                          ),
-                          code: ({ children }) => (
-                            <code className="px-1 py-0.5 rounded text-xs bg-muted/50">
-                              {children}
-                            </code>
-                          ),
-                          pre: ({ children }) => (
-                            <pre className="p-2 mt-2 mb-2 overflow-x-auto rounded bg-muted/30">
-                              {children}
-                            </pre>
-                          ),
-                        }}
-                      >
-                        {message.thinking}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ThinkingDisplay thinking={message.thinking!} messageId={message._id} />
             )}
 
             {/* Action buttons and model info - only show on hover */}

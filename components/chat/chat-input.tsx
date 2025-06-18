@@ -133,6 +133,7 @@ export function ChatInput({
       const messageHistory =
         messages
           .filter((msg) => msg.content.trim() !== "")
+          .filter((msg) => msg.type !== "error")
           .map((msg) => ({
             role: msg.role,
             content: msg.content,
