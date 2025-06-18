@@ -25,12 +25,6 @@ const nextConfig = {
           chunks: 'all',
           priority: 10
         },
-        convex: {
-          name: 'convex',
-          test: /[\\/]node_modules[\\/](convex|@convex-dev)[\\/]/,
-          chunks: 'all',
-          priority: 10
-        }
       }
     };
     

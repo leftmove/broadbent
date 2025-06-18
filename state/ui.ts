@@ -14,6 +14,10 @@ interface UIState {
   input: {
     hasContent: boolean; // Whether the input has any text
   };
+  search: {
+    enabled: boolean; // Whether web search is enabled
+    isSearching: boolean; // Whether AI is currently searching
+  };
   // Example for future expansion:
   // panels: {
   //   rightPanelOpen: boolean;
@@ -30,6 +34,10 @@ const DEFAULT_UI_STATE: UIState = {
   modals: {},
   input: {
     hasContent: false,
+  },
+  search: {
+    enabled: false,
+    isSearching: false,
   },
 };
 
@@ -59,6 +67,10 @@ if (typeof window !== "undefined") {
         input: {
           ...DEFAULT_UI_STATE.input,
           ...parsed.input,
+        },
+        search: {
+          ...DEFAULT_UI_STATE.search,
+          ...parsed.search,
         },
       });
     } catch (e) {
@@ -204,6 +216,18 @@ export const useUIState = () => {
     // Direct access to input state for convenience
     inputHasContent: currentState.input.hasContent,
     setInputHasContent,
+
+    // Direct access to search state for convenience  
+    searchEnabled: currentState.search.enabled,
+    isSearching: currentState.search.isSearching,
+    setSearchEnabled: (enabled: boolean) => {
+      uiState.search.enabled.set(enabled);
+      persistState();
+    },
+    setIsSearching: (searching: boolean) => {
+      uiState.search.isSearching.set(searching);
+      // Don't persist searching state as it's transient
+    },
 
     // Generic methods
     setUIState,

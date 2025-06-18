@@ -125,6 +125,11 @@ export const updateBySlug = mutation({
     content: v.string(),
     thinking: v.optional(v.string()),
     type: v.optional(v.union(v.literal("error"), v.literal("normal"))),
+    sources: v.optional(v.array(v.object({
+      title: v.string(),
+      url: v.string(),
+      excerpt: v.optional(v.string()),
+    }))),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -153,6 +158,7 @@ export const updateBySlug = mutation({
       content: args.content,
       thinking: args.thinking,
       type: args.type,
+      sources: args.sources,
     });
 
     return args.messageSlug;

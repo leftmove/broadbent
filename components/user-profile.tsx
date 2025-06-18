@@ -95,20 +95,26 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
   if (collapsed) {
     return (
       <div className="px-1 py-2 transition-all duration-150 ease-in-out">
-        <button
-          className="w-10 h-10 mx-auto rounded-full focus:outline-none"
-          onClick={handleToggleExpand}
-        >
-          <Avatar className="w-10 h-10 border border-border">
-            <AvatarImage
-              src={currentAccount.image || ""}
-              alt={currentAccount.name}
-            />
-            <AvatarFallback>
-              {getInitials(currentAccount.name, currentAccount.email)}
-            </AvatarFallback>
-          </Avatar>
-        </button>
+        <div className="relative group">
+          <button
+            className="w-10 h-10 mx-auto transition-all duration-200 rounded-full focus:outline-none hover:scale-105"
+            onClick={handleToggleExpand}
+          >
+            <Avatar className="w-10 h-10 transition-all duration-200 border-2 shadow-sm border-border/50 hover:border-primary/40">
+              <AvatarImage
+                src={currentAccount.image || ""}
+                alt={currentAccount.name}
+              />
+              <AvatarFallback className="text-sm font-medium bg-gradient-to-br from-primary/20 to-primary/40">
+                {getInitials(currentAccount.name, currentAccount.email)}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+          {/* Tooltip */}
+          <div className="absolute z-50 px-2 py-1 ml-2 text-xs transition-opacity duration-200 -translate-y-1/2 rounded opacity-0 pointer-events-none left-full top-1/2 bg-foreground text-background group-hover:opacity-100 whitespace-nowrap">
+            {currentAccount.name}
+          </div>
+        </div>
       </div>
     );
   }
@@ -117,14 +123,14 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
     <div className="px-2 py-2 transition-all duration-150 ease-in-out">
       <button
         onClick={handleToggleExpand}
-        className="flex items-center w-full p-2 space-x-3 rounded-lg hover:bg-secondary/50 focus:outline-none"
+        className="flex items-center w-full p-3 space-x-3 transition-all duration-200 border border-transparent rounded-lg hover:bg-secondary/60 focus:outline-none hover:border-secondary/40"
       >
-        <Avatar className="w-10 h-10 border border-border">
+        <Avatar className="w-10 h-10 border-2 shadow-sm border-border/50">
           <AvatarImage
             src={currentAccount.image || ""}
             alt={currentAccount.name}
           />
-          <AvatarFallback>
+          <AvatarFallback className="text-sm font-medium bg-gradient-to-br from-primary/20 to-primary/40">
             {getInitials(currentAccount.name, currentAccount.email)}
           </AvatarFallback>
         </Avatar>
@@ -132,13 +138,13 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
           <p className="text-sm font-medium leading-none truncate">
             {currentAccount.name}
           </p>
-          <p className="h-4 text-xs leading-none truncate text-muted-foreground">
+          <p className="h-4 mt-1 text-xs leading-none truncate text-muted-foreground">
             {currentAccount.email}
           </p>
         </div>
         <ChevronUp
           className={cn(
-            "h-4 w-4 text-muted-foreground transition-transform duration-150 ease-in-out",
+            "h-4 w-4 text-muted-foreground transition-transform duration-200 ease-in-out",
             !expanded && "rotate-180"
           )}
         />
@@ -151,19 +157,19 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
           >
             <Button
               variant="ghost"
               size="sm"
-              className="justify-start w-full px-3 text-sm text-left"
+              className="justify-start w-full px-3 text-sm text-left transition-all duration-200 border border-transparent h-9 hover:bg-secondary/60 hover:border-secondary/40"
               onClick={handleToggleAccountSwitcher}
             >
               <Users className="w-4 h-4 mr-2" />
               <span>Switch account</span>
               <ChevronUp
                 className={cn(
-                  "ml-auto h-4 w-4 text-muted-foreground transition-transform",
+                  "ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200",
                   !showAccountSwitcher && "rotate-180"
                 )}
               />
@@ -172,14 +178,14 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
             <AnimatePresence>
               {showAccountSwitcher && (
                 <motion.div
-                  className="pl-2 ml-2 overflow-hidden border-l border-border will-change-transform"
+                  className="pl-3 ml-2 overflow-hidden overflow-y-auto border-l-2 border-border/60 will-change-transform max-h-32"
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                 >
                   {isValidatingAccount ? (
-                    <div className="flex justify-center py-2">
+                    <div className="flex justify-center py-3">
                       <div className="w-4 h-4 border-2 rounded-full animate-spin border-primary border-t-transparent"></div>
                     </div>
                   ) : (
@@ -191,11 +197,13 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
                             key={account.id}
                             variant="ghost"
                             size="sm"
-                            className="justify-start w-full h-auto px-3 py-1 my-1 text-xs text-left"
+                            className="justify-start w-full h-auto px-3 py-2 my-1 text-xs text-left transition-all duration-200 border border-transparent rounded-md hover:bg-secondary/60 hover:border-secondary/40"
                             onClick={() => handleSwitchAccount(account.id)}
                           >
                             <div className="flex flex-col items-start">
-                              <span>{account.name}</span>
+                              <span className="font-medium">
+                                {account.name}
+                              </span>
                               <span className="text-xs text-muted-foreground">
                                 {account.email}
                               </span>
@@ -206,7 +214,7 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="justify-start w-full px-3 mt-1 text-xs text-left text-primary"
+                        className="justify-start w-full px-3 mt-2 text-xs text-left transition-all duration-200 border border-transparent rounded-md text-primary hover:bg-primary/10 hover:border-primary/20"
                         onClick={() =>
                           (window.location.href = "/settings/profile")
                         }
@@ -220,12 +228,12 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
               )}
             </AnimatePresence>
 
-            <div className="my-1 border-t border-border"></div>
+            <div className="my-2 border-t border-border/60"></div>
 
             <Button
               variant="ghost"
               size="sm"
-              className="justify-start w-full px-3 text-sm text-left text-destructive hover:bg-destructive/10 dark:text-red-400 dark:hover:bg-red-950/30"
+              className="justify-start w-full px-3 text-sm text-left transition-all duration-200 border border-transparent text-destructive hover:bg-destructive/10 dark:text-red-400 dark:hover:bg-red-950/30 hover:border-destructive/20 h-9"
               onClick={handleSignOut}
             >
               <LogOut className="w-4 h-4 mr-2" />

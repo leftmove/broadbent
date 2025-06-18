@@ -13,6 +13,7 @@ import { CodeBlock } from "components/code-block";
 import { Button } from "components/ui/button";
 import { MessageEditor } from "components/chat/message-editor";
 import { ThinkingDisplay } from "components/chat/thinking-display";
+import { MessageSources } from "components/chat/message-sources";
 import { llms } from "lib/ai/providers";
 import { useAIGeneration } from "state/ai";
 
@@ -378,6 +379,11 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                 {message.content}
               </ReactMarkdown>
             </div>
+
+            {/* Sources section - only show if message has sources */}
+            {message.sources && message.sources.length > 0 && (
+              <MessageSources sources={message.sources} />
+            )}
 
             {/* Reasoning section - only show if model has reasoning */}
             {hasReasoning && (

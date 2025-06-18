@@ -31,6 +31,11 @@ const applicationTables = {
     userId: v.id("users"),
     thinking: v.optional(v.string()),
     modelId: v.optional(v.string()),
+    sources: v.optional(v.array(v.object({
+      title: v.string(),
+      url: v.string(),
+      excerpt: v.optional(v.string()),
+    }))),
   })
     .index("by_chat", ["chatId"])
     .searchIndex("search_messages", {

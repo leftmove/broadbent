@@ -75,7 +75,7 @@ export function ThinkingDisplay({
 
         {showReasoning && (
           <button
-            onClick={copyToClipboard}
+            onClick={() => void copyToClipboard()}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-all duration-200 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 rounded-full hover:bg-secondary/30"
           >
             {copied ? (

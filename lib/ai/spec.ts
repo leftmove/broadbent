@@ -478,11 +478,10 @@ export const anthropic = {
   models: [
     {
       name: "Claude Opus 4",
-      id: "claude-opus-4",
+      id: "claude-opus-4-20250514",
       description: "Anthropic's most powerful model. Highest level of intelligence and capability.",
       capabilities: {
-        thinking: true,
-        tool: true
+        thinking: true
       },
       input: {
         text: true,
@@ -502,11 +501,10 @@ export const anthropic = {
     },
     {
       name: "Claude Sonnet 4",
-      id: "claude-sonnet-4",
+      id: "claude-sonnet-4-20250514",
       description: "Effective model with exceptional reasoning capabilities. High intelligence and balanced performance",
       capabilities: {
-        thinking: true,
-        tool: true
+        thinking: true
       },
       input: {
         text: true,
@@ -529,8 +527,7 @@ export const anthropic = {
       id: "claude-3-7-sonnet-latest",
       description: "High-performance and high-intelligence model with early extended thinking. Extended thinking is toggleable.",
       capabilities: {
-        thinking: true,
-        tool: true
+        thinking: true
       },
       input: {
         text: true,
@@ -552,9 +549,7 @@ export const anthropic = {
       name: "Claude Sonnet 3.5",
       id: "claude-3-5-sonnet-latest",
       description: "Previous, less powerful intelligence model. On the higher end of intelligence and capability.",
-      capabilities: {
-        tool: true
-      },
+      capabilities: null,
       input: {
         text: true,
         image: true
@@ -575,9 +570,7 @@ export const anthropic = {
       name: "Claude Haiku 3.5",
       id: "claude-3-5-haiku-latest",
       description: "Fastest model. Less powerful, but has mid-level intelligence at blazing speeds.",
-      capabilities: {
-        tool: true
-      },
+      capabilities: null,
       input: {
         text: true,
         image: true
@@ -598,9 +591,7 @@ export const anthropic = {
       name: "Claude Opus 3",
       id: "claude-3-opus-latest",
       description: "Previous power model. Top-level intelligence, fluency, and understanding.",
-      capabilities: {
-        tool: true
-      },
+      capabilities: null,
       input: {
         text: true,
         image: true
@@ -619,11 +610,9 @@ export const anthropic = {
     },
     {
       name: "Claude Haiku 3",
-      id: "claude-3-haiku-latest",
+      id: "claude-3-haiku-20240307",
       description: "Least powerful model, but fast. Quick and accurate targeted performance.",
-      capabilities: {
-        tool: true
-      },
+      capabilities: null,
       input: {
         text: true,
         image: true
@@ -1138,47 +1127,6 @@ export const google = {
         },
         {
           output: 8192
-        }
-      ]
-    },
-    {
-      name: "Imagen 3",
-      id: "imagen-3.0-generate-002",
-      description: "Google's highest quality text-to-image model, capable of generating images with even better detail, richer lighting and fewer distracting artifacts than our previous models.",
-      capabilities: null,
-      input: {
-        text: true
-      },
-      output: {
-        image: true
-      },
-      context: [
-        {
-          unit: "image"
-        },
-        {
-          output: 4
-        }
-      ]
-    },
-    {
-      name: "Veo 2",
-      id: "veo-2.0-generate-001",
-      description: "Google's best video model, offering high quality text- and image-to-video. Capable of generating detailed videos, and capturing nuance within prompts.",
-      capabilities: null,
-      input: {
-        text: true,
-        image: true
-      },
-      output: {
-        video: true
-      },
-      context: [
-        {
-          unit: "video"
-        },
-        {
-          output: 2
         }
       ]
     }

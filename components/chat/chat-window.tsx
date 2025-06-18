@@ -6,6 +6,8 @@ import { api } from "convex/_generated/api";
 
 import { ChatMessage } from "components/chat/chat-message";
 import { ChatInput } from "components/chat/chat-input";
+import { ChatNavigator } from "components/chat/chat-navigator";
+import { SearchProgressBar } from "components/chat/search-progress-bar";
 import { cn } from "lib/utils";
 
 interface ChatWindowProps {
@@ -118,8 +120,10 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
           "absolute w-full max-w-4xl px-4 transform -translate-x-1/2 bottom-4 transition-all duration-300 left-1/2"
         )}
       >
+        <SearchProgressBar />
         <ChatInput chatSlug={chatSlug} />
       </div>
+      <ChatNavigator chatSlug={chatSlug} />
     </div>
   );
 }

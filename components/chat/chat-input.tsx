@@ -8,10 +8,10 @@ import { api } from "convex/_generated/api";
 import {
   ChevronDown,
   ChevronUp,
-  Send,
   ArrowUp,
   Brain,
   Square,
+  Globe,
 } from "lucide-react";
 
 import { useChatState } from "state/chat";
@@ -58,7 +58,7 @@ export function ChatInput({
   const { setSelectedChatSlug } = useChatState();
   const { generateResponse, streaming, setError, clearError, stopGeneration } =
     useAIGeneration();
-  const { setInputHasContent } = useUIState();
+  const { setInputHasContent, searchEnabled, isSearching, setSearchEnabled, setIsSearching } = useUIState();
 
   const createChat = useMutation(api.chats.create);
   const sendMessage = useMutation(api.messages.sendBySlug);
@@ -145,7 +145,8 @@ export function ChatInput({
         assistantMessageId,
         message,
         userSettings.selectedModel as ModelId,
-        messageHistory
+        messageHistory,
+        searchEnabled
       ).catch(async (error: any) => {
         const errorMessage = handleError(error, {
           provider: currentProvider.id,
@@ -231,7 +232,10 @@ export function ChatInput({
             <div className="flex items-center gap-2">
               <span className="font-medium">{currentModel.name}</span>
               {currentModel.capabilities?.thinking && (
-                <div className="flex items-center justify-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                <div
+                  className="flex items-center justify-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30"
+                  title="Reasoning capabilities"
+                >
                   <Brain className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
                 </div>
               )}
@@ -242,6 +246,32 @@ export function ChatInput({
               <ChevronDown className="w-4 h-4 ml-1 transition-transform duration-200" />
             )}
           </button>
+
+          {/* Search Toggle Button */}
+          {currentModel.capabilities?.tool && (
+            <button
+              onClick={() => setSearchEnabled(!searchEnabled)}
+              className={cn(
+                "flex items-center justify-center w-8 h-8 transition-all duration-200 rounded-lg border relative",
+                searchEnabled
+                  ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                  : "bg-transparent text-blue-500 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-950"
+              )}
+              title={
+                searchEnabled ? "Disable web search" : "Enable web search"
+              }
+            >
+              <Globe className={cn(
+                "w-4 h-4 transition-transform duration-200",
+                isSearching && "animate-pulse"
+              )} />
+              {isSearching && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-current rounded-full animate-ping" />
+                </div>
+              )}
+            </button>
+          )}
         </div>
 
         <div
@@ -253,6 +283,27 @@ export function ChatInput({
           )}
         >
           <div className="overflow-y-auto max-h-[32rem] p-2">
+            {/* Icon Key */}
+            <div className="flex justify-end pr-2 mb-4">
+              <div className="flex items-center gap-4 px-3 py-2 border rounded-lg bg-secondary/30 border-border/20">
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                    <Brain className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    Reasoning
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center w-4 h-4 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                    <Globe className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    Web Search
+                  </span>
+                </div>
+              </div>
+            </div>
             {(() => {
               const ENABLE_DEMOS = true; // Toggle this to show/hide demos section
               const DEMO_PROVIDERS = ["openai", "xai", "groq"];
@@ -273,7 +324,7 @@ export function ChatInput({
                           {provider.name}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-2 px-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-2 px-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                         {provider.models.map((model) => {
                           const isSelected = currentModel.id === model.id;
 
@@ -296,11 +347,24 @@ export function ChatInput({
                                     <div className="font-medium text-foreground">
                                       {model.name}
                                     </div>
-                                    {model.capabilities?.thinking && (
-                                      <div className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30">
-                                        <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                                      </div>
-                                    )}
+                                    <div className="flex items-center gap-1">
+                                      {model.capabilities?.thinking && (
+                                        <div
+                                          className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30"
+                                          title="Reasoning capabilities"
+                                        >
+                                          <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                        </div>
+                                      )}
+                                      {model.capabilities?.tool && (
+                                        <div
+                                          className="flex items-center justify-center w-5 h-5 bg-blue-100 rounded-full dark:bg-blue-900/30"
+                                          title="Web search capabilities"
+                                        >
+                                          <Globe className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                   {model.description && (
                                     <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
@@ -388,11 +452,24 @@ export function ChatInput({
                                             <div className="font-medium text-foreground">
                                               {model.name}
                                             </div>
-                                            {model.capabilities?.thinking && (
-                                              <div className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30">
-                                                <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                                              </div>
-                                            )}
+                                            <div className="flex items-center gap-1">
+                                              {model.capabilities?.thinking && (
+                                                <div
+                                                  className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30"
+                                                  title="Reasoning capabilities"
+                                                >
+                                                  <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                                </div>
+                                              )}
+                                              {model.capabilities?.tool && (
+                                                <div
+                                                  className="flex items-center justify-center w-5 h-5 bg-blue-100 rounded-full dark:bg-blue-900/30"
+                                                  title="Web search capabilities"
+                                                >
+                                                  <Globe className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                                                </div>
+                                              )}
+                                            </div>
                                           </div>
                                           {model.description && (
                                             <div className="mt-1 text-xs text-muted-foreground line-clamp-2">

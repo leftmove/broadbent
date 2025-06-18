@@ -6,6 +6,7 @@ import { headerPhrase } from "lib/phrases";
 import { cn } from "lib/utils";
 import { useUIState } from "state/ui";
 import { ChatInput } from "components/chat/chat-input";
+import { SearchProgressBar } from "components/chat/search-progress-bar";
 
 export function HomePlaceholder() {
   const [prompt, setPrompt] = useState("");
@@ -209,6 +210,7 @@ export function HomePlaceholder() {
             isTransitioning ? "transform translate-y-4 scale-105" : ""
           }`}
         >
+          <SearchProgressBar />
           <ChatInput chatSlug="" isHomepage={true} className="p-3" />
         </div>
       </div>
