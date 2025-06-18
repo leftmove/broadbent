@@ -35,6 +35,7 @@ export const sendBySlug = mutation({
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
     thinking: v.optional(v.string()),
+    modelId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -58,6 +59,7 @@ export const sendBySlug = mutation({
       role: args.role,
       userId,
       thinking: args.thinking,
+      modelId: args.modelId,
     });
   },
 });
@@ -206,5 +208,87 @@ export const listBySlug = query({
       .withIndex("by_chat", (q) => q.eq("chatId", chat._id))
       .order("asc")
       .collect();
+  },
+});
+
+export const deleteMessage = mutation({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const message = await ctx.db.get(args.messageId);
+    if (!message || message.userId !== userId) {
+      throw new Error("Message not found or access denied");
+    }
+
+    await ctx.db.delete(args.messageId);
+    return args.messageId;
+  },
+});
+
+export const editMessage = mutation({
+  args: {
+    messageId: v.id("messages"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const message = await ctx.db.get(args.messageId);
+    if (!message || message.userId !== userId) {
+      throw new Error("Message not found or access denied");
+    }
+
+    await ctx.db.patch(args.messageId, {
+      content: args.content,
+    });
+
+    return args.messageId;
+  },
+});
+
+export const searchMessages = query({
+  args: {
+    query: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    if (!args.query.trim()) {
+      return [];
+    }
+
+    // Search messages using full text search
+    const searchResults = await ctx.db
+      .query("messages")
+      .withSearchIndex("search_messages", (q) => 
+        q.search("content", args.query)
+      )
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .take(50);
+
+    // Get the associated chats for each message
+    const messagesWithChats = await Promise.all(
+      searchResults.map(async (message) => {
+        const chat = await ctx.db.get(message.chatId);
+        return {
+          ...message,
+          chat,
+        };
+      })
+    );
+
+    return messagesWithChats.filter(msg => msg.chat !== null);
   },
 });

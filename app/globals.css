@@ -62,7 +62,7 @@
   h4,
   h5,
   h6 {
-    @apply font-semibold;
+    @apply font-serif font-semibold;
   }
 
   .font-mono {

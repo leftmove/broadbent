@@ -29,7 +29,13 @@ const applicationTables = {
     type: v.optional(v.union(v.literal("error"), v.literal("normal"))),
     userId: v.id("users"),
     thinking: v.optional(v.string()),
-  }).index("by_chat", ["chatId"]),
+    modelId: v.optional(v.string()),
+  })
+    .index("by_chat", ["chatId"])
+    .searchIndex("search_messages", {
+      searchField: "content",
+      filterFields: ["role", "type"],
+    }),
 
   settings: defineTable({
     userId: v.id("users"),

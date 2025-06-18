@@ -98,6 +98,7 @@ export function ChatInput({
         chatSlug: currentChatSlug,
         content: "",
         role: "assistant",
+        modelId: currentModel.id,
       });
       // Prepare message history
       const messageHistory =

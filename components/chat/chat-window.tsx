@@ -70,7 +70,11 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
       >
         <div className="w-11/12 mx-auto space-y-6">
           {messages.map((message) => (
-            <ChatMessage key={message._id} message={message} />
+            <ChatMessage
+              key={message._id}
+              message={message}
+              chatSlug={chatSlug}
+            />
           ))}
 
           {/* Streaming Message */}

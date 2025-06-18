@@ -132,3 +132,31 @@ export const getAllApiKeys = query({
     };
   },
 });
+
+export const setApiKey = mutation({
+  args: {
+    userId: v.id("users"),
+    provider: providersValidator,
+    keyValue: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("apiKeys")
+      .withIndex("by_user_provider", (q) =>
+        q.eq("userId", args.userId).eq("provider", args.provider)
+      )
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { keyValue: args.keyValue });
+    } else {
+      await ctx.db.insert("apiKeys", {
+        userId: args.userId,
+        provider: args.provider,
+        keyValue: args.keyValue,
+      });
+    }
+    return null;
+  },
+});

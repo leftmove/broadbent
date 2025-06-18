@@ -82,7 +82,7 @@ export const INVALID_MODEL = (model?: string) => {
 
 The model **${modelName}** is not available or does not exist.
 
-This is likely due to an error in the configuration. For now, you can try and switch to a different model.
+This is likely due to an error in our configuration. For now, you can try and switch to a different model.
 `;
 };
 
@@ -92,7 +92,7 @@ export const INVALID_PROVIDER = (provider?: string) => {
 
 The AI provider **${providerName}** is not supported or does not exist.
     
-This is likely due to an error in the configuration. For now, you can try and switch to a different provider.`;
+This is likely due to an error in our configuration. For now, you can try and switch to a different provider.`;
 };
 
 export const RATE_LIMIT = (provider?: AIProvider) => {
@@ -101,9 +101,7 @@ export const RATE_LIMIT = (provider?: AIProvider) => {
 
 The API key for **${providerName}** has exceeded its usage allocation.
 
-You have either reached a temporary limit, or your billing has expired.
-
-**Resolution**
+You have either reached a temporary limit, or your billing has expired. Here are a couple of options going forward.
 
 - Wait for the limit to reset
 - Upgrade your subscription plan or add credits
@@ -111,26 +109,4 @@ You have either reached a temporary limit, or your billing has expired.
 
 For now, you can try and switch to a different provider/model.
 `;
-};
-
-export const INVALID_API_KEY = (provider?: AIProvider) => {
-  const providerName = provider
-    ? llms.provider(provider).name
-    : "the selected provider";
-  return `## API Key Authentication Failed
-
-The **${providerName}** API key is invalid or has expired.
-
-**Common issues:**
-- Transcription errors during key entry
-- Revoked or expired authentication credentials
-- Insufficient key permissions for the requested operation
-
-**Resolution process:**
-1. Navigate to **Settings** → **API Keys**
-2. **Generate a new key** from the ${providerName} dashboard
-3. **Copy and paste carefully** to avoid formatting errors
-4. **Test the configuration** with a simple request
-
-**Best practice:** Generate fresh API keys when authentication issues occur.`;
 };

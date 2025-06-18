@@ -5,8 +5,7 @@ import { api } from "convex/_generated/api";
 
 import { Key, Check, Eye, EyeOff, Loader2 } from "lucide-react";
 
-import { useSettingsState } from "state/settings";
-import { AIProvider, providerModels } from "lib/ai/providers";
+import { AIProvider } from "lib/ai/providers";
 import { cn } from "lib/utils";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
@@ -199,9 +198,9 @@ const providersInfo: Record<
     apiKeyName: string;
     apiKeyPlaceholder: string;
     style: {
-      background: string;
       default: string;
       selected: string;
+      background: string;
     };
   }
 > = {
@@ -212,25 +211,21 @@ const providersInfo: Record<
     apiKeyName: "OpenAI API Key",
     apiKeyPlaceholder: "sk-...",
     style: {
-      background: "bg-emerald-50",
-      default:
-        "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
-      selected:
-        "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300",
+      default: "border-gray-200 hover:border-gray-300 bg-white",
+      selected: "border-blue-500 bg-blue-50 ring-2 ring-blue-500/20",
+      background: "bg-blue-50",
     },
   },
   anthropic: {
     name: "Anthropic",
     logo: AnthropicIcon,
-    href: "https://console.anthropic.com/",
+    href: "https://console.anthropic.com/account/keys",
     apiKeyName: "Anthropic API Key",
     apiKeyPlaceholder: "sk-ant-...",
     style: {
+      default: "border-gray-200 hover:border-gray-300 bg-white",
+      selected: "border-orange-500 bg-orange-50 ring-2 ring-orange-500/20",
       background: "bg-orange-50",
-      default:
-        "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
-      selected:
-        "border-orange-500 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950 dark:text-orange-300",
     },
   },
   google: {
@@ -238,27 +233,23 @@ const providersInfo: Record<
     logo: GoogleIcon,
     href: "https://aistudio.google.com/app/apikey",
     apiKeyName: "Google API Key",
-    apiKeyPlaceholder: "AI...",
+    apiKeyPlaceholder: "AIza...",
     style: {
-      background: "bg-blue-50",
-      default:
-        "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
-      selected:
-        "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-300",
+      default: "border-gray-200 hover:border-gray-300 bg-white",
+      selected: "border-green-500 bg-green-50 ring-2 ring-green-500/20",
+      background: "bg-green-50",
     },
   },
   xai: {
     name: "xAI",
     logo: GrokIcon,
-    href: "https://x.ai/",
+    href: "https://console.x.ai/",
     apiKeyName: "xAI API Key",
-    apiKeyPlaceholder: "...",
+    apiKeyPlaceholder: "xai-...",
     style: {
-      background: "bg-gray-100",
-      default:
-        "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
-      selected:
-        "border-gray-800 bg-gray-100 text-gray-900 dark:border-gray-300 dark:bg-gray-900 dark:text-gray-100",
+      default: "border-gray-200 hover:border-gray-300 bg-white",
+      selected: "border-gray-800 bg-gray-50 ring-2 ring-gray-800/20",
+      background: "bg-gray-50",
     },
   },
   groq: {
@@ -268,11 +259,9 @@ const providersInfo: Record<
     apiKeyName: "Groq API Key",
     apiKeyPlaceholder: "gsk_...",
     style: {
-      background: "bg-gray-100",
-      default:
-        "border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800",
-      selected:
-        "border-orange-500 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950 dark:text-orange-300",
+      default: "border-gray-200 hover:border-gray-300 bg-white",
+      selected: "border-red-500 bg-red-50 ring-2 ring-red-500/20",
+      background: "bg-red-50",
     },
   },
 };
@@ -281,12 +270,17 @@ export default function ApiKeysPage() {
   const user = useQuery(api.auth.loggedInUser);
   const userId = user?._id;
 
-  // Convex integration for provider preference
+  // Convex queries and mutations
   const providerPref = useQuery(
     api.settings.getProvider,
     userId ? { userId } : "skip"
   );
+  const apiKeys = useQuery(
+    api.settings.getAllApiKeys,
+    userId ? { userId } : "skip"
+  );
   const setProviderPref = useMutation(api.settings.setProvider);
+  const setApiKeyMutation = useMutation(api.settings.setApiKey);
 
   const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(
     null
@@ -301,10 +295,7 @@ export default function ApiKeysPage() {
     groq: false,
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [showApiKeySection, setShowApiKeySection] = useState(false);
-
-  // Local state for API keys and provider
-  const { apiKeys, setApiKey } = useSettingsState();
+  const [currentApiKey, setCurrentApiKey] = useState("");
 
   useEffect(() => {
     if (providerPref) {
@@ -312,11 +303,20 @@ export default function ApiKeysPage() {
     }
   }, [providerPref]);
 
+  useEffect(() => {
+    if (selectedProvider && apiKeys) {
+      setCurrentApiKey(apiKeys[selectedProvider] || "");
+    }
+  }, [selectedProvider, apiKeys]);
+
   const handleProviderChange = (value: AIProvider) => {
     setSelectedProvider(value);
-    setShowApiKeySection(true);
     if (userId) {
       void setProviderPref({ userId, provider: value });
+    }
+    // Set the current API key when switching providers
+    if (apiKeys) {
+      setCurrentApiKey(apiKeys[value] || "");
     }
   };
 
@@ -328,18 +328,24 @@ export default function ApiKeysPage() {
   };
 
   const handleApiKeyChange = (value: string) => {
-    if (selectedProvider) {
-      setApiKey(selectedProvider, value);
-    }
+    setCurrentApiKey(value);
   };
 
-  const handleSave = () => {
-    setIsSaving(true);
+  const handleSave = async () => {
+    if (!userId || !selectedProvider) return;
 
-    // Simulate save delay and indicate success through button state
-    setTimeout(() => {
+    setIsSaving(true);
+    try {
+      await setApiKeyMutation({
+        userId,
+        provider: selectedProvider,
+        keyValue: currentApiKey,
+      });
+    } catch (error) {
+      console.error("Failed to save API key:", error);
+    } finally {
       setIsSaving(false);
-    }, 500);
+    }
   };
 
   return (
@@ -447,7 +453,7 @@ export default function ApiKeysPage() {
                         <div className="relative flex-1">
                           <Input
                             id="apiKey"
-                            value={apiKeys[selectedProvider] || ""}
+                            value={currentApiKey}
                             type={
                               apiKeyVisibility[selectedProvider]
                                 ? "text"
@@ -480,7 +486,7 @@ export default function ApiKeysPage() {
                         </div>
                         <Button
                           type="button"
-                          onClick={handleSave}
+                          onClick={() => void handleSave()}
                           className="shrink-0"
                           disabled={isSaving}
                         >
@@ -494,7 +500,7 @@ export default function ApiKeysPage() {
                       </div>
                       <div className="flex flex-col justify-between gap-2 mt-2 sm:flex-row">
                         <p className="text-xs text-muted-foreground">
-                          Your API key is stored securely in your browser.
+                          Your API key is stored securely in the database.
                         </p>
                         <a
                           href={providersInfo[selectedProvider].href}
