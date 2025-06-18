@@ -11,7 +11,7 @@ export function AuthHeader({ title = "Broadbent", logo }: AuthHeaderProps) {
       {logo}
       <h1 className="text-5xl font-semibold tracking-tight">{title}</h1>
       <p className="mb-24 text-md text-muted-foreground">
-        The insanely great assistant.
+        A chat app with broad goals.
       </p>
       {/* <p className="mt-0 text-md text-muted-foreground">
         Be really fucking productive.

@@ -76,10 +76,24 @@ export function ChatInput({
       }
     })
     .setup(["shift", "enter"], () => {
-      setInput((prev) => {
-        const newValue = prev + "\n";
-        return newValue;
-      });
+      if (textareaRef.current) {
+        const textarea = textareaRef.current;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        
+        setInput((prev) => {
+          const newValue = prev.slice(0, start) + "\n" + prev.slice(end);
+          
+          // Set cursor position after the newline on next tick
+          setTimeout(() => {
+            if (textarea) {
+              textarea.selectionStart = textarea.selectionEnd = start + 1;
+            }
+          }, 0);
+          
+          return newValue;
+        });
+      }
     })
     .handler();
 
