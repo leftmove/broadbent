@@ -47,7 +47,7 @@ export default function RootLayout({
       <body className={`${switzer.variable} ${sentient.variable} font-sans`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

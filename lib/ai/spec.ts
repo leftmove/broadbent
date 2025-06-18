@@ -526,7 +526,7 @@ export const anthropic = {
     },
     {
       name: "Claude Sonnet 3.7",
-      id: "claude-3-7-sonnet",
+      id: "claude-3-7-sonnet-latest",
       description: "High-performance and high-intelligence model with early extended thinking. Extended thinking is toggleable.",
       capabilities: {
         thinking: true,
@@ -550,7 +550,7 @@ export const anthropic = {
     },
     {
       name: "Claude Sonnet 3.5",
-      id: "claude-3-5-sonnet",
+      id: "claude-3-5-sonnet-latest",
       description: "Previous, less powerful intelligence model. On the higher end of intelligence and capability.",
       capabilities: {
         tool: true
@@ -596,7 +596,7 @@ export const anthropic = {
     },
     {
       name: "Claude Opus 3",
-      id: "claude-3-opus",
+      id: "claude-3-opus-latest",
       description: "Previous power model. Top-level intelligence, fluency, and understanding.",
       capabilities: {
         tool: true
@@ -619,7 +619,7 @@ export const anthropic = {
     },
     {
       name: "Claude Haiku 3",
-      id: "claude-3-haiku",
+      id: "claude-3-haiku-latest",
       description: "Least powerful model, but fast. Quick and accurate targeted performance.",
       capabilities: {
         tool: true

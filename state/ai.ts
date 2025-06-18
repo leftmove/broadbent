@@ -17,6 +17,7 @@ type MessageHistory = Message[];
 export const useAIGeneration = () => {
   const [error, setError] = useState<CustomError | null>(null);
   const [streaming, setStreaming] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const generateResponseAction = useAction(api.ai.generateResponse);
 
   const clearError = useCallback(() => {
@@ -26,6 +27,14 @@ export const useAIGeneration = () => {
   const resetStreaming = useCallback(() => {
     setStreaming(false);
   }, []);
+
+  const stopGeneration = useCallback(() => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+      setStreaming(false);
+    }
+  }, [abortController]);
 
   const generateResponse = async (
     userId: Id<"users">,
@@ -37,6 +46,10 @@ export const useAIGeneration = () => {
   ): Promise<{ content: string; thinking?: string }> => {
     setError(null);
     setStreaming(true);
+    
+    // Create new abort controller for this generation
+    const controller = new AbortController();
+    setAbortController(controller);
 
     try {
       const result = await generateResponseAction({
@@ -52,8 +65,16 @@ export const useAIGeneration = () => {
       });
 
       setStreaming(false);
+      setAbortController(null);
       return result;
     } catch (error: any) {
+      // Check if error was due to abort
+      if (controller.signal.aborted) {
+        setStreaming(false);
+        setAbortController(null);
+        throw new CustomError("GenerationStopped", "Generation was stopped by user.");
+      }
+      
       if (error instanceof CustomError) {
         setError(error);
       } else {
@@ -64,6 +85,7 @@ export const useAIGeneration = () => {
         setError(customError);
       }
       setStreaming(false);
+      setAbortController(null);
       throw error;
     }
   };
@@ -75,5 +97,6 @@ export const useAIGeneration = () => {
     setError,
     clearError,
     resetStreaming,
+    stopGeneration,
   };
 };

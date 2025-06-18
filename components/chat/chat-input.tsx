@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ChevronDown, ChevronUp, Send, ArrowUp, Brain } from "lucide-react";
+import { ChevronDown, ChevronUp, Send, ArrowUp, Brain, Square } from "lucide-react";
 
 import { useChatState } from "state/chat";
 import { useAIGeneration } from "state/ai";
@@ -48,7 +48,7 @@ export function ChatInput({
     useQuery(api.messages.listBySlug, chatSlug ? { chatSlug } : "skip") || [];
 
   const { setSelectedChatSlug } = useChatState();
-  const { generateResponse, streaming, setError, clearError } =
+  const { generateResponse, streaming, setError, clearError, stopGeneration } =
     useAIGeneration();
   const { setInputHasContent } = useUIState();
 
@@ -58,7 +58,8 @@ export function ChatInput({
   const setSelectedModel = useMutation(api.settings.setSelectedModel);
 
   const currentModel =
-    collection.model(userSettings.selectedModel) || collection.model("gpt-4o");
+    collection.model(userSettings.selectedModel as ModelId) ||
+    collection.model(collection.provider(userSettings.provider).models[0].id);
   const currentProvider = collection.provider(currentModel.provider);
 
   const handleKeyboard = new Keyboard()
@@ -151,12 +152,33 @@ export function ChatInput({
     setIsModelSelectorOpen(false);
   };
 
+  const handleButtonClick = () => {
+    if (streaming) {
+      // Stop the current generation
+      stopGeneration();
+    } else if (input.trim() && !isSubmitting) {
+      // Send the message
+      void handleSubmit(input);
+    }
+  };
+
+  // Auto-resize textarea based on content
+  const autoResizeTextarea = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  };
+
   useEffect(() => {
     if (isHomepage && !input.trim()) {
       setInputHasContent(false);
     } else if (isHomepage && input.trim()) {
       setInputHasContent(true);
     }
+    
+    // Auto-resize textarea when input changes
+    autoResizeTextarea();
   }, [isHomepage, input]);
 
   return (
@@ -264,7 +286,7 @@ export function ChatInput({
             ))}
           </div>
         </div>
-        <div className="flex items-start h-20 gap-3 p-4 transition-all duration-200">
+        <div className="flex items-start min-h-20 gap-3 p-4 transition-all duration-200">
           <div className="relative flex items-center flex-1 group">
             <Textarea
               ref={textareaRef}
@@ -276,31 +298,35 @@ export function ChatInput({
               }}
               onKeyDown={handleKeyboard}
               placeholder={streaming ? "Streaming..." : inputPhrase()}
-              className="w-full h-16 px-0 text-sm leading-relaxed transition-all duration-200 bg-transparent border-0 outline-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
+              className="w-full min-h-16 px-0 text-sm leading-relaxed transition-all duration-200 bg-transparent border-0 outline-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
               disabled={isSubmitting || streaming}
             />
           </div>
           <div className="flex items-center pt-1">
             <Button
-              onClick={() => void handleSubmit(input)}
-              disabled={!input.trim() || isSubmitting || streaming}
+              onClick={handleButtonClick}
+              disabled={!streaming && (!input.trim() || isSubmitting)}
               size="sm"
               className={cn(
                 "relative overflow-hidden transition-all duration-300 rounded-full h-10 w-10 shrink-0 shadow-sm",
-                !input.trim() || isSubmitting || streaming
+                streaming
+                  ? "bg-red-500 text-white hover:bg-red-600 hover:scale-105 hover:shadow-md active:scale-95"
+                  : !input.trim() || isSubmitting
                   ? "bg-muted text-muted-foreground cursor-not-allowed"
                   : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 hover:shadow-md active:scale-95"
               )}
             >
               <div className="relative z-10 flex items-center justify-center">
                 {streaming ? (
+                  <Square className="w-4 h-4" />
+                ) : isSubmitting ? (
                   <div className="w-4 h-4 border-2 border-current rounded-full border-t-transparent animate-spin" />
                 ) : (
                   <ArrowUp className="w-4 h-4 transition-transform duration-200 group-hover:translate-y-[-1px]" />
                 )}
               </div>
               {/* Subtle shine effect on hover */}
-              {!(!input.trim() || isSubmitting || streaming) && (
+              {(streaming || (!input.trim() || isSubmitting)) ? null : (
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-500 ease-out"></div>
               )}
             </Button>

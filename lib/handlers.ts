@@ -43,6 +43,8 @@ export function requestHandler(
     case 401:
     case 403:
       return NO_API_KEY_SET(details.provider);
+    case 404:
+      return INVALID_RESOURCE(details.provider, details.model);
     case 429:
       return RATE_LIMIT(details.provider);
     default:
@@ -86,13 +88,22 @@ This is likely due to an error in our configuration. For now, you can try and sw
 `;
 };
 
-export const INVALID_PROVIDER = (provider?: string) => {
-  const providerName = provider || "'Unknown'";
+export const INVALID_PROVIDER = (provider?: AIProvider) => {
+  const providerName = provider ? llms.provider(provider).name : "Unknown";
   return `## Provider Not Recognized
 
 The AI provider **${providerName}** is not supported or does not exist.
     
 This is likely due to an error in our configuration. For now, you can try and switch to a different provider.`;
+};
+
+export const INVALID_RESOURCE = (provider?: AIProvider, model?: string) => {
+  const providerName = provider ? llms.provider(provider).name : "Unknown";
+  const modelName = model || "Unknown";
+  return `## Resource Not Found
+  
+  The resource **${providerName}** with model **${modelName}** was not found. This is likely due to an error in our configuration. For now, you can try and switch to a different provider.
+  `;
 };
 
 export const RATE_LIMIT = (provider?: AIProvider) => {
