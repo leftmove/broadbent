@@ -48,9 +48,8 @@ export function requestHandler(
 ) {
   switch (details.request.statusCode) {
     case 401:
-      return NO_API_KEY_SET(details.provider);
     case 403:
-      return INVALID_LOCATION();
+      return NO_API_KEY_SET(details.provider);
     case 429:
       return RATE_LIMIT(details.provider);
     default:

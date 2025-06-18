@@ -139,7 +139,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-card relative transition-all duration-150 pt-2 ease-in-out",
+        "flex flex-col h-full bg-card relative transition-all duration-150 pt-2 ease-in-out border-r-[1px] border-border",
         collapsed ? "max-w-16 w-16" : "max-w-72 w-72"
       )}
     >

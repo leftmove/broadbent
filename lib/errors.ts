@@ -1,4 +1,4 @@
-import { embedMetadata } from "lib/metadata";
+import { embedMetadata } from "./metadata";
 
 export abstract class BaseError extends Error {
   public readonly details?: any;

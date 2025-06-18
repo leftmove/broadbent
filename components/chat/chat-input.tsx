@@ -242,19 +242,12 @@ export function ChatInput({
               {streaming ? (
                 <div className="w-5 h-5 border-2 border-current rounded-full border-t-transparent animate-spin" />
               ) : (
-                <svg
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                  x="0px"
-                  y="0px"
-                  viewBox="0 0 512 512"
-                >
-                  <g>
-                    <g>
-                      <circle cx="256" cy="256" r="256" />
-                    </g>
-                  </g>
-                </svg>
+                <div
+                  className={cn(
+                    "w-5 h-5 bg-current transition-all duration-300 ease-in-out",
+                    streaming ? "rounded-sm" : "rounded-full"
+                  )}
+                />
               )}
             </Button>
           </div>

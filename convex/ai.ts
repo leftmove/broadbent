@@ -46,7 +46,7 @@ export const generateResponse = action({
     const selectedProvider = selectedModel.provider;
     let apiKey: string;
 
-    if (selectedProvider in apiKeys) {
+    if (selectedProvider in apiKeys && apiKeys[selectedProvider]) {
       apiKey = apiKeys[selectedProvider];
     } else {
       throw new ConvexError(

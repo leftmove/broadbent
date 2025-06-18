@@ -63,7 +63,7 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
   }
 
   return (
-    <div className="relative flex flex-col h-full mt-8 -mb-4 overflow-hidden border-2 border-r-0 rounded-tl-xl border-border">
+    <div className="relative flex flex-col h-full -mb-4 overflow-hidden border-r-0 border-border">
       <div
         ref={messagesContainerRef}
         className="flex-1 px-4 pt-4 pb-48 overflow-x-hidden overflow-y-auto"
