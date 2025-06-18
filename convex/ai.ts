@@ -1,4 +1,5 @@
-import { action } from "./_generated/server";
+import { action, ActionCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
 import { streamText } from "ai";
@@ -9,7 +10,7 @@ import { createXai } from "@ai-sdk/xai";
 import { createGroq } from "@ai-sdk/groq";
 
 import { llms } from "../lib/ai/providers";
-import { handleError } from "../lib/handlers";
+import { handleError, ErrorDetails } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
 import { api } from "./_generated/api";
 import { ConvexError, CustomError } from "../lib/errors";
@@ -18,6 +19,25 @@ import { type ModelId } from "../lib/ai/models";
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+async function throwError(
+  ctx: ActionCtx,
+  name: string,
+  message: string,
+  details: ErrorDetails,
+  chatSlug: Id<"chats"> | string,
+  messageSlug: Id<"messages"> | string
+) {
+  const customError = new CustomError(name, message, details);
+  const errorMessage = handleError(customError, details);
+  await ctx.runMutation(api.messages.updateBySlug, {
+    chatSlug,
+    messageSlug: messageSlug as Id<"messages">,
+    content: errorMessage,
+    type: "error",
+  });
+  return { content: errorMessage };
 }
 
 export const generateResponse = action({
@@ -56,25 +76,17 @@ export const generateResponse = action({
     if (selectedProvider in apiKeys && apiKeys[selectedProvider]) {
       apiKey = apiKeys[selectedProvider];
     } else {
-      const error = new CustomError(
+      return await throwError(
+        ctx,
         "EmptyAPIKey",
         "API key not set with selected provider.",
         {
           provider: selectedProvider,
           model: args.modelId,
-        }
+        },
+        args.chatSlug,
+        args.messageSlug
       );
-      const message = handleError(error, {
-        provider: selectedProvider,
-        model: args.modelId,
-      });
-      await ctx.runMutation(api.messages.updateBySlug, {
-        chatSlug: args.chatSlug,
-        messageSlug: args.messageSlug,
-        content: message,
-        type: "error",
-      });
-      return { content: message };
     }
 
     let llm;
@@ -102,13 +114,16 @@ export const generateResponse = action({
         model = llm(selectedModel.id);
         break;
       default:
-        throw new ConvexError(
+        return await throwError(
+          ctx,
           "InvalidProvider",
           "Invalid parameter given for provider.",
           {
             provider: selectedProvider,
             model: args.modelId,
-          }
+          },
+          args.chatSlug,
+          args.messageSlug
         );
     }
 
@@ -150,13 +165,16 @@ export const generateResponse = action({
             await ctx.runMutation(api.generations.cleanup, {
               messageId: args.messageSlug,
             });
-            throw new ConvexError(
+            return await throwError(
+              ctx,
               "GenerationCancelled",
               "Generation was cancelled by user.",
               {
                 provider: selectedProvider,
                 model: args.modelId,
-              }
+              },
+              args.chatSlug,
+              args.messageSlug
             );
           }
 
@@ -220,13 +238,16 @@ export const generateResponse = action({
             await ctx.runMutation(api.generations.cleanup, {
               messageId: args.messageSlug,
             });
-            throw new ConvexError(
+            return await throwError(
+              ctx,
               "GenerationCancelled",
               "Generation was cancelled by user.",
               {
                 provider: selectedProvider,
                 model: args.modelId,
-              }
+              },
+              args.chatSlug,
+              args.messageSlug
             );
           }
 
@@ -257,44 +278,27 @@ export const generateResponse = action({
       }
 
       if (error instanceof ConvexError) {
-        const message = handleError(error, {
-          provider: selectedProvider,
-          model: args.modelId,
-        });
-        await ctx.runMutation(api.messages.updateBySlug, {
-          chatSlug: args.chatSlug,
-          messageSlug: args.messageSlug,
-          content: message,
-          type: "error",
-        });
-        return { content: message };
+        return await throwError(
+          ctx,
+          error.name,
+          error.message,
+          error.details,
+          args.chatSlug,
+          args.messageSlug
+        );
       } else {
-        const customError = new CustomError(
+        return await throwError(
+          ctx,
           "RequestError",
           "Error occurred when trying to query AI provider for response.",
-          "error" in error
-            ? {
-                request: error.error,
-                provider: selectedProvider,
-                model: args.modelId,
-              }
-            : {
-                message: error.message,
-                provider: selectedProvider,
-                model: args.modelId,
-              }
+          {
+            request: error.error,
+            provider: selectedProvider,
+            model: args.modelId,
+          },
+          args.chatSlug,
+          args.messageSlug
         );
-        const message = handleError(customError, {
-          provider: selectedProvider,
-          model: args.modelId,
-        });
-        await ctx.runMutation(api.messages.updateBySlug, {
-          chatSlug: args.chatSlug,
-          messageSlug: args.messageSlug,
-          content: message,
-          type: "error",
-        });
-        return { content: message };
       }
     }
   },

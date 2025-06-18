@@ -2,8 +2,8 @@ import { llms, type AIProvider } from "./ai/providers";
 import { CustomError, RequestDetails } from "./errors";
 import { openai, anthropic, google, xai, groq } from "./ai/spec";
 
-type ErrorDetails = Record<string, any>;
-type RequestErrorDetails = ErrorDetails & { request: RequestDetails };
+export type ErrorDetails = Record<string, any>;
+export type RequestErrorDetails = ErrorDetails & { request: RequestDetails };
 
 export function handleError(error: CustomError, details: ErrorDetails) {
   const name = error.name;
