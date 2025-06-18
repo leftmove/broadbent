@@ -272,7 +272,7 @@ export const searchMessages = query({
     // Search messages using full text search
     const searchResults = await ctx.db
       .query("messages")
-      .withSearchIndex("search_messages", (q) => 
+      .withSearchIndex("search_messages", (q) =>
         q.search("content", args.query)
       )
       .filter((q) => q.eq(q.field("userId"), userId))
@@ -289,6 +289,6 @@ export const searchMessages = query({
       })
     );
 
-    return messagesWithChats.filter(msg => msg.chat !== null);
+    return messagesWithChats.filter((msg) => msg.chat !== null);
   },
 });

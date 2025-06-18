@@ -28,7 +28,7 @@ export function ChatInterface({ children }: ChatInterfaceProps) {
             <div className="text-center">
               <h1 className="mb-2 text-4xl font-bold">Broadent</h1>
               <p className="text-muted-foreground">
-                AI-powered chat with smooth text generation
+                A chat app with broad goals.
               </p>
             </div>
             <AuthForm />

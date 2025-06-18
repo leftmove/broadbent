@@ -1,8 +1,9 @@
 "use client";
 
 import { Sparkles, BrainCircuit, Compass, Telescope } from "lucide-react";
-import { ChatInput } from "@/components/chat/chat-input";
+import { ChatInput } from "components/chat/chat-input";
 import { useState } from "react";
+import { useUIState } from "state/ui";
 
 const placeholderPhrases: string[] = [
   "How can I help you today?",
@@ -29,6 +30,7 @@ const placeholderPhrases: string[] = [
 export function HomePlaceholder() {
   const [prompt, setPrompt] = useState("");
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const { inputHasContent } = useUIState();
 
   const handlePromptClick = (text: string) => {
     setPrompt(text);
@@ -46,15 +48,19 @@ export function HomePlaceholder() {
     <div className="relative flex flex-col items-center justify-center flex-1 px-4">
       <h3
         className={`mb-4 font-serif text-lg font-bold opacity-30 transition-all duration-700 ease-out ${
-          isTransitioning ? "transform -translate-y-8 opacity-0" : ""
+          isTransitioning || inputHasContent
+            ? "transform -translate-y-8 opacity-0"
+            : ""
         }`}
       >
         Broadbent
       </h3>
-      <div className="w-full mx-auto space-y-8 text-center ">
+      <div className="w-full mx-auto space-y-8 text-center">
         <div
           className={`space-y-6 opacity-0 animate-pop-in transition-all duration-700 ease-out ${
-            isTransitioning ? "transform -translate-y-12 opacity-0" : ""
+            isTransitioning || inputHasContent
+              ? "transform -translate-y-12 opacity-0"
+              : ""
           }`}
         >
           <h1 className="font-sans text-4xl font-semibold text-foreground">
@@ -65,31 +71,12 @@ export function HomePlaceholder() {
             }
           </h1>
         </div>
-        {/* 
-        <div className="grid w-full max-w-2xl grid-cols-1 gap-4 font-serif md:grid-cols-2">
-          <button
-            onClick={() =>
-              handlePromptClick(
-                "Help me spark my imagination with a creative writing prompt."
-              )
-            }
-            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-1"
-          >
-            <div className="flex items-center h-16 space-x-3">
-              <div className="text-lg">
-                <Sparkles className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <div className="text-sm font-medium text-foreground">
-                  Imagine
-                </div>
-                <div className="font-sans text-xs leading-relaxed text-muted-foreground">
-                  Write a thousand words at once with image generation.
-                </div>
-              </div>
-            </div>
-          </button>
 
+        <div
+          className={`grid w-full max-w-2xl grid-cols-1 gap-4 mx-auto font-serif md:grid-cols-2 transition-all duration-700 ease-out ${
+            inputHasContent ? "opacity-0 transform -translate-y-8" : ""
+          }`}
+        >
           <button
             onClick={() =>
               handlePromptClick(
@@ -119,7 +106,7 @@ export function HomePlaceholder() {
                 "Help me break down a complex problem I'm facing with my project."
               )
             }
-            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-2"
+            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-1"
           >
             <div className="flex items-center h-16 space-x-3">
               <div className="text-lg">
@@ -135,12 +122,32 @@ export function HomePlaceholder() {
           </button>
 
           <button
-            onClick={() =>
-              handlePromptClick(
-                "Explain a complex topic to me in simple terms."
-              )
-            }
-            className="p-5 text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-2"
+            onClick={() => {}}
+            className="relative p-5 overflow-hidden text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-2"
+          >
+            <div className="flex items-center h-16 space-x-3">
+              <div className="text-lg">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  Imagine
+                </div>
+                <div className="font-sans text-xs leading-relaxed text-muted-foreground">
+                  Write a thousand words at once with image generation.
+                </div>
+              </div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-200 opacity-0 bg-background/90 backdrop-blur-sm group-hover:opacity-100">
+              <span className="px-3 py-1 text-xs font-medium border rounded-full text-muted-foreground border-border">
+                Coming Soon
+              </span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => {}}
+            className="relative p-5 overflow-hidden text-left transition-all duration-200 border shadow-sm opacity-0 border-border rounded-2xl hover:bg-secondary/30 group hover:shadow-md animate-pop-in-delay-2"
           >
             <div className="flex items-center h-16 space-x-3">
               <div className="text-lg">
@@ -155,12 +162,19 @@ export function HomePlaceholder() {
                 </div>
               </div>
             </div>
+            <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-200 opacity-0 bg-background/90 backdrop-blur-sm group-hover:opacity-100">
+              <span className="px-3 py-1 text-xs font-medium border rounded-full text-muted-foreground border-border">
+                Coming Soon
+              </span>
+            </div>
           </button>
-        </div> */}
+        </div>
 
         <div
           className={`max-w-lg mx-auto space-y-4 font-sans text-sm opacity-0 animate-pop-in-delay-3 transition-all duration-700 ease-out ${
-            isTransitioning ? "transform -translate-y-16 opacity-0" : ""
+            isTransitioning || inputHasContent
+              ? "transform -translate-y-16 opacity-0"
+              : ""
           }`}
         >
           <button
@@ -200,13 +214,7 @@ export function HomePlaceholder() {
             isTransitioning ? "transform translate-y-4 scale-105" : ""
           }`}
         >
-          <ChatInput
-            isHomePage={true}
-            className="p-3"
-            promptToSubmit={prompt}
-            onPromptHandled={handlePromptHandled}
-            onChatStart={handleChatStart}
-          />
+          <ChatInput chatSlug="" isHomepage={true} className="p-3" />
         </div>
       </div>
       <div className="absolute bottom-0 left-0 w-[0.5px] h-full bg-border"></div>

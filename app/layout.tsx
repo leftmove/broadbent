@@ -33,8 +33,8 @@ const sentient = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Broadbent - AI Chat",
-  description: "A modern AI chat application with smooth text generation",
+  title: "Broadbent",
+  description: "A chat app with broad goals",
 };
 
 export default function RootLayout({

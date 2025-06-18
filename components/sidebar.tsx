@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -10,10 +10,11 @@ import { Doc } from "convex/_generated/dataModel";
 
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
-import { Settings, MessageSquare, Search, PanelLeft } from "lucide-react";
+import { Settings, MessageSquare, Search, PanelLeft, X } from "lucide-react";
 import { ChatDeleteDialog } from "@/components/chat/chat-delete-dialog";
 import { ChatItem } from "@/components/chat/chat-item";
 import { UserProfile } from "components/user-profile";
+import { SearchResults } from "components/search-results";
 import { useUIState } from "state/ui";
 
 import { cn } from "lib/utils";
@@ -34,9 +35,16 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   const togglePinChat = useMutation(api.chats.togglePin);
   const deleteChatMutation = useMutation(api.chats.deleteChat);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile } = useUIState();
+
+  // Search results from full text search
+  const searchResults = useQuery(
+    api.messages.searchMessages,
+    searchQuery.trim() ? { query: searchQuery } : "skip"
+  ) || [];
 
   // State for delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -92,6 +100,30 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
     }
   };
 
+  // Filter chats based on search query (search chat titles)
+  const filteredChats = useMemo(() => {
+    if (!searchQuery.trim()) return chats;
+    
+    const query = searchQuery.toLowerCase();
+    return chats.filter(chat => 
+      chat.title.toLowerCase().includes(query)
+    );
+  }, [chats, searchQuery]);
+
+  // Get unique chats from search results
+  const searchedChats = useMemo(() => {
+    if (!searchQuery.trim() || searchResults.length === 0) return [];
+    
+    const uniqueChats = new Map<string, Doc<"chats">>();
+    searchResults.forEach(result => {
+      if (result.chat) {
+        uniqueChats.set(result.chat._id, result.chat);
+      }
+    });
+    
+    return Array.from(uniqueChats.values());
+  }, [searchResults, searchQuery]);
+
   const groupChatsByTime = (chats: Doc<"chats">[]) => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -134,7 +166,24 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
     return groups;
   };
 
-  const chatGroups = groupChatsByTime(chats);
+  // Determine which chats to display based on search state
+  const displayChats = searchQuery.trim() 
+    ? [...filteredChats, ...searchedChats].filter((chat, index, self) => 
+        self.findIndex(c => c._id === chat._id) === index
+      ) // Remove duplicates
+    : chats;
+  
+  const chatGroups = groupChatsByTime(displayChats);
+  
+  // Track search state
+  useEffect(() => {
+    setIsSearching(searchQuery.trim().length > 0);
+  }, [searchQuery]);
+  
+  const clearSearch = () => {
+    setSearchQuery("");
+    setIsSearching(false);
+  };
 
   return (
     <div
@@ -162,46 +211,69 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
         </div>
         {!collapsed ? (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between group">
               <Link href="/" className="block w-full">
-                <Button className="w-full h-10 mb-4 font-sans text-sm rounded-lg rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90">
-                  New Chat
+                <Button className="w-full h-11 mb-4 font-sans text-sm font-medium rounded-lg rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md border border-primary/10">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  <span>New Chat</span>
                 </Button>
               </Link>
               {!isMobile && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-3/12 h-10 p-0 mb-4 rounded-lg rounded-l-none border-l-1 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary/95"
+                  className="w-3/12 h-11 p-0 mb-4 rounded-lg rounded-l-none border-l-0 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary transition-all duration-200 hover:shadow-md border border-primary/10"
                   onClick={toggleSidebar}
                 >
-                  <PanelLeft className="w-6 h-6" />
+                  <PanelLeft className="w-5 h-5 transition-transform duration-200 hover:scale-110" />
                   <span className="sr-only">Toggle Sidebar</span>
                 </Button>
               )}
             </div>
-            <div className="relative">
-              <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-lg opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 -z-10 blur-sm"></div>
+              <Search className={cn(
+                "absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 transition-all duration-300",
+                searchQuery ? "text-primary" : "text-muted-foreground group-focus-within:text-primary"
+              )} />
               <Input
-                placeholder="Search your threads..."
+                placeholder="Search messages and chats..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 font-sans text-sm rounded-lg bg-input border-border"
+                className={cn(
+                  "pl-10 pr-10 font-sans text-sm rounded-lg transition-all duration-300 shadow-sm",
+                  "bg-background/50 border-border/60 backdrop-blur-sm",
+                  "hover:bg-background/80 hover:border-border/80 hover:shadow-md",
+                  "focus:ring-2 focus:ring-primary/30 focus:border-primary/60 focus:bg-background focus:shadow-lg",
+                  searchQuery && "bg-background border-primary/40 shadow-md"
+                )}
               />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute transform -translate-y-1/2 right-3 top-1/2 text-muted-foreground hover:text-foreground transition-all duration-200 hover:bg-secondary/50 rounded-full p-0.5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center space-y-2">
-            <Link href="/">
-              <Button className="w-10 h-10 p-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+          <div className="flex flex-col items-center space-y-3">
+            <Link href="/" className="group relative">
+              <Button className="w-11 h-11 p-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md">
                 <MessageSquare className="w-5 h-5" />
                 <span className="sr-only">New Chat</span>
               </Button>
+              {/* Tooltip */}
+              <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-foreground text-background text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                New Chat
+              </div>
             </Link>
 
             <Button
               variant="ghost"
-              className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 hover:shadow-md border border-transparent hover:border-primary/20"
             >
               <Search className="w-5 h-5" />
               <span className="sr-only">Search</span>
@@ -212,12 +284,85 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
       {!collapsed && (
         <div className="flex-1 px-2 overflow-y-auto">
-          {chatGroups.pinned.length > 0 && (
-            <div className="mb-2">
-              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
-                Pinned
+          {isSearching ? (
+            <div className="space-y-4">
+              <div className="mb-4 px-3 py-3 bg-gradient-to-r from-secondary/20 via-secondary/30 to-secondary/20 rounded-xl mx-2 border border-border/30 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-semibold text-foreground/90">
+                    Search Results
+                  </div>
+                  {searchQuery && (
+                    <div className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full border border-primary/20">
+                      "{searchQuery}"
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    {displayChats.length} {displayChats.length === 1 ? 'chat' : 'chats'}
+                  </span>
+                  {searchResults.length > 0 && (
+                    <span className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      {searchResults.length} message{searchResults.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="space-y-0.5">
+              
+              {searchResults.length > 0 && (
+                <div className="px-2">
+                  <div className="mb-3 px-2 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                      Message Matches
+                    </div>
+                    <div className="flex-1 h-px bg-border/30"></div>
+                  </div>
+                  <SearchResults 
+                    results={searchResults} 
+                    query={searchQuery}
+                    className="mb-6"
+                  />
+                </div>
+              )}
+              
+              {displayChats.length > 0 && (
+                <div>
+                  <div className="mb-3 px-4 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                      Chats
+                    </div>
+                    <div className="flex-1 h-px bg-border/30"></div>
+                  </div>
+                  <div className="space-y-0.5">
+                    {displayChats.map((chat) => (
+                      <ChatItem
+                        key={chat._id}
+                        chat={chat}
+                        isSelected={selectedChatSlug === chat.slug}
+                        onPinClick={handlePinChat}
+                        onDeleteClick={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {chatGroups.pinned.length > 0 && (
+            <div className="mb-4">
+              <div className="px-3 py-2 mb-2 flex items-center gap-2">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                  Pinned
+                </div>
+                <div className="flex-1 h-px bg-border/30"></div>
+              </div>
+              <div className="space-y-1">
                 {chatGroups.pinned.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -232,11 +377,15 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.today.length > 0 && (
-            <div className="mb-2">
-              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
-                Today
+            <div className="mb-4">
+              <div className="px-3 py-2 mb-2 flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                  Today
+                </div>
+                <div className="flex-1 h-px bg-border/30"></div>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {chatGroups.today.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -251,11 +400,15 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.yesterday.length > 0 && (
-            <div className="mb-2">
-              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
-                Yesterday
+            <div className="mb-4">
+              <div className="px-3 py-2 mb-2 flex items-center gap-2">
+                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                  Yesterday
+                </div>
+                <div className="flex-1 h-px bg-border/30"></div>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {chatGroups.yesterday.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -270,11 +423,15 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.lastWeek.length > 0 && (
-            <div className="mb-2">
-              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
-                Last week
+            <div className="mb-4">
+              <div className="px-3 py-2 mb-2 flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                  Last Week
+                </div>
+                <div className="flex-1 h-px bg-border/30"></div>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {chatGroups.lastWeek.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -289,11 +446,15 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           )}
 
           {chatGroups.older.length > 0 && (
-            <div className="mb-2">
-              <div className="px-3 py-1 font-sans text-xs font-medium text-muted-foreground">
-                Older
+            <div className="mb-4">
+              <div className="px-3 py-2 mb-2 flex items-center gap-2">
+                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                  Older
+                </div>
+                <div className="flex-1 h-px bg-border/30"></div>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {chatGroups.older.map((chat) => (
                   <ChatItem
                     key={chat._id}
@@ -305,6 +466,8 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                 ))}
               </div>
             </div>
+          )}
+            </>
           )}
         </div>
       )}

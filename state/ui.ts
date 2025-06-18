@@ -11,6 +11,9 @@ interface UIState {
   modals: {
     [key: string]: boolean;
   };
+  input: {
+    hasContent: boolean; // Whether the input has any text
+  };
   // Example for future expansion:
   // panels: {
   //   rightPanelOpen: boolean;
@@ -25,6 +28,9 @@ const DEFAULT_UI_STATE: UIState = {
     forceCollapsed: false,
   },
   modals: {},
+  input: {
+    hasContent: false,
+  },
 };
 
 // Create the observable state
@@ -49,6 +55,10 @@ if (typeof window !== "undefined") {
           ...DEFAULT_UI_STATE.sidebar,
           ...parsed.sidebar,
           forceCollapsed: false, // Always reset forceCollapsed on page load
+        },
+        input: {
+          ...DEFAULT_UI_STATE.input,
+          ...parsed.input,
         },
       });
     } catch (e) {
@@ -152,6 +162,12 @@ export const useUIState = () => {
     persistState();
   };
 
+  // Direct setter for input content state
+  const setInputHasContent = (hasContent: boolean) => {
+    uiState.input.hasContent.set(hasContent);
+    // Don't persist input state as it's transient
+  };
+
   // Generic setter for any UI state property
   const setUIState = (category: keyof UIState, key: string, value: any) => {
     // @ts-expect-error - Dynamically setting nested properties
@@ -184,6 +200,10 @@ export const useUIState = () => {
     isMobile: currentState.sidebar.forceCollapsed,
     toggleSidebar,
     setSidebarCollapsed,
+
+    // Direct access to input state for convenience
+    inputHasContent: currentState.input.hasContent,
+    setInputHasContent,
 
     // Generic methods
     setUIState,

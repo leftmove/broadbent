@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Send, ArrowUp } from "lucide-react";
 
 import { useChatState } from "state/chat";
 import { useAIGeneration } from "state/ai";
+import { useUIState } from "state/ui";
 
 import { cn } from "lib/utils";
 import { Keyboard } from "lib/keyboard";
@@ -49,6 +50,7 @@ export function ChatInput({
   const { setSelectedChatSlug } = useChatState();
   const { generateResponse, streaming, setError, clearError } =
     useAIGeneration();
+  const { setInputHasContent } = useUIState();
 
   const createChat = useMutation(api.chats.create);
   const sendMessage = useMutation(api.messages.sendBySlug);
@@ -65,7 +67,11 @@ export function ChatInput({
       }
     })
     .setup(["shift", "enter"], () => {
-      setInput((prev) => prev + "\n");
+      setInput((prev) => {
+        const newValue = prev + "\n";
+        setInputHasContent(newValue.trim().length > 0);
+        return newValue;
+      });
     })
     .handler();
 
@@ -74,6 +80,7 @@ export function ChatInput({
 
     setIsSubmitting(true);
     setInput("");
+    setInputHasContent(false);
     clearError();
     try {
       let currentChatSlug = chatSlug;
@@ -157,14 +164,17 @@ export function ChatInput({
       )} */}
       <div
         className={cn(
-          "relative flex flex-col border rounded-xl shadow-lg bg-background/95 z-50 backdrop-blur-sm border-border/50",
+          "relative flex flex-col border rounded-xl shadow-lg bg-background/95 z-50 backdrop-blur-sm border-border/50 transition-all duration-300 hover:shadow-xl hover:border-border/70 focus-within:shadow-xl focus-within:border-primary/20 focus-within:ring-1 focus-within:ring-primary/10",
+          isHomepage && isModelSelectorOpen
+            ? "-translate-y-[26rem]"
+            : "translate-y-0",
           className
         )}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+        <div className="flex items-center justify-between px-4 py-3 transition-colors duration-200 border-b border-border/30">
           <button
             onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-md text-foreground hover:bg-secondary/70 border border-transparent hover:border-border/50"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-lg text-foreground hover:bg-secondary/70 border border-transparent hover:border-border/50 hover:shadow-sm"
           >
             <span className="font-medium">{currentModel.name}</span>
             {isModelSelectorOpen ? (
@@ -177,9 +187,9 @@ export function ChatInput({
 
         <div
           className={cn(
-            "overflow-hidden border-b border-border/30 bg-background/50 transition-all duration-300 ease-in-out",
+            "overflow-hidden border-b border-border/30 bg-background/50 transition-all duration-300 ease-in-out backdrop-blur-sm",
             isModelSelectorOpen
-              ? "max-h-[32rem] opacity-100 transform translate-y-0"
+              ? "max-h-[32rem] opacity-100 transform translate-y-0 shadow-inner"
               : "max-h-0 opacity-0 transform -translate-y-2"
           )}
         >
@@ -202,9 +212,9 @@ export function ChatInput({
                           void handleModelChange(provider.id, model.id)
                         }
                         className={cn(
-                          "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent",
+                          "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent hover:shadow-sm hover:scale-[1.02]",
                           isSelected
-                            ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20"
+                            ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20 shadow-sm"
                             : "hover:border-primary/10"
                         )}
                       >
@@ -233,34 +243,46 @@ export function ChatInput({
             ))}
           </div>
         </div>
-        <div className="flex items-start h-20 gap-3 p-4">
-          <div className="relative flex items-center flex-1">
+        <div className="flex items-start h-20 gap-3 p-4 transition-all duration-200">
+          <div className="relative flex items-center flex-1 group">
             <Textarea
               ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setInput(newValue);
+                setInputHasContent(newValue.trim().length > 0);
+              }}
               onKeyDown={handleKeyboard}
-              placeholder={streaming ? "AI is responding..." : inputPhrase()}
-              className="w-full h-16 px-0 text-sm leading-relaxed bg-transparent border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
+              placeholder={streaming ? "Streaming..." : inputPhrase()}
+              className="w-full h-16 px-0 text-sm leading-relaxed transition-all duration-200 bg-transparent border-0 outline-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
               disabled={isSubmitting || streaming}
             />
+            {/* Subtle focus indicator */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent scale-x-0 group-focus-within:scale-x-100 transition-transform duration-300 ease-out"></div>
           </div>
           <div className="flex items-center pt-1">
             <Button
               onClick={() => void handleSubmit(input)}
               disabled={!input.trim() || isSubmitting || streaming}
               size="sm"
-              className="transition-all duration-200 rounded-lg h-9 w-9 shrink-0 hover:scale-105 disabled:scale-100"
+              className={cn(
+                "relative overflow-hidden transition-all duration-300 rounded-full h-10 w-10 shrink-0 shadow-sm",
+                !input.trim() || isSubmitting || streaming
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 hover:shadow-md active:scale-95"
+              )}
             >
-              {streaming ? (
-                <div className="w-5 h-5 border-2 border-current rounded-full border-t-transparent animate-spin" />
-              ) : (
-                <div
-                  className={cn(
-                    "w-5 h-5 bg-current transition-all duration-300 ease-in-out",
-                    streaming ? "rounded-sm" : "rounded-full"
-                  )}
-                />
+              <div className="relative z-10 flex items-center justify-center">
+                {streaming ? (
+                  <div className="w-4 h-4 border-2 border-current rounded-full border-t-transparent animate-spin" />
+                ) : (
+                  <ArrowUp className="w-4 h-4 transition-transform duration-200 group-hover:translate-y-[-1px]" />
+                )}
+              </div>
+              {/* Subtle shine effect on hover */}
+              {!(!input.trim() || isSubmitting || streaming) && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-500 ease-out"></div>
               )}
             </Button>
           </div>
