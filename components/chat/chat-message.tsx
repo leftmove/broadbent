@@ -34,6 +34,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   const [deleteTimeout, setDeleteTimeout] = useState<NodeJS.Timeout | null>(
     null
   );
+  const [showReasoning, setShowReasoning] = useState(false);
 
   const user = useQuery(api.auth.loggedInUser);
   const messages = useQuery(api.messages.listBySlug, { chatSlug });
@@ -165,6 +166,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   };
 
   const modelInfo = getModelInfo();
+  const hasReasoning = message.thinking && message.thinking.trim() !== "";
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -377,16 +379,62 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
               </ReactMarkdown>
             </div>
 
+            {/* Reasoning section - only show if model has reasoning */}
+            {hasReasoning && (
+              <div className="mt-4 border-t border-border/20 pt-4">
+                <button
+                  onClick={() => setShowReasoning(!showReasoning)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all duration-200 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent hover:border-border/50"
+                >
+                  <Brain className="w-4 h-4" />
+                  <span>Reasoning</span>
+                  {showReasoning ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  )}
+                </button>
+                
+                {showReasoning && (
+                  <div className="mt-3 p-4 rounded-lg bg-secondary/30 border border-border/30">
+                    <div className="prose prose-sm max-w-none font-mono text-sm text-muted-foreground">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => (
+                            <p className="mb-2 leading-relaxed break-words last:mb-0">
+                              {children}
+                            </p>
+                          ),
+                          code: ({ children }) => (
+                            <code className="px-1 py-0.5 rounded text-xs bg-muted/50">
+                              {children}
+                            </code>
+                          ),
+                          pre: ({ children }) => (
+                            <pre className="p-2 mt-2 mb-2 overflow-x-auto rounded bg-muted/30">
+                              {children}
+                            </pre>
+                          ),
+                        }}
+                      >
+                        {message.thinking}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Action buttons and model info - only show on hover */}
             <div
               className={cn(
-                "flex items-center justify-between pt-4 mt-3 transition-all duration-300",
+                "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-3 transition-all duration-300",
                 isHovered
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-2"
               )}
             >
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center flex-wrap gap-0.5 sm:gap-0.5">
                 <button
                   onClick={() =>
                     void copyToClipboard(message.content, "formatted")
@@ -398,7 +446,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
-                  <span className="font-medium">Copy</span>
+                  <span className="font-medium hidden xs:inline">Copy</span>
                 </button>
 
                 <button
@@ -410,7 +458,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                   ) : (
                     <FileText className="w-3.5 h-3.5" />
                   )}
-                  <span className="font-medium">Raw</span>
+                  <span className="font-medium hidden xs:inline">Raw</span>
                 </button>
 
                 {isOwnMessage && (
@@ -419,7 +467,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                     className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-all duration-200 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 rounded-full hover:bg-secondary/30"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
-                    <span className="font-medium">Edit</span>
+                    <span className="font-medium hidden xs:inline">Edit</span>
                   </button>
                 )}
 
@@ -434,7 +482,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                       isRegenerating && "animate-spin"
                     )}
                   />
-                  <span className="font-medium">Regenerate</span>
+                  <span className="font-medium hidden xs:inline">Regenerate</span>
                 </button>
 
                 <button
@@ -443,12 +491,12 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                   className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-all duration-200 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 disabled:opacity-50 rounded-full hover:bg-destructive/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span className="font-medium">Delete</span>
+                  <span className="font-medium hidden xs:inline">Delete</span>
                 </button>
               </div>
 
               {modelInfo && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-secondary/30 rounded-full border border-border/30">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-secondary/30 rounded-full border border-border/30 self-start sm:self-auto">
                   <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                   <span className="text-xs font-medium text-foreground/80">
                     {modelInfo.provider.name}

@@ -68,7 +68,7 @@ models:
       - window: 200_000
       - output: 8_192
   - name: Claude Haiku 3.5
-    id: claude-3-5-haiku
+    id: claude-3-5-haiku-latest
     description: Fastest model. Less powerful, but has mid-level intelligence at blazing speeds.
     capabilities:
       tool: true

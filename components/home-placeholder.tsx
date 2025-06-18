@@ -1,36 +1,20 @@
 "use client";
+import { useState, useEffect } from "react";
 
 import { Sparkles, BrainCircuit, Compass, Telescope } from "lucide-react";
-import { ChatInput } from "components/chat/chat-input";
-import { useState } from "react";
+import { headerPhrase } from "lib/phrases";
+import { cn } from "lib/utils";
 import { useUIState } from "state/ui";
-
-const placeholderPhrases: string[] = [
-  "How can I help you today?",
-  "Is this thing on?",
-  "You first.",
-  "Conversation pending.",
-  "It begins.",
-  "Holding for words.",
-  "We start from nothing.",
-  "Blank space. Big potential.",
-  "Prompt not included.",
-  "Scene: Unwritten.",
-  "All quiet on the input front.",
-  "On the edge of meaning.",
-  "Where words might go.",
-  "One message away.",
-  "Speechless, by design.",
-  "The calm before the reply.",
-  "Nothing yet. But almost.",
-  "Right before relevance.",
-  "This could be the start.",
-];
+import { ChatInput } from "components/chat/chat-input";
 
 export function HomePlaceholder() {
   const [prompt, setPrompt] = useState("");
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const { inputHasContent } = useUIState();
+  const { inputHasContent, setInputHasContent } = useUIState();
+
+  useEffect(() => {
+    setInputHasContent(false);
+  }, []);
 
   const handlePromptClick = (text: string) => {
     setPrompt(text);
@@ -47,33 +31,32 @@ export function HomePlaceholder() {
   return (
     <div className="relative flex flex-col items-center justify-center flex-1 px-4">
       <h3
-        className={`mb-4 font-serif text-lg font-bold opacity-30 transition-all duration-700 ease-out ${
-          isTransitioning || inputHasContent
-            ? "transform -translate-y-8 opacity-0"
-            : ""
+        className={`mb-4 font-serif text-lg font-bold opacity-30 transition-all duration-300 ease-out ${
+          isTransitioning ? "transform -translate-y-8 opacity-0" : ""
         }`}
       >
         Broadbent
       </h3>
       <div className="w-full mx-auto space-y-8 text-center">
         <div
-          className={`space-y-6 opacity-0 animate-pop-in transition-all duration-700 ease-out ${
+          className={`space-y-6 opacity-0 animate-pop-in transition-all duration-300 ease-out ${
             isTransitioning || inputHasContent
               ? "transform -translate-y-12 opacity-0"
               : ""
           }`}
         >
-          <h1 className="font-sans text-4xl font-semibold text-foreground">
-            {
-              placeholderPhrases[
-                Math.floor(Math.random() * placeholderPhrases.length)
-              ]
-            }
+          <h1
+            className={cn(
+              "font-sans text-4xl font-semibold text-foreground",
+              inputHasContent ? "opacity-0 -translate-y-16" : "translate-y-0"
+            )}
+          >
+            {headerPhrase()}
           </h1>
         </div>
 
         <div
-          className={`grid w-full max-w-2xl grid-cols-1 gap-4 mx-auto font-serif md:grid-cols-2 transition-all duration-700 ease-out ${
+          className={`grid w-full max-w-2xl grid-cols-1 gap-4 mx-auto font-serif md:grid-cols-2 transition-all duration-300 ease-out ${
             inputHasContent ? "opacity-0 transform -translate-y-8" : ""
           }`}
         >
@@ -171,7 +154,7 @@ export function HomePlaceholder() {
         </div>
 
         <div
-          className={`max-w-lg mx-auto space-y-4 font-sans text-sm opacity-0 animate-pop-in-delay-3 transition-all duration-700 ease-out ${
+          className={`max-w-lg mx-auto space-y-4 font-sans text-sm opacity-0 animate-pop-in-delay-3 transition-all duration-300 ease-out ${
             isTransitioning || inputHasContent
               ? "transform -translate-y-16 opacity-0"
               : ""
@@ -179,14 +162,20 @@ export function HomePlaceholder() {
         >
           <button
             onClick={() => handlePromptClick("How does AI work?")}
-            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            className={cn(
+              "block w-full px-4 py-3 opacity-100 transition-all duration-300 text-left rounded-xl hover:bg-secondary/30 text-muted-foreground",
+              inputHasContent ? "opacity-0 translate-y-16" : ""
+            )}
             disabled={isTransitioning}
           >
             How does AI work?
           </button>
           <button
             onClick={() => handlePromptClick("Are black holes real?")}
-            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            className={cn(
+              "block w-full px-4 py-3 opacity-100 transition-all duration-300 text-left rounded-xl hover:bg-secondary/30 text-muted-foreground",
+              inputHasContent ? "opacity-0 translate-y-16" : ""
+            )}
             disabled={isTransitioning}
           >
             Are black holes real?
@@ -195,14 +184,20 @@ export function HomePlaceholder() {
             onClick={() =>
               handlePromptClick('How many Rs are in the word "strawberry"?')
             }
-            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            className={cn(
+              "block w-full px-4 py-3 opacity-100 transition-all duration-300 text-left rounded-xl hover:bg-secondary/30 text-muted-foreground",
+              inputHasContent ? "opacity-0 translate-y-16" : ""
+            )}
             disabled={isTransitioning}
           >
             How many Rs are in the word "strawberry"?
           </button>
           <button
             onClick={() => handlePromptClick("What is the meaning of life?")}
-            className="block w-full px-4 py-3 text-left transition-colors rounded-xl hover:bg-secondary/30 text-muted-foreground"
+            className={cn(
+              "block w-full px-4 py-3 opacity-100 transition-all duration-300 text-left rounded-xl hover:bg-secondary/30 text-muted-foreground",
+              inputHasContent ? "opacity-0 translate-y-16" : ""
+            )}
             disabled={isTransitioning}
           >
             What is the meaning of life?

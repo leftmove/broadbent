@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ChevronDown, ChevronUp, Send, ArrowUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Send, ArrowUp, Brain } from "lucide-react";
 
 import { useChatState } from "state/chat";
 import { useAIGeneration } from "state/ai";
@@ -57,7 +57,8 @@ export function ChatInput({
   const updateMessage = useMutation(api.messages.updateBySlug);
   const setSelectedModel = useMutation(api.settings.setSelectedModel);
 
-  const currentModel = collection.model(userSettings.selectedModel);
+  const currentModel =
+    collection.model(userSettings.selectedModel) || collection.model("gpt-4o");
   const currentProvider = collection.provider(currentModel.provider);
 
   const handleKeyboard = new Keyboard()
@@ -69,7 +70,6 @@ export function ChatInput({
     .setup(["shift", "enter"], () => {
       setInput((prev) => {
         const newValue = prev + "\n";
-        setInputHasContent(newValue.trim().length > 0);
         return newValue;
       });
     })
@@ -80,7 +80,6 @@ export function ChatInput({
 
     setIsSubmitting(true);
     setInput("");
-    setInputHasContent(false);
     clearError();
     try {
       let currentChatSlug = chatSlug;
@@ -152,6 +151,14 @@ export function ChatInput({
     setIsModelSelectorOpen(false);
   };
 
+  useEffect(() => {
+    if (isHomepage && !input.trim()) {
+      setInputHasContent(false);
+    } else if (isHomepage && input.trim()) {
+      setInputHasContent(true);
+    }
+  }, [isHomepage, input]);
+
   return (
     <div className="relative">
       {/* {error && (
@@ -176,7 +183,14 @@ export function ChatInput({
             onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
             className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-lg text-foreground hover:bg-secondary/70 border border-transparent hover:border-border/50 hover:shadow-sm"
           >
-            <span className="font-medium">{currentModel.name}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{currentModel.name}</span>
+              {currentModel.capabilities?.thinking && (
+                <div className="flex items-center justify-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                  <Brain className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                </div>
+              )}
+            </div>
             {isModelSelectorOpen ? (
               <ChevronUp className="w-4 h-4 ml-1 transition-transform duration-200" />
             ) : (
@@ -220,8 +234,15 @@ export function ChatInput({
                       >
                         <div className="flex items-center min-h-[4rem]">
                           <div className="flex-1">
-                            <div className="font-medium text-foreground">
-                              {model.name}
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium text-foreground">
+                                {model.name}
+                              </div>
+                              {model.capabilities?.thinking && (
+                                <div className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                                  <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                </div>
+                              )}
                             </div>
                             {model.description && (
                               <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
@@ -258,8 +279,6 @@ export function ChatInput({
               className="w-full h-16 px-0 text-sm leading-relaxed transition-all duration-200 bg-transparent border-0 outline-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
               disabled={isSubmitting || streaming}
             />
-            {/* Subtle focus indicator */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent scale-x-0 group-focus-within:scale-x-100 transition-transform duration-300 ease-out"></div>
           </div>
           <div className="flex items-center pt-1">
             <Button

@@ -12,6 +12,7 @@ import { llms } from "../lib/ai/providers";
 import { modelIdsValidator } from "./schema";
 import { api } from "./_generated/api";
 import { ConvexError } from "../lib/errors";
+import { type ModelId } from "../lib/ai/models";
 
 interface Message {
   role: "user" | "assistant";
@@ -42,7 +43,7 @@ export const generateResponse = action({
     const apiKeys = await ctx.runQuery(api.settings.getAllApiKeys, {
       userId: args.userId,
     });
-    const selectedModel = llms.model(args.modelId);
+    const selectedModel = llms.model(args.modelId as ModelId);
     const selectedProvider = selectedModel.provider;
     let apiKey: string;
 

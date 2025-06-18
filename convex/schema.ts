@@ -9,7 +9,8 @@ export const providersValidator = v.union(
 );
 
 export const modelIdsValidator = v.union(
-  ...llms.providers.flatMap((p) => p.models).map((m) => v.literal(m.id))
+  ...llms.providers.flatMap((p) => p.models).map((m) => v.literal(m.id)),
+  v.string()
 );
 
 const applicationTables = {

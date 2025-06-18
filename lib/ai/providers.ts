@@ -7,6 +7,7 @@ import {
 } from "./models";
 
 export type AIProvider = ModelAIProvider;
+export type { ModelId } from "./models";
 export type AIProviderName = "OpenAI" | "Anthropic" | "Google" | "xAI" | "Groq";
 
 export type ApiKeys = Record<AIProvider, string>;

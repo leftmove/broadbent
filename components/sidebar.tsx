@@ -41,10 +41,11 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   const { isMobile } = useUIState();
 
   // Search results from full text search
-  const searchResults = useQuery(
-    api.messages.searchMessages,
-    searchQuery.trim() ? { query: searchQuery } : "skip"
-  ) || [];
+  const searchResults =
+    useQuery(
+      api.messages.searchMessages,
+      searchQuery.trim() ? { query: searchQuery } : "skip"
+    ) || [];
 
   // State for delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -103,24 +104,22 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   // Filter chats based on search query (search chat titles)
   const filteredChats = useMemo(() => {
     if (!searchQuery.trim()) return chats;
-    
+
     const query = searchQuery.toLowerCase();
-    return chats.filter(chat => 
-      chat.title.toLowerCase().includes(query)
-    );
+    return chats.filter((chat) => chat.title.toLowerCase().includes(query));
   }, [chats, searchQuery]);
 
   // Get unique chats from search results
   const searchedChats = useMemo(() => {
     if (!searchQuery.trim() || searchResults.length === 0) return [];
-    
+
     const uniqueChats = new Map<string, Doc<"chats">>();
-    searchResults.forEach(result => {
+    searchResults.forEach((result) => {
       if (result.chat) {
         uniqueChats.set(result.chat._id, result.chat);
       }
     });
-    
+
     return Array.from(uniqueChats.values());
   }, [searchResults, searchQuery]);
 
@@ -167,19 +166,20 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   };
 
   // Determine which chats to display based on search state
-  const displayChats = searchQuery.trim() 
-    ? [...filteredChats, ...searchedChats].filter((chat, index, self) => 
-        self.findIndex(c => c._id === chat._id) === index
+  const displayChats = searchQuery.trim()
+    ? [...filteredChats, ...searchedChats].filter(
+        (chat, index, self) =>
+          self.findIndex((c) => c._id === chat._id) === index
       ) // Remove duplicates
     : chats;
-  
+
   const chatGroups = groupChatsByTime(displayChats);
-  
+
   // Track search state
   useEffect(() => {
     setIsSearching(searchQuery.trim().length > 0);
   }, [searchQuery]);
-  
+
   const clearSearch = () => {
     setSearchQuery("");
     setIsSearching(false);
@@ -213,7 +213,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           <>
             <div className="flex items-center justify-between group">
               <Link href="/" className="block w-full">
-                <Button className="w-full h-11 mb-4 font-sans text-sm font-medium rounded-lg rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md border border-primary/10">
+                <Button className="w-full mb-4 font-sans text-sm font-medium transition-all duration-200 border rounded-lg rounded-r-none shadow-sm h-11 bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md border-primary/10">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   <span>New Chat</span>
                 </Button>
@@ -222,7 +222,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-3/12 h-11 p-0 mb-4 rounded-lg rounded-l-none border-l-0 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary transition-all duration-200 hover:shadow-md border border-primary/10"
+                  className="w-3/12 p-0 mb-4 transition-all duration-200 border border-l-0 rounded-lg rounded-l-none h-11 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary hover:shadow-md border-primary/10"
                   onClick={toggleSidebar}
                 >
                   <PanelLeft className="w-5 h-5 transition-transform duration-200 hover:scale-110" />
@@ -231,11 +231,15 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
               )}
             </div>
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-lg opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 -z-10 blur-sm"></div>
-              <Search className={cn(
-                "absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 transition-all duration-300",
-                searchQuery ? "text-primary" : "text-muted-foreground group-focus-within:text-primary"
-              )} />
+              <div className="absolute inset-0 transition-opacity duration-300 rounded-lg opacity-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 group-focus-within:opacity-100 -z-10 blur-sm"></div>
+              <Search
+                className={cn(
+                  "absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 transition-all duration-300",
+                  searchQuery
+                    ? "text-primary"
+                    : "text-muted-foreground group-focus-within:text-primary"
+                )}
+              />
               <Input
                 placeholder="Search messages and chats..."
                 value={searchQuery}
@@ -260,20 +264,20 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           </>
         ) : (
           <div className="flex flex-col items-center space-y-3">
-            <Link href="/" className="group relative">
-              <Button className="w-11 h-11 p-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md">
+            <Link href="/" className="relative group">
+              <Button className="p-0 transition-all duration-200 rounded-lg shadow-sm w-11 h-11 bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md">
                 <MessageSquare className="w-5 h-5" />
                 <span className="sr-only">New Chat</span>
               </Button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-foreground text-background text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              <div className="absolute z-50 px-2 py-1 ml-2 text-xs transition-opacity duration-200 -translate-y-1/2 rounded opacity-0 pointer-events-none left-full top-1/2 bg-foreground text-background group-hover:opacity-100 whitespace-nowrap">
                 New Chat
               </div>
             </Link>
 
             <Button
               variant="ghost"
-              className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 hover:shadow-md border border-transparent hover:border-primary/20"
+              className="w-10 h-10 p-0 transition-all duration-200 border border-transparent rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 hover:shadow-md hover:border-primary/20"
             >
               <Search className="w-5 h-5" />
               <span className="sr-only">Search</span>
@@ -286,7 +290,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
         <div className="flex-1 px-2 overflow-y-auto">
           {isSearching ? (
             <div className="space-y-4">
-              <div className="mb-4 px-3 py-3 bg-gradient-to-r from-secondary/20 via-secondary/30 to-secondary/20 rounded-xl mx-2 border border-border/30 shadow-sm">
+              <div className="px-3 py-3 mx-2 mb-4 border shadow-sm bg-gradient-to-r from-secondary/20 via-secondary/30 to-secondary/20 rounded-xl border-border/30">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-xs font-semibold text-foreground/90">
                     Search Results
@@ -297,42 +301,44 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    {displayChats.length} {displayChats.length === 1 ? 'chat' : 'chats'}
+                    {displayChats.length}{" "}
+                    {displayChats.length === 1 ? "chat" : "chats"}
                   </span>
                   {searchResults.length > 0 && (
                     <span className="flex items-center gap-1">
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                      {searchResults.length} message{searchResults.length !== 1 ? 's' : ''}
+                      {searchResults.length} message
+                      {searchResults.length !== 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
               </div>
-              
+
               {searchResults.length > 0 && (
                 <div className="px-2">
-                  <div className="mb-3 px-2 flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-2 mb-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                    <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Message Matches
                     </div>
                     <div className="flex-1 h-px bg-border/30"></div>
                   </div>
-                  <SearchResults 
-                    results={searchResults} 
+                  <SearchResults
+                    results={searchResults}
                     query={searchQuery}
                     className="mb-6"
                   />
                 </div>
               )}
-              
+
               {displayChats.length > 0 && (
                 <div>
-                  <div className="mb-3 px-4 flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-4 mb-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
+                    <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Chats
                     </div>
                     <div className="flex-1 h-px bg-border/30"></div>
@@ -354,119 +360,119 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           ) : (
             <>
               {chatGroups.pinned.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 mb-2 flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
-                  Pinned
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
+                      Pinned
+                    </div>
+                    <div className="flex-1 h-px bg-border/30"></div>
+                  </div>
+                  <div className="space-y-1">
+                    {chatGroups.pinned.map((chat) => (
+                      <ChatItem
+                        key={chat._id}
+                        chat={chat}
+                        isSelected={selectedChatSlug === chat.slug}
+                        onPinClick={handlePinChat}
+                        onDeleteClick={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 h-px bg-border/30"></div>
-              </div>
-              <div className="space-y-1">
-                {chatGroups.pinned.map((chat) => (
-                  <ChatItem
-                    key={chat._id}
-                    chat={chat}
-                    isSelected={selectedChatSlug === chat.slug}
-                    onPinClick={handlePinChat}
-                    onDeleteClick={handleDeleteClick}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+              )}
 
-          {chatGroups.today.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 mb-2 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
-                  Today
+              {chatGroups.today.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
+                      Today
+                    </div>
+                    <div className="flex-1 h-px bg-border/30"></div>
+                  </div>
+                  <div className="space-y-1">
+                    {chatGroups.today.map((chat) => (
+                      <ChatItem
+                        key={chat._id}
+                        chat={chat}
+                        isSelected={selectedChatSlug === chat.slug}
+                        onPinClick={handlePinChat}
+                        onDeleteClick={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 h-px bg-border/30"></div>
-              </div>
-              <div className="space-y-1">
-                {chatGroups.today.map((chat) => (
-                  <ChatItem
-                    key={chat._id}
-                    chat={chat}
-                    isSelected={selectedChatSlug === chat.slug}
-                    onPinClick={handlePinChat}
-                    onDeleteClick={handleDeleteClick}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+              )}
 
-          {chatGroups.yesterday.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 mb-2 flex items-center gap-2">
-                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
-                  Yesterday
+              {chatGroups.yesterday.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                    <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
+                      Yesterday
+                    </div>
+                    <div className="flex-1 h-px bg-border/30"></div>
+                  </div>
+                  <div className="space-y-1">
+                    {chatGroups.yesterday.map((chat) => (
+                      <ChatItem
+                        key={chat._id}
+                        chat={chat}
+                        isSelected={selectedChatSlug === chat.slug}
+                        onPinClick={handlePinChat}
+                        onDeleteClick={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 h-px bg-border/30"></div>
-              </div>
-              <div className="space-y-1">
-                {chatGroups.yesterday.map((chat) => (
-                  <ChatItem
-                    key={chat._id}
-                    chat={chat}
-                    isSelected={selectedChatSlug === chat.slug}
-                    onPinClick={handlePinChat}
-                    onDeleteClick={handleDeleteClick}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+              )}
 
-          {chatGroups.lastWeek.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 mb-2 flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
-                  Last Week
+              {chatGroups.lastWeek.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
+                      Last Week
+                    </div>
+                    <div className="flex-1 h-px bg-border/30"></div>
+                  </div>
+                  <div className="space-y-1">
+                    {chatGroups.lastWeek.map((chat) => (
+                      <ChatItem
+                        key={chat._id}
+                        chat={chat}
+                        isSelected={selectedChatSlug === chat.slug}
+                        onPinClick={handlePinChat}
+                        onDeleteClick={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 h-px bg-border/30"></div>
-              </div>
-              <div className="space-y-1">
-                {chatGroups.lastWeek.map((chat) => (
-                  <ChatItem
-                    key={chat._id}
-                    chat={chat}
-                    isSelected={selectedChatSlug === chat.slug}
-                    onPinClick={handlePinChat}
-                    onDeleteClick={handleDeleteClick}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+              )}
 
-          {chatGroups.older.length > 0 && (
-            <div className="mb-4">
-              <div className="px-3 py-2 mb-2 flex items-center gap-2">
-                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                <div className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
-                  Older
+              {chatGroups.older.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                    <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
+                      Older
+                    </div>
+                    <div className="flex-1 h-px bg-border/30"></div>
+                  </div>
+                  <div className="space-y-1">
+                    {chatGroups.older.map((chat) => (
+                      <ChatItem
+                        key={chat._id}
+                        chat={chat}
+                        isSelected={selectedChatSlug === chat.slug}
+                        onPinClick={handlePinChat}
+                        onDeleteClick={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 h-px bg-border/30"></div>
-              </div>
-              <div className="space-y-1">
-                {chatGroups.older.map((chat) => (
-                  <ChatItem
-                    key={chat._id}
-                    chat={chat}
-                    isSelected={selectedChatSlug === chat.slug}
-                    onPinClick={handlePinChat}
-                    onDeleteClick={handleDeleteClick}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+              )}
             </>
           )}
         </div>
