@@ -12,7 +12,7 @@ import { llms } from "../lib/ai/providers";
 import { handleError } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
 import { api } from "./_generated/api";
-import { ConvexError } from "../lib/errors";
+import { ConvexError, CustomError } from "../lib/errors";
 import { type ModelId } from "../lib/ai/models";
 
 interface Message {
@@ -56,7 +56,7 @@ export const generateResponse = action({
     if (selectedProvider in apiKeys && apiKeys[selectedProvider]) {
       apiKey = apiKeys[selectedProvider];
     } else {
-      throw new ConvexError(
+      const error = new CustomError(
         "EmptyAPIKey",
         "API key not set with selected provider.",
         {
@@ -64,6 +64,17 @@ export const generateResponse = action({
           model: args.modelId,
         }
       );
+      const message = handleError(error, {
+        provider: selectedProvider,
+        model: args.modelId,
+      });
+      await ctx.runMutation(api.messages.updateBySlug, {
+        chatSlug: args.chatSlug,
+        messageSlug: args.messageSlug,
+        content: message,
+        type: "error",
+      });
+      return { content: message };
     }
 
     let llm;
@@ -258,7 +269,7 @@ export const generateResponse = action({
         });
         return { content: message };
       } else {
-        const customError = new ConvexError(
+        const customError = new CustomError(
           "RequestError",
           "Error occurred when trying to query AI provider for response.",
           "error" in error
