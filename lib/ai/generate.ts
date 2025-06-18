@@ -23,10 +23,10 @@ function readYamls(): Record<string, any> {
 }
 
 function generateTS(data: Record<string, any>): string {
-  const header = `// AUTO-GENERATED FILE. DO NOT EDIT.\n\nimport type { ModelYAML } from "./models";\n`;
+  const header = `// AUTO-GENERATED FILE. DO NOT EDIT.\n\n`;
   const exports = Object.entries(data).map(([key, val]) => {
     const ts = JSON.stringify(val, null, 2).replace(/"([^"]+)":/g, "$1:");
-    return `export const ${key}: ModelYAML = ${ts} as const;`;
+    return `export const ${key} = ${ts} as const;`;
   });
   const indexExport = `\nexport const modelSpecs = { ${Object.keys(data).join(", ")} } as const;`;
   return [header, ...exports, indexExport, ""].join("\n\n");

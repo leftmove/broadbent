@@ -114,10 +114,7 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
           "absolute w-full max-w-4xl px-4 transform -translate-x-1/2 bottom-4 transition-all duration-300 left-1/2"
         )}
       >
-        <ChatInput
-          chatSlug={chatSlug}
-          onStreamingUpdate={handleStreamingUpdate}
-        />
+        <ChatInput chatSlug={chatSlug} />
       </div>
     </div>
   );

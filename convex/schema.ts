@@ -2,17 +2,14 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
-import {
-  AIProvider,
-  availableProviders,
-  availableModels,
-} from "../lib/ai/providers";
+import { llms } from "../lib/ai/providers";
 
-export const providers = v.union(
-  ...availableProviders.map((provider: AIProvider) => v.literal(provider))
+export const providersValidator = v.union(
+  ...llms.providers.map((p) => v.literal(p.id))
 );
-export const modelIds = v.union(
-  ...availableModels.map((model: string) => v.literal(model))
+
+export const modelIdsValidator = v.union(
+  ...llms.providers.flatMap((p) => p.models).map((m) => v.literal(m.id))
 );
 
 const applicationTables = {
@@ -28,15 +25,24 @@ const applicationTables = {
   messages: defineTable({
     chatId: v.id("chats"),
     content: v.string(),
-    role: v.union(v.literal("user"), v.literal("assistant")),
+    role: v.union(v.literal("user"), v.literal("assistant"), v.literal("error")),
     userId: v.id("users"),
+    thinking: v.optional(v.string()),
   }).index("by_chat", ["chatId"]),
 
   settings: defineTable({
     userId: v.id("users"),
-    provider: providers,
-    selectedModel: v.optional(modelIds),
+    provider: providersValidator,
+    selectedModel: modelIdsValidator,
   }).index("by_user", ["userId"]),
+
+  apiKeys: defineTable({
+    userId: v.id("users"),
+    provider: providersValidator,
+    keyValue: v.string(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_provider", ["userId", "provider"]),
 };
 
 export default defineSchema({

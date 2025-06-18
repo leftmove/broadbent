@@ -1,52 +1,59 @@
 import { AIProvider } from "lib/ai/providers";
 import {
   DEFAULT_ERROR_MESSAGE,
-  NO_API_KEY_SET_ERROR_MESSAGE,
-  INVALID_MODEL_ERROR_MESSAGE,
-  INVALID_PROVIDER_ERROR_MESSAGE,
-  GOOGLE_MODEL_NOT_FOUND_ERROR_MESSAGE,
+  NO_API_KEY_SET,
+  INVALID_MODEL,
+  INVALID_PROVIDER,
+  INVALID_LOCATION,
+  RATE_LIMIT,
 } from "lib/ai/errors";
-import {
-  APIKeyError,
-  InvalidModelError,
-  InvalidProviderError,
-} from "lib/errors";
+import { CustomError, RequestDetails } from "lib/errors";
 
-function match(regex: RegExp, message: string): boolean {
-  return regex.test(message);
-}
+type ErrorDetails = Record<string, any>;
+type RequestErrorDetails = ErrorDetails & { request: RequestDetails };
 
-export function handleError(error: Error, details: any): string {
-  const supplementals: Record<string, string> = {};
-  Object.keys(details).forEach((key) => {
-    if (details[key]) {
-      supplementals[key] = details[key];
-    } else {
-      supplementals[key] = "Unknown";
-    }
-  });
-  console.error(error);
+export function handleError(error: CustomError, details: ErrorDetails) {
+  const name = error.name;
+  const message = error.message;
+  const supplementals = { ...details, ...error.details };
+  console.error(name, message, supplementals, details);
 
-  if (error instanceof APIKeyError) {
-    return NO_API_KEY_SET_ERROR_MESSAGE(supplementals.provider as AIProvider);
+  if (name === "EmptyAPIKey") {
+    return NO_API_KEY_SET(supplementals.provider as AIProvider);
   }
 
-  if (error instanceof InvalidModelError) {
-    return INVALID_MODEL_ERROR_MESSAGE(supplementals.model);
+  if (name === "RateLimit") {
+    return RATE_LIMIT(supplementals.provider as AIProvider);
   }
 
-  if (error instanceof InvalidProviderError) {
-    return INVALID_PROVIDER_ERROR_MESSAGE(supplementals.model);
+  if (name === "InvalidModel") {
+    return INVALID_MODEL(supplementals.model);
   }
 
-  if (
-    match(
-      /models\/([^/\s]+) is not found for API version [^,]+, or is not supported for generateContent/,
-      error.message
-    )
-  ) {
-    return GOOGLE_MODEL_NOT_FOUND_ERROR_MESSAGE(supplementals.model);
+  if (name === "InvalidProvider") {
+    return INVALID_PROVIDER(supplementals.model);
+  }
+
+  if (name === "RequestError") {
+    return requestHandler(name, message, supplementals as RequestErrorDetails);
   }
 
   return DEFAULT_ERROR_MESSAGE();
+}
+
+export function requestHandler(
+  name: string,
+  message: string,
+  details: RequestErrorDetails
+) {
+  switch (details.request.statusCode) {
+    case 401:
+      return NO_API_KEY_SET(details.provider);
+    case 403:
+      return INVALID_LOCATION();
+    case 429:
+      return RATE_LIMIT(details.provider);
+    default:
+      return DEFAULT_ERROR_MESSAGE();
+  }
 }

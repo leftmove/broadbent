@@ -5,23 +5,17 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 import { cn } from "lib/utils";
-import { AIProvider, ProviderModel } from "lib/ai/providers";
-import {
-  DEFAULT_ERROR_MESSAGE,
-  NO_API_KEY_SET_ERROR_MESSAGE,
-  INVALID_API_KEY_ERROR_MESSAGE,
-  RATE_LIMIT_ERROR_MESSAGE,
-} from "lib/ai/errors";
 import { handleError } from "lib/ai/handler";
+import { CustomError } from "lib/errors";
 
 interface ErrorToast {
-  error: Error;
+  error: CustomError;
   closed: boolean;
 }
 
 interface ErrorMessageProps {
-  error: Error;
-  details: any;
+  error: CustomError;
+  details: Record<string, any>;
 }
 
 export function ErrorMessage({ error, details }: ErrorMessageProps) {
@@ -45,6 +39,8 @@ export function ErrorMessage({ error, details }: ErrorMessageProps) {
     setErrors([{ error, closed: false }, ...errors]);
   }, [error]);
 
+  const handledError = handleError(error, details);
+
   return (
     <ul className="relative">
       {errors.map((e, index) => (
@@ -57,7 +53,7 @@ export function ErrorMessage({ error, details }: ErrorMessageProps) {
           )}
           key={index + e.error.message}
         >
-          <span>{handleError(e.error, details)}</span>
+          <span>{handledError}</span>
           <button
             onClick={() => handleClose(index)}
             className="flex items-center justify-center w-5 h-5 ml-2 transition-colors rounded-full hover:bg-destructive/20"

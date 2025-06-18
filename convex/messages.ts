@@ -34,6 +34,7 @@ export const sendBySlug = mutation({
     chatSlug: v.string(),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
+    thinking: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -56,6 +57,7 @@ export const sendBySlug = mutation({
       content: args.content,
       role: args.role,
       userId,
+      thinking: args.thinking,
     });
   },
 });
@@ -83,6 +85,73 @@ export const update = mutation({
     });
 
     return args.messageId;
+  },
+});
+
+export const updateWithThinking = mutation({
+  args: {
+    messageId: v.id("messages"),
+    content: v.string(),
+    thinking: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get the message and verify ownership
+    const message = await ctx.db.get(args.messageId);
+    if (!message || message.userId !== userId) {
+      throw new Error("Message not found or access denied");
+    }
+
+    // Update the message content and thinking
+    await ctx.db.patch(args.messageId, {
+      content: args.content,
+      thinking: args.thinking,
+    });
+
+    return args.messageId;
+  },
+});
+
+export const updateBySlug = mutation({
+  args: {
+    chatSlug: v.string(),
+    messageSlug: v.id("messages"),
+    content: v.string(),
+    thinking: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get the chat by slug and verify ownership
+    const chat = await ctx.db
+      .query("chats")
+      .withIndex("by_slug", (q) => q.eq("slug", args.chatSlug))
+      .first();
+
+    if (!chat || chat.userId !== userId) {
+      throw new Error("Chat not found or access denied");
+    }
+
+    // Get the message and verify it belongs to this chat and user
+    const message = await ctx.db.get(args.messageSlug);
+    if (!message || message.userId !== userId || message.chatId !== chat._id) {
+      throw new Error("Message not found or access denied");
+    }
+
+    // Update the message content and thinking
+    await ctx.db.patch(args.messageSlug, {
+      content: args.content,
+      thinking: args.thinking,
+    });
+
+    return args.messageSlug;
   },
 });
 

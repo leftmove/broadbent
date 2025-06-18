@@ -1,122 +1,73 @@
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { xai } from "@ai-sdk/xai";
-import { groq } from "@ai-sdk/groq";
-
+import { InvalidProviderError } from "../errors";
+import { openai, anthropic, google, xai, groq } from "./spec";
 import {
-  OpenAIProvider,
-  AnthropicProvider,
-  GoogleProvider,
-  XAIProvider,
-  GroqProvider,
-  OpenAIModel,
-  AnthropicModel,
-  GoogleModel,
-  XAIModel,
-  GroqModel,
+  Model,
+  type ModelId,
+  type AIProvider as ModelAIProvider,
 } from "./models";
 
-export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "groq";
-export type ModelId = (typeof availableModels)[number];
-export type ProviderModel =
-  | OpenAIModel
-  | AnthropicModel
-  | GoogleModel
-  | XAIModel
-  | GroqModel;
+export type AIProvider = ModelAIProvider;
+export type AIProviderName = "OpenAI" | "Anthropic" | "Google" | "xAI" | "Groq";
 
-export interface ApiKeys {
-  openai: string;
-  anthropic: string;
-  google: string;
-  xai: string;
-  groq: string;
+export type ApiKeys = Record<AIProvider, string>;
+
+export class Provider {
+  id: AIProvider;
+  name: AIProviderName;
+
+  models: Model[] = [];
+
+  constructor(id: AIProvider) {
+    this.id = id;
+    switch (id) {
+      case "openai":
+        this.name = "OpenAI";
+        this.models = openai.models.map((m: any) => new Model(m, "openai"));
+        break;
+      case "anthropic":
+        this.name = "Anthropic";
+        this.models = anthropic.models.map(
+          (m: any) => new Model(m, "anthropic")
+        );
+        break;
+      case "google":
+        this.name = "Google";
+        this.models = google.models.map((m: any) => new Model(m, "google"));
+        break;
+      case "xai":
+        this.name = "xAI";
+        this.models = xai.models.map((m: any) => new Model(m, "xai"));
+        break;
+      case "groq":
+        this.name = "Groq";
+        this.models = groq.models.map((m: any) => new Model(m, "groq"));
+        break;
+      default:
+        throw new InvalidProviderError("Invalid provider.");
+    }
+  }
 }
 
-type OpenAIModelId = Parameters<typeof openai>[0];
-type AnthropicModelId = Parameters<typeof anthropic>[0];
-type GoogleModelId = Parameters<typeof google>[0];
-type XAIModelId = Parameters<typeof xai>[0];
-type GroqModelId = Parameters<typeof groq>[0];
+export class AICollection {
+  providers: Provider[] = [];
 
-export const getModel = (id: ModelId): ProviderModel | undefined => {
-  if (!id) return undefined;
-
-  const providers = Object.entries(providerModels);
-  const mapProviders = [
-    ...providers.map(([_, providerMap]) => providerMap),
-  ].flat();
-  const providerFind = mapProviders.find((map) => map.get(id))!;
-  const modelFind = providerFind.get(id) || undefined;
-
-  return modelFind;
-};
-
-export const getProvider = (id: ModelId): AIProvider | undefined => {
-  const providers = Object.entries(providerModels);
-  const mapProviders = [
-    ...providers.map(([_, providerMap]) => providerMap),
-  ].flat();
-  const providerFind = mapProviders.find((map) => map.get(id))!;
-  const defaultModel = providerFind.get("default")!;
-  const provider = defaultModel.provider || undefined;
-
-  return provider;
-};
-
-export const getProviderName = (provider: AIProvider): string => {
-  switch (provider) {
-    case "openai":
-      return "OpenAI";
-    case "anthropic":
-      return "Anthropic";
-    case "google":
-      return "Google";
-    case "xai":
-      return "xAI";
-    case "groq":
-      return "Groq";
-    default:
-      return "Unknown";
+  constructor() {
+    this.providers = [
+      new Provider("openai"),
+      new Provider("anthropic"),
+      new Provider("google"),
+      new Provider("xai"),
+      new Provider("groq"),
+    ];
   }
-};
 
-export const availableProviders = [
-  "openai",
-  "anthropic",
-  "google",
-  "xai",
-  "groq",
-] as const;
+  provider(id: AIProvider): Provider {
+    return this.providers.find((p) => p.id === id)!;
+  }
 
-export const availableModels = [
-  ...OpenAIProvider.keys(),
-  ...AnthropicProvider.keys(),
-  ...GoogleProvider.keys(),
-  ...XAIProvider.keys(),
-  ...GroqProvider.keys(),
-];
+  model(id: ModelId): Model {
+    return this.providers.flatMap((p) => p.models).find((m) => m.id === id)!;
+  }
+}
 
-export const providerModels: Record<
-  AIProvider,
-  | typeof OpenAIProvider
-  | typeof AnthropicProvider
-  | typeof GoogleProvider
-  | typeof XAIProvider
-  | typeof GroqProvider
-> = {
-  openai: OpenAIProvider,
-  anthropic: AnthropicProvider,
-  google: GoogleProvider,
-  xai: XAIProvider,
-  groq: GroqProvider,
-};
-
-export type {
-  OpenAIModelId,
-  AnthropicModelId,
-  GoogleModelId,
-  XAIModelId,
-  GroqModelId,
-};
+export const llms = new AICollection();

@@ -1,11 +1,11 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-import { providers, modelIds } from "./schema";
+import { providersValidator, modelIdsValidator } from "./schema";
 
 export const getProvider = query({
   args: { userId: v.id("users") },
-  returns: v.union(providers, v.null()),
+  returns: v.union(providersValidator, v.null()),
   handler: async (ctx, args) => {
     const pref = await ctx.db
       .query("settings")
@@ -20,7 +20,7 @@ export const getProvider = query({
 
 export const getSelectedModel = query({
   args: { userId: v.id("users") },
-  returns: v.union(modelIds, v.null()),
+  returns: v.union(modelIdsValidator, v.null()),
   handler: async (ctx, args) => {
     const pref = await ctx.db
       .query("settings")
@@ -33,7 +33,7 @@ export const getSelectedModel = query({
 export const setProvider = mutation({
   args: {
     userId: v.id("users"),
-    provider: providers,
+    provider: providersValidator,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -46,7 +46,8 @@ export const setProvider = mutation({
     } else {
       await ctx.db.insert("settings", {
         userId: args.userId,
-        provider: args.provider,
+        provider: "openai",
+        selectedModel: "gpt-4o",
       });
     }
     return null;
@@ -56,8 +57,8 @@ export const setProvider = mutation({
 export const setSelectedModel = mutation({
   args: {
     userId: v.id("users"),
-    provider: providers,
-    modelId: modelIds,
+    provider: providersValidator,
+    modelId: modelIdsValidator,
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -77,13 +78,12 @@ export const setSelectedModel = mutation({
     return null;
   },
 });
-
 export const getSettings = query({
   args: { userId: v.id("users") },
   returns: v.union(
     v.object({
-      provider: providers,
-      selectedModel: v.union(modelIds, v.null()),
+      provider: providersValidator,
+      selectedModel: v.union(modelIdsValidator, v.null()),
     }),
     v.null()
   ),
@@ -99,6 +99,36 @@ export const getSettings = query({
     return {
       provider,
       selectedModel: pref.selectedModel || null,
+    };
+  },
+});
+
+export const getAllApiKeys = query({
+  args: { userId: v.id("users") },
+  returns: v.object({
+    openai: v.optional(v.string()),
+    anthropic: v.optional(v.string()),
+    google: v.optional(v.string()),
+    xai: v.optional(v.string()),
+    groq: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const apiKeys = await ctx.db
+      .query("apiKeys")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const result: Record<string, string> = {};
+    for (const apiKey of apiKeys) {
+      result[apiKey.provider] = apiKey.keyValue;
+    }
+
+    return {
+      openai: result.openai || "",
+      anthropic: result.anthropic || "",
+      google: result.google || "",
+      xai: result.xai || "",
+      groq: result.groq || "",
     };
   },
 });

@@ -1,0 +1,204 @@
+import { action } from "./_generated/server";
+import { v } from "convex/values";
+
+import { streamText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createXai } from "@ai-sdk/xai";
+import { createGroq } from "@ai-sdk/groq";
+
+import { llms } from "../lib/ai/providers";
+import { modelIdsValidator } from "./schema";
+import { api } from "./_generated/api";
+import { ConvexError } from "../lib/errors";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export const generateResponse = action({
+  args: {
+    userId: v.id("users"),
+    chatSlug: v.string(),
+    messageSlug: v.id("messages"),
+    prompt: v.string(),
+    modelId: modelIdsValidator,
+    messageHistory: v.optional(
+      v.array(
+        v.object({
+          role: v.union(v.literal("user"), v.literal("assistant")),
+          content: v.string(),
+        })
+      )
+    ),
+  },
+  returns: v.object({
+    content: v.string(),
+    thinking: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const apiKeys = await ctx.runQuery(api.settings.getAllApiKeys, {
+      userId: args.userId,
+    });
+    const selectedModel = llms.model(args.modelId);
+    const selectedProvider = selectedModel.provider;
+    let apiKey: string;
+
+    if (selectedProvider in apiKeys) {
+      apiKey = apiKeys[selectedProvider];
+    } else {
+      throw new ConvexError(
+        "EmptyAPIKey",
+        "API key not set with selected provider.",
+        {
+          provider: selectedProvider,
+          model: args.modelId,
+        }
+      );
+    }
+
+    let llm;
+    let model;
+
+    switch (selectedProvider) {
+      case "openai":
+        llm = createOpenAI({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      case "anthropic":
+        llm = createAnthropic({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      case "google":
+        llm = createGoogleGenerativeAI({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      case "xai":
+        llm = createXai({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      case "groq":
+        llm = createGroq({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      default:
+        throw new ConvexError(
+          "InvalidProvider",
+          "Invalid parameter given for provider.",
+          {
+            provider: selectedProvider,
+            model: args.modelId,
+          }
+        );
+    }
+
+    const messages: Message[] = [
+      ...(args.messageHistory || []),
+      { role: "user", content: args.prompt },
+    ];
+    const isReasoningModel = selectedModel.capabilities.thinking;
+
+    try {
+      if (isReasoningModel) {
+        const result = streamText({
+          model,
+          messages,
+          maxRetries: 0,
+          onError: (error) => {
+            throw new ConvexError(
+              "RequestError",
+              "Error occurred streaming text for model.",
+              {
+                request: error.error,
+                provider: selectedProvider,
+                model: args.modelId,
+              }
+            );
+          },
+        });
+
+        let fullText = "";
+        let fullThinking = "";
+
+        for await (const chunk of result.fullStream) {
+          if (chunk.type === "text-delta") {
+            fullText += chunk.textDelta;
+            await ctx.runMutation(api.messages.updateBySlug, {
+              chatSlug: args.chatSlug,
+              messageSlug: args.messageSlug,
+              content: fullText,
+              thinking: fullThinking || undefined,
+            });
+          } else if (
+            chunk.type === "step-finish" &&
+            chunk.providerMetadata?.openai?.reasoning
+          ) {
+            const reasoning = chunk.providerMetadata.openai.reasoning;
+            if (typeof reasoning === "string") {
+              fullThinking = reasoning;
+              await ctx.runMutation(api.messages.updateBySlug, {
+                chatSlug: args.chatSlug,
+                messageSlug: args.messageSlug,
+                content: fullText,
+                thinking: fullThinking,
+              });
+            }
+          }
+        }
+
+        return { content: fullText, thinking: fullThinking };
+      } else {
+        const { textStream } = streamText({
+          model,
+          messages,
+          maxRetries: 0,
+          onError: (error) => {
+            throw new ConvexError(
+              "RequestError",
+              "Error occurred streaming text for model.",
+              {
+                request: error.error,
+                provider: selectedProvider,
+                model: args.modelId,
+              }
+            );
+          },
+        });
+
+        let fullText = "";
+        for await (const textPart of textStream) {
+          fullText += textPart;
+          await ctx.runMutation(api.messages.updateBySlug, {
+            chatSlug: args.chatSlug,
+            messageSlug: args.messageSlug,
+            content: fullText,
+          });
+        }
+
+        return { content: fullText };
+      }
+    } catch (error: any) {
+      if (error instanceof ConvexError) {
+        throw error;
+      } else {
+        throw new ConvexError(
+          "RequestError",
+          "Error occurred when trying to query AI provider for response.",
+          "error" in error
+            ? {
+                request: error.error,
+                provider: selectedProvider,
+                model: args.modelId,
+              }
+            : {
+                message: error.message,
+                provider: selectedProvider,
+                model: args.modelId,
+              }
+        );
+      }
+    }
+  },
+});
