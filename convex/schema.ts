@@ -26,6 +26,7 @@ const applicationTables = {
     chatId: v.id("chats"),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
+    type: v.optional(v.union(v.literal("error"), v.literal("normal"))),
     userId: v.id("users"),
     thinking: v.optional(v.string()),
   }).index("by_chat", ["chatId"]),

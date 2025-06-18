@@ -16,7 +16,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   if (isUser) {
     // User messages: bubble style on the right
     return (
-      <div className="flex w-full justify-end px-4 py-2">
+      <div className="flex justify-end w-full px-4 py-2">
         <div className="rounded-lg px-3 py-2 max-w-[80%] break-words bg-primary text-primary-foreground">
           <div className="text-base leading-relaxed">{message.content}</div>
         </div>
@@ -27,8 +27,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
   // AI messages: plain text on background, no bubble
   return (
     <div className="flex w-full px-4 py-2">
-      <div className="w-full max-w-none break-words">
-        <div className="prose prose-base max-w-none break-words text-foreground [&_*]:text-foreground">
+      <div className="w-full break-words max-w-none">
+        <div className="prose prose-base max-w-none font-sans break-words text-foreground [&_*]:text-foreground">
           <ReactMarkdown
             components={{
               p: ({ children }) => (
@@ -73,12 +73,12 @@ export function ChatMessage({ message }: ChatMessageProps) {
               ),
               em: ({ children }) => <em className="italic">{children}</em>,
               ul: ({ children }) => (
-                <ul className="mb-3 space-y-1 list-disc list-inside last:mb-0 pl-2">
+                <ul className="pl-2 mb-3 space-y-1 list-disc list-inside last:mb-0">
                   {children}
                 </ul>
               ),
               ol: ({ children }) => (
-                <ol className="mb-3 space-y-1 list-decimal list-inside last:mb-0 pl-2">
+                <ol className="pl-2 mb-3 space-y-1 list-decimal list-inside last:mb-0">
                   {children}
                 </ol>
               ),
@@ -86,7 +86,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 <li className="leading-relaxed break-words">{children}</li>
               ),
               blockquote: ({ children }) => (
-                <blockquote className="border-l-4 pl-4 py-2 my-3 italic break-words border-muted-foreground/30">
+                <blockquote className="py-2 pl-4 my-3 italic break-words border-l-4 border-muted-foreground/30">
                   {children}
                 </blockquote>
               ),
@@ -95,7 +95,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline hover:no-underline transition-colors break-all text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-blue-600 underline break-all transition-colors hover:no-underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   {children}
                 </a>

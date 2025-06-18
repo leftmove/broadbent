@@ -16,9 +16,9 @@ import { inputPhrase } from "lib/phrases";
 
 import { Textarea } from "components/ui/textarea";
 import { Button } from "components/ui/button";
-import { ErrorMessage } from "components/error-message";
 
 import { llms as collection, type AIProvider } from "lib/ai/providers";
+import { handleError } from "lib/handlers";
 import { type ModelId } from "lib/ai/models";
 
 interface ChatInputProps {
@@ -47,11 +47,12 @@ export function ChatInput({
     useQuery(api.messages.listBySlug, chatSlug ? { chatSlug } : "skip") || [];
 
   const { setSelectedChatSlug } = useChatState();
-  const { generateResponse, streaming, error, setError, clearError } =
+  const { generateResponse, streaming, setError, clearError } =
     useAIGeneration();
 
   const createChat = useMutation(api.chats.create);
   const sendMessage = useMutation(api.messages.sendBySlug);
+  const updateMessage = useMutation(api.messages.updateBySlug);
   const setSelectedModel = useMutation(api.settings.setSelectedModel);
 
   const currentModel = collection.model(userSettings.selectedModel);
@@ -114,7 +115,18 @@ export function ChatInput({
         message,
         userSettings.selectedModel,
         messageHistory
-      );
+      ).catch(async (error: any) => {
+        const errorMessage = handleError(error, {
+          provider: currentProvider.id,
+          model: currentModel.id,
+        });
+        await updateMessage({
+          chatSlug: currentChatSlug,
+          messageSlug: assistantMessageId,
+          content: errorMessage,
+          type: "error",
+        });
+      });
     } catch (error: any) {
       setError(error);
     } finally {
@@ -134,14 +146,14 @@ export function ChatInput({
 
   return (
     <div className="relative">
-      {error && (
+      {/* {error && (
         <div className="absolute left-0 right-0 z-40 mb-2 bottom-full">
           <ErrorMessage
             error={error}
             details={{ provider: currentProvider.id, model: currentModel.id }}
           />
         </div>
-      )}
+      )} */}
       <div
         className={cn(
           "relative flex flex-col border rounded-xl shadow-lg bg-background/95 z-50 backdrop-blur-sm border-border/50",

@@ -122,6 +122,7 @@ export const updateBySlug = mutation({
     messageSlug: v.id("messages"),
     content: v.string(),
     thinking: v.optional(v.string()),
+    type: v.optional(v.union(v.literal("error"), v.literal("normal"))),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -149,6 +150,7 @@ export const updateBySlug = mutation({
     await ctx.db.patch(args.messageSlug, {
       content: args.content,
       thinking: args.thinking,
+      type: args.type,
     });
 
     return args.messageSlug;
