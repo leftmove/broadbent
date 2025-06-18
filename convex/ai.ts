@@ -40,6 +40,12 @@ export const generateResponse = action({
     thinking: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
+    // Create generation record for cancellation tracking
+    const generationId = await ctx.runMutation(api.generations.create, {
+      messageId: args.messageSlug,
+      userId: args.userId,
+    });
+
     const apiKeys = await ctx.runQuery(api.settings.getAllApiKeys, {
       userId: args.userId,
     });
@@ -124,6 +130,25 @@ export const generateResponse = action({
         let fullThinking = "";
 
         for await (const chunk of result.fullStream) {
+          // Check for cancellation
+          const isCancelled = await ctx.runQuery(api.generations.isCancelled, {
+            messageId: args.messageSlug,
+          });
+          
+          if (isCancelled) {
+            await ctx.runMutation(api.generations.cleanup, {
+              messageId: args.messageSlug,
+            });
+            throw new ConvexError(
+              "GenerationCancelled",
+              "Generation was cancelled by user.",
+              {
+                provider: selectedProvider,
+                model: args.modelId,
+              }
+            );
+          }
+
           if (chunk.type === "text-delta") {
             fullText += chunk.textDelta;
             await ctx.runMutation(api.messages.updateBySlug, {
@@ -149,6 +174,11 @@ export const generateResponse = action({
           }
         }
 
+        // Clean up generation record on success
+        await ctx.runMutation(api.generations.cleanup, {
+          messageId: args.messageSlug,
+        });
+        
         return { content: fullText, thinking: fullThinking };
       } else {
         const { textStream } = streamText({
@@ -170,6 +200,25 @@ export const generateResponse = action({
 
         let fullText = "";
         for await (const textPart of textStream) {
+          // Check for cancellation
+          const isCancelled = await ctx.runQuery(api.generations.isCancelled, {
+            messageId: args.messageSlug,
+          });
+          
+          if (isCancelled) {
+            await ctx.runMutation(api.generations.cleanup, {
+              messageId: args.messageSlug,
+            });
+            throw new ConvexError(
+              "GenerationCancelled",
+              "Generation was cancelled by user.",
+              {
+                provider: selectedProvider,
+                model: args.modelId,
+              }
+            );
+          }
+
           fullText += textPart;
           await ctx.runMutation(api.messages.updateBySlug, {
             chatSlug: args.chatSlug,
@@ -178,9 +227,21 @@ export const generateResponse = action({
           });
         }
 
+        // Clean up generation record on success
+        await ctx.runMutation(api.generations.cleanup, {
+          messageId: args.messageSlug,
+        });
+        
         return { content: fullText };
       }
     } catch (error: any) {
+      // Clean up generation record on error (unless it's already a cancellation error)
+      if (!(error instanceof ConvexError && error.name === "GenerationCancelled")) {
+        await ctx.runMutation(api.generations.cleanup, {
+          messageId: args.messageSlug,
+        });
+      }
+      
       if (error instanceof ConvexError) {
         throw error;
       } else {

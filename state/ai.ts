@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { ModelId } from "lib/ai/models";
 import { Id } from "../convex/_generated/dataModel";
@@ -17,8 +17,9 @@ type MessageHistory = Message[];
 export const useAIGeneration = () => {
   const [error, setError] = useState<CustomError | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [currentMessageId, setCurrentMessageId] = useState<Id<"messages"> | null>(null);
   const generateResponseAction = useAction(api.ai.generateResponse);
+  const cancelGeneration = useMutation(api.generations.cancel);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -28,13 +29,17 @@ export const useAIGeneration = () => {
     setStreaming(false);
   }, []);
 
-  const stopGeneration = useCallback(() => {
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
-      setStreaming(false);
+  const stopGeneration = useCallback(async () => {
+    if (currentMessageId && streaming) {
+      try {
+        await cancelGeneration({ messageId: currentMessageId });
+        setStreaming(false);
+        setCurrentMessageId(null);
+      } catch (error) {
+        console.error("Failed to cancel generation:", error);
+      }
     }
-  }, [abortController]);
+  }, [currentMessageId, streaming, cancelGeneration]);
 
   const generateResponse = async (
     userId: Id<"users">,
@@ -46,10 +51,7 @@ export const useAIGeneration = () => {
   ): Promise<{ content: string; thinking?: string }> => {
     setError(null);
     setStreaming(true);
-    
-    // Create new abort controller for this generation
-    const controller = new AbortController();
-    setAbortController(controller);
+    setCurrentMessageId(messageSlug);
 
     try {
       const result = await generateResponseAction({
@@ -65,13 +67,13 @@ export const useAIGeneration = () => {
       });
 
       setStreaming(false);
-      setAbortController(null);
+      setCurrentMessageId(null);
       return result;
     } catch (error: any) {
-      // Check if error was due to abort
-      if (controller.signal.aborted) {
+      // Check if error was due to cancellation
+      if (error instanceof CustomError && error.name === "GenerationCancelled") {
         setStreaming(false);
-        setAbortController(null);
+        setCurrentMessageId(null);
         throw new CustomError("GenerationStopped", "Generation was stopped by user.");
       }
       
@@ -85,7 +87,7 @@ export const useAIGeneration = () => {
         setError(customError);
       }
       setStreaming(false);
-      setAbortController(null);
+      setCurrentMessageId(null);
       throw error;
     }
   };

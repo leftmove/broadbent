@@ -42,6 +42,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [isDemosSectionExpanded, setIsDemosSectionExpanded] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
@@ -50,7 +51,7 @@ export function ChatInput({
   const userSettings = useQuery(
     api.settings.getSettings,
     user ? { userId: user._id } : "skip"
-  ) || { selectedModel: "gpt-4o", provider: "openai" };
+  ) || { selectedModel: "gemini-2.5-flash", provider: "google" };
   const messages =
     useQuery(api.messages.listBySlug, chatSlug ? { chatSlug } : "skip") || [];
 
@@ -80,17 +81,17 @@ export function ChatInput({
         const textarea = textareaRef.current;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        
+
         setInput((prev) => {
           const newValue = prev.slice(0, start) + "\n" + prev.slice(end);
-          
+
           // Set cursor position after the newline on next tick
           setTimeout(() => {
             if (textarea) {
               textarea.selectionStart = textarea.selectionEnd = start + 1;
             }
           }, 0);
-          
+
           return newValue;
         });
       }
@@ -176,7 +177,7 @@ export function ChatInput({
   const handleButtonClick = () => {
     if (streaming) {
       // Stop the current generation
-      stopGeneration();
+      void stopGeneration();
     } else if (input.trim() && !isSubmitting) {
       // Send the message
       void handleSubmit(input);
@@ -251,60 +252,172 @@ export function ChatInput({
           )}
         >
           <div className="overflow-y-auto max-h-[32rem] p-2">
-            {collection.providers.map((provider) => (
-              <div key={provider.id} className="mb-6">
-                <div className="flex items-center justify-between px-3 py-3 mb-3 border-b border-border/20">
-                  <div className="text-sm font-medium tracking-wide text-foreground/90">
-                    {provider.name}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-2 px-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {provider.models.map((model) => {
-                    const isSelected = currentModel.id === model.id;
+            {(() => {
+              const ENABLE_DEMOS = true; // Toggle this to show/hide demos section
+              const DEMO_PROVIDERS = ["openai", "xai", "groq"];
 
-                    return (
+              const regularProviders = collection.providers.filter(
+                (provider) => !DEMO_PROVIDERS.includes(provider.id)
+              );
+              const demoProviders = collection.providers.filter((provider) =>
+                DEMO_PROVIDERS.includes(provider.id)
+              );
+
+              return (
+                <>
+                  {regularProviders.map((provider) => (
+                    <div key={provider.id} className="mb-6">
+                      <div className="flex items-center justify-between px-3 py-3 mb-3 border-b border-border/20">
+                        <div className="text-sm font-medium tracking-wide text-foreground/90">
+                          {provider.name}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2 px-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {provider.models.map((model) => {
+                          const isSelected = currentModel.id === model.id;
+
+                          return (
+                            <button
+                              key={model.id}
+                              onClick={() =>
+                                void handleModelChange(provider.id, model.id)
+                              }
+                              className={cn(
+                                "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent hover:shadow-sm hover:scale-[1.02]",
+                                isSelected
+                                  ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20 shadow-sm"
+                                  : "hover:border-primary/10"
+                              )}
+                            >
+                              <div className="flex items-center min-h-[4rem]">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="font-medium text-foreground">
+                                      {model.name}
+                                    </div>
+                                    {model.capabilities?.thinking && (
+                                      <div className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                                        <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  {model.description && (
+                                    <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                      {model.description}
+                                    </div>
+                                  )}
+                                </div>
+                                {isSelected && (
+                                  <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {ENABLE_DEMOS && demoProviders.length > 0 && (
+                    <div className="mb-6">
                       <button
-                        key={model.id}
                         onClick={() =>
-                          void handleModelChange(provider.id, model.id)
+                          setIsDemosSectionExpanded(!isDemosSectionExpanded)
                         }
+                        className="flex items-center justify-between w-full px-3 py-3 mb-3 transition-colors duration-200 border-b rounded-lg border-border/20 hover:bg-secondary/30"
+                      >
+                        <div>
+                          <div className="text-sm font-medium tracking-wide text-left text-foreground/90">
+                            Demos
+                          </div>
+                          <div className="mt-1 text-xs text-left text-muted-foreground/80">
+                            These models are untested and may not work as
+                            expected
+                          </div>
+                        </div>
+                        {isDemosSectionExpanded ? (
+                          <ChevronUp className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
+                        )}
+                      </button>
+
+                      <div
                         className={cn(
-                          "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent hover:shadow-sm hover:scale-[1.02]",
-                          isSelected
-                            ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20 shadow-sm"
-                            : "hover:border-primary/10"
+                          "transition-all duration-300 ease-in-out",
+                          isDemosSectionExpanded
+                            ? "block opacity-100"
+                            : "hidden opacity-0"
                         )}
                       >
-                        <div className="flex items-center min-h-[4rem]">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-foreground">
-                                {model.name}
-                              </div>
-                              {model.capabilities?.thinking && (
-                                <div className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30">
-                                  <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                        <div className="space-y-4">
+                          {demoProviders.map((provider) => (
+                            <div key={provider.id}>
+                              <div className="px-3 mb-2">
+                                <div className="text-xs font-medium tracking-wider text-muted-foreground">
+                                  {provider.name}
                                 </div>
-                              )}
-                            </div>
-                            {model.description && (
-                              <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                {model.description}
                               </div>
-                            )}
-                          </div>
-                          {isSelected && (
-                            <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
-                              <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                              <div className="grid grid-cols-1 gap-2 px-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {provider.models.map((model) => {
+                                  const isSelected =
+                                    currentModel.id === model.id;
+
+                                  return (
+                                    <button
+                                      key={model.id}
+                                      onClick={() =>
+                                        void handleModelChange(
+                                          provider.id,
+                                          model.id
+                                        )
+                                      }
+                                      className={cn(
+                                        "text-left px-3 py-3 text-sm rounded-lg hover:bg-secondary/70 transition-all duration-200 border border-transparent hover:shadow-sm hover:scale-[1.02]",
+                                        isSelected
+                                          ? "bg-secondary/70 ring-1 ring-primary/20 border-primary/20 shadow-sm"
+                                          : "hover:border-primary/10"
+                                      )}
+                                    >
+                                      <div className="flex items-center min-h-[4rem]">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <div className="font-medium text-foreground">
+                                              {model.name}
+                                            </div>
+                                            {model.capabilities?.thinking && (
+                                              <div className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                                                <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                              </div>
+                                            )}
+                                          </div>
+                                          {model.description && (
+                                            <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                              {model.description}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {isSelected && (
+                                          <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          )}
+                          ))}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
         <div className="flex items-start gap-3 p-4 transition-all duration-200 min-h-20">

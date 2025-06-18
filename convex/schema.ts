@@ -51,6 +51,14 @@ const applicationTables = {
   })
     .index("by_user", ["userId"])
     .index("by_user_provider", ["userId", "provider"]),
+
+  generations: defineTable({
+    messageId: v.id("messages"),
+    userId: v.id("users"),
+    cancelled: v.boolean(),
+  })
+    .index("by_message", ["messageId"])
+    .index("by_user", ["userId"]),
 };
 
 export default defineSchema({
