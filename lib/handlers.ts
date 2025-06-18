@@ -1,6 +1,6 @@
-import { llms, type AIProvider } from "lib/ai/providers";
-import { CustomError, RequestDetails } from "lib/errors";
-import { openai, anthropic, google, xai, groq } from "lib/ai/spec";
+import { llms, type AIProvider } from "./ai/providers";
+import { CustomError, RequestDetails } from "./errors";
+import { openai, anthropic, google, xai, groq } from "./ai/spec";
 
 type ErrorDetails = Record<string, any>;
 type RequestErrorDetails = ErrorDetails & { request: RequestDetails };

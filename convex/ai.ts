@@ -9,6 +9,7 @@ import { createXai } from "@ai-sdk/xai";
 import { createGroq } from "@ai-sdk/groq";
 
 import { llms } from "../lib/ai/providers";
+import { handleError } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
 import { api } from "./_generated/api";
 import { ConvexError } from "../lib/errors";
@@ -40,8 +41,7 @@ export const generateResponse = action({
     thinking: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    // Create generation record for cancellation tracking
-    const generationId = await ctx.runMutation(api.generations.create, {
+    await ctx.runMutation(api.generations.create, {
       messageId: args.messageSlug,
       userId: args.userId,
     });
@@ -134,7 +134,7 @@ export const generateResponse = action({
           const isCancelled = await ctx.runQuery(api.generations.isCancelled, {
             messageId: args.messageSlug,
           });
-          
+
           if (isCancelled) {
             await ctx.runMutation(api.generations.cleanup, {
               messageId: args.messageSlug,
@@ -178,7 +178,7 @@ export const generateResponse = action({
         await ctx.runMutation(api.generations.cleanup, {
           messageId: args.messageSlug,
         });
-        
+
         return { content: fullText, thinking: fullThinking };
       } else {
         const { textStream } = streamText({
@@ -204,7 +204,7 @@ export const generateResponse = action({
           const isCancelled = await ctx.runQuery(api.generations.isCancelled, {
             messageId: args.messageSlug,
           });
-          
+
           if (isCancelled) {
             await ctx.runMutation(api.generations.cleanup, {
               messageId: args.messageSlug,
@@ -231,21 +231,34 @@ export const generateResponse = action({
         await ctx.runMutation(api.generations.cleanup, {
           messageId: args.messageSlug,
         });
-        
+
         return { content: fullText };
       }
     } catch (error: any) {
-      // Clean up generation record on error (unless it's already a cancellation error)
-      if (!(error instanceof ConvexError && error.name === "GenerationCancelled")) {
+      console.log(error);
+
+      if (
+        !(error instanceof ConvexError && error.name === "GenerationCancelled")
+      ) {
         await ctx.runMutation(api.generations.cleanup, {
           messageId: args.messageSlug,
         });
       }
-      
+
       if (error instanceof ConvexError) {
-        throw error;
+        const message = handleError(error, {
+          provider: selectedProvider,
+          model: args.modelId,
+        });
+        await ctx.runMutation(api.messages.updateBySlug, {
+          chatSlug: args.chatSlug,
+          messageSlug: args.messageSlug,
+          content: message,
+          type: "error",
+        });
+        return { content: message };
       } else {
-        throw new ConvexError(
+        const customError = new ConvexError(
           "RequestError",
           "Error occurred when trying to query AI provider for response.",
           "error" in error
@@ -260,6 +273,17 @@ export const generateResponse = action({
                 model: args.modelId,
               }
         );
+        const message = handleError(customError, {
+          provider: selectedProvider,
+          model: args.modelId,
+        });
+        await ctx.runMutation(api.messages.updateBySlug, {
+          chatSlug: args.chatSlug,
+          messageSlug: args.messageSlug,
+          content: message,
+          type: "error",
+        });
+        return { content: message };
       }
     }
   },

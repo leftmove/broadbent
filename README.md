@@ -1,5 +1,5 @@
-<div style="display: flex; flex-direction: column; align-items: center;">
-  <image src="https://i.imgur.com/7c3e98n.png" alt="Broadbent" />
+<div style="display: flex; flex-direction: column; align-items: center; margin: 40px auto 20px auto; width: 66.66%;">
+  <image src="https://i.imgur.com/dIolunV.png" alt="Broadbent" />
   <span style="margin-top: 20px;">A chat app with broad goals.</span>
 </div>
 
