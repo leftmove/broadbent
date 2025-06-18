@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MessageSquare, Calendar } from "lucide-react";
 import { cn } from "lib/utils";
@@ -24,7 +25,7 @@ interface SearchResultsProps {
   className?: string;
 }
 
-export function SearchResults({ results, query, className }: SearchResultsProps) {
+export const SearchResults = memo(function SearchResults({ results, query, className }: SearchResultsProps) {
   const router = useRouter();
 
   const handleResultClick = (result: SearchResult) => {
@@ -33,7 +34,7 @@ export function SearchResults({ results, query, className }: SearchResultsProps)
     }
   };
 
-  const highlightText = (text: string, query: string) => {
+  const highlightText = useMemo(() => (text: string, query: string) => {
     if (!query.trim()) return text;
     
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -46,7 +47,7 @@ export function SearchResults({ results, query, className }: SearchResultsProps)
         </mark>
       ) : part
     );
-  };
+  }, [query]);
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -116,4 +117,4 @@ export function SearchResults({ results, query, className }: SearchResultsProps)
       ))}
     </div>
   );
-}
+});

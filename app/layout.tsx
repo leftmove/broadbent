@@ -17,6 +17,8 @@ const switzer = localFont({
     },
   ],
   variable: "--font-switzer",
+  display: "swap",
+  preload: true,
 });
 const sentient = localFont({
   src: [
@@ -30,6 +32,8 @@ const sentient = localFont({
     },
   ],
   variable: "--font-sentient",
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

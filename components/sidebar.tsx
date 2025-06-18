@@ -287,7 +287,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
       </div>
 
       {!collapsed && (
-        <div className="flex-1 px-2 overflow-y-auto">
+        <div className="flex-1 px-2 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           {isSearching ? (
             <div className="space-y-4">
               <div className="px-3 py-3 mx-2 mb-4 border shadow-sm bg-gradient-to-r from-secondary/20 via-secondary/30 to-secondary/20 rounded-xl border-border/30">

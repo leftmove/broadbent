@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Doc } from "convex/_generated/dataModel";
 import { Button } from "components/ui/button";
 import { Pin, Trash2 } from "lucide-react";
@@ -13,7 +14,7 @@ interface ChatItemProps {
   onDeleteClick: (chat: Doc<"chats">, event: React.MouseEvent) => void;
 }
 
-export function ChatItem({
+export const ChatItem = memo(function ChatItem({
   chat,
   isSelected,
   onPinClick,
@@ -88,4 +89,4 @@ export function ChatItem({
       </div>
     </div>
   );
-}
+});
