@@ -26,16 +26,24 @@ const applicationTables = {
   messages: defineTable({
     chatId: v.id("chats"),
     content: v.string(),
-    role: v.union(v.literal("user"), v.literal("assistant")),
+    role: v.union(
+      v.literal("user"),
+      v.literal("assistant"),
+      v.literal("system")
+    ),
     type: v.optional(v.union(v.literal("error"), v.literal("normal"))),
     userId: v.id("users"),
     thinking: v.optional(v.string()),
     modelId: v.optional(v.string()),
-    sources: v.optional(v.array(v.object({
-      title: v.string(),
-      url: v.string(),
-      excerpt: v.optional(v.string()),
-    }))),
+    sources: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          url: v.string(),
+          excerpt: v.optional(v.string()),
+        })
+      )
+    ),
   })
     .index("by_chat", ["chatId"])
     .searchIndex("search_messages", {

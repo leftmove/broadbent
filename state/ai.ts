@@ -9,7 +9,7 @@ import { extractMetadata } from "lib/metadata";
 import { useUIState } from "./ui";
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -18,7 +18,8 @@ type MessageHistory = Message[];
 export const useAIGeneration = () => {
   const [error, setError] = useState<CustomError | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const [currentMessageId, setCurrentMessageId] = useState<Id<"messages"> | null>(null);
+  const [currentMessageId, setCurrentMessageId] =
+    useState<Id<"messages"> | null>(null);
   const generateResponseAction = useAction(api.ai.generateResponse);
   const cancelGeneration = useMutation(api.generations.cancel);
   const { setIsSearching } = useUIState();
@@ -52,25 +53,51 @@ export const useAIGeneration = () => {
     modelId: ModelId,
     messageHistory?: MessageHistory,
     enableWebSearch?: boolean
-  ): Promise<{ content: string; thinking?: string; sources?: Array<{title: string; url: string; excerpt?: string}> }> => {
+  ): Promise<{
+    content: string;
+    thinking?: string;
+    sources?: Array<{ title: string; url: string; excerpt?: string }>;
+  }> => {
     setError(null);
     setStreaming(true);
     setCurrentMessageId(messageSlug);
-    
+
     // Only show search animation if web search is enabled and the prompt likely requires search
     // Check if the prompt contains keywords that would trigger web search
     if (enableWebSearch) {
       const searchKeywords = [
-        'current', 'recent', 'latest', 'today', 'yesterday', 'news', 'weather', 
-        'price', 'stock', 'market', 'update', 'happening', 'events', 'when did',
-        'when was', 'what happened', 'search', 'find', 'look up', 'check',
-        '2024', '2025', 'this year', 'this month', 'this week'
+        "current",
+        "recent",
+        "latest",
+        "today",
+        "yesterday",
+        "news",
+        "weather",
+        "price",
+        "stock",
+        "market",
+        "update",
+        "happening",
+        "events",
+        "when did",
+        "when was",
+        "what happened",
+        "search",
+        "find",
+        "look up",
+        "check",
+        "2024",
+        "2025",
+        "this year",
+        "this month",
+        "this week",
       ];
-      
+
       const promptLower = prompt.toLowerCase();
-      const likelyToSearch = searchKeywords.some(keyword => promptLower.includes(keyword)) ||
-                           promptLower.includes('?'); // Questions are more likely to need search
-      
+      const likelyToSearch =
+        searchKeywords.some((keyword) => promptLower.includes(keyword)) ||
+        promptLower.includes("?"); // Questions are more likely to need search
+
       if (likelyToSearch) {
         setIsSearching(true);
         // Auto-clear after 5 seconds if still showing
@@ -98,13 +125,19 @@ export const useAIGeneration = () => {
       return result;
     } catch (error: any) {
       // Check if error was due to cancellation
-      if (error instanceof CustomError && error.name === "GenerationCancelled") {
+      if (
+        error instanceof CustomError &&
+        error.name === "GenerationCancelled"
+      ) {
         setStreaming(false);
         setCurrentMessageId(null);
         setIsSearching(false);
-        throw new CustomError("GenerationStopped", "Generation was stopped by user.");
+        throw new CustomError(
+          "GenerationStopped",
+          "Generation was stopped by user."
+        );
       }
-      
+
       if (error instanceof CustomError) {
         setError(error);
       } else {

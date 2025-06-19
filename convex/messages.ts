@@ -6,7 +6,11 @@ export const send = mutation({
   args: {
     chatId: v.id("chats"),
     content: v.string(),
-    role: v.union(v.literal("user"), v.literal("assistant")),
+    role: v.union(
+      v.literal("user"),
+      v.literal("assistant"),
+      v.literal("system")
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -33,7 +37,11 @@ export const sendBySlug = mutation({
   args: {
     chatSlug: v.string(),
     content: v.string(),
-    role: v.union(v.literal("user"), v.literal("assistant")),
+    role: v.union(
+      v.literal("user"),
+      v.literal("assistant"),
+      v.literal("system")
+    ),
     thinking: v.optional(v.string()),
     modelId: v.optional(v.string()),
   },
@@ -125,11 +133,15 @@ export const updateBySlug = mutation({
     content: v.string(),
     thinking: v.optional(v.string()),
     type: v.optional(v.union(v.literal("error"), v.literal("normal"))),
-    sources: v.optional(v.array(v.object({
-      title: v.string(),
-      url: v.string(),
-      excerpt: v.optional(v.string()),
-    }))),
+    sources: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          url: v.string(),
+          excerpt: v.optional(v.string()),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
