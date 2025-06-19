@@ -160,7 +160,7 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
       {/* User prompt overlay - positioned within the chat window */}
       <div
         className={cn(
-          "absolute top-0 right-0 left-0 z-50 transition-all duration-300 ease-out pointer-events-none",
+          "absolute top-0 right-0 left-0 z-30 z-50 transition-all duration-300 ease-out pointer-events-none",
           showSlidingResponse
             ? "opacity-100 translate-y-0"
             : "opacity-0 -translate-y-full"

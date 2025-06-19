@@ -70,7 +70,7 @@ export function ChatNavigator({ chatSlug }: { chatSlug: string }) {
   };
 
   return (
-    <div className="fixed top-4 right-6 z-40">
+    <div className="fixed top-4 right-6 z-[1000]">
       <div
         className={cn(
           "flex overflow-hidden flex-col rounded-2xl border backdrop-blur-md transition-all duration-300 ease-out",
@@ -93,12 +93,12 @@ export function ChatNavigator({ chatSlug }: { chatSlug: string }) {
         >
           <div
             className={cn(
-              "flex items-center gap-2 cursor-pointer transition-all duration-300 hover:text-foreground",
+              "flex items-center gap-2 cursor-pointer transition-all z-50 duration-300 hover:text-foreground",
               !isOpen && "justify-center w-full h-full"
             )}
             onClick={() => setIsOpen(!isOpen)}
           >
-            <List className="flex-shrink-0 w-5 h-5 text-foreground/70" />
+            <List className="z-50 flex-shrink-0 w-5 h-5 text-foreground/70" />
             <span
               className={cn(
                 "overflow-hidden text-sm font-medium transition-all duration-300 text-foreground",

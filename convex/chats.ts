@@ -99,6 +99,39 @@ export const togglePin = mutation({
   },
 });
 
+export const updateTitle = mutation({
+  args: {
+    slug: v.string(),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get the current chat by slug
+    const chat = await ctx.db
+      .query("chats")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first();
+
+    if (!chat) {
+      throw new Error("Chat not found");
+    }
+
+    // Verify ownership
+    if (chat.userId !== userId) {
+      throw new Error("Not authorized to modify this chat");
+    }
+
+    // Update the title
+    return await ctx.db.patch(chat._id, {
+      title: args.title.trim(),
+    });
+  },
+});
+
 export const deleteChat = mutation({
   args: {
     slug: v.string(),
