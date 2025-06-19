@@ -38,7 +38,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   const [isSearching, setIsSearching] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { isMobile } = useUIState();
+  const { isMobile, setInputHasContent } = useUIState();
 
   // Search results from full text search
   const searchResults =
@@ -188,21 +188,21 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-card relative transition-all duration-150 pt-2 ease-in-out border-r-[1px] border-border",
-        collapsed ? "max-w-16 w-16" : "max-w-72 w-72"
+        "flex relative flex-col pt-2 h-full transition-all duration-150 ease-in-out bg-card border-r-[1px] border-border",
+        collapsed ? "w-16 max-w-16" : "w-72 max-w-72"
       )}
     >
       <div className="p-4">
         <div
           className={cn(
-            "flex items-center mb-2 overflow-hidden transition-all duration-150 ease-in-out",
-            collapsed ? "max-w-full" : "max-w-0 -mb-8"
+            "flex overflow-hidden items-center mb-2 transition-all duration-150 ease-in-out",
+            collapsed ? "max-w-full" : "-mb-8 max-w-0"
           )}
         >
           <Button
             variant="ghost"
             size="sm"
-            className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            className="p-0 w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             onClick={toggleSidebar}
           >
             <PanelLeft className="w-5 h-5" />
@@ -211,10 +211,14 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
         </div>
         {!collapsed ? (
           <>
-            <div className="flex items-center justify-between group">
-              <Link href="/" className="block w-full">
-                <Button className="w-full mb-4 font-sans text-sm font-medium transition-all duration-200 border rounded-lg rounded-r-none shadow-sm h-11 bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md border-primary/10">
-                  <MessageSquare className="w-4 h-4 mr-2" />
+            <div className="flex justify-between items-center group">
+              <Link
+                href="/"
+                className="block w-full"
+                onClick={() => setInputHasContent(false)}
+              >
+                <Button className="mb-4 w-full h-11 font-sans text-sm font-medium rounded-lg rounded-r-none border shadow-sm transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md border-primary/10">
+                  <MessageSquare className="mr-2 w-4 h-4" />
                   <span>New Chat</span>
                 </Button>
               </Link>
@@ -222,7 +226,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-3/12 p-0 mb-4 transition-all duration-200 border border-l-0 rounded-lg rounded-l-none h-11 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary hover:shadow-md border-primary/10"
+                  className="p-0 mb-4 w-3/12 h-11 rounded-lg rounded-l-none border border-l-0 transition-all duration-200 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary hover:shadow-md border-primary/10"
                   onClick={toggleSidebar}
                 >
                   <PanelLeft className="w-5 h-5 transition-transform duration-200 hover:scale-110" />
@@ -231,10 +235,10 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
               )}
             </div>
             <div className="relative group">
-              <div className="absolute inset-0 transition-opacity duration-300 rounded-lg opacity-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 group-focus-within:opacity-100 -z-10 blur-sm"></div>
+              <div className="absolute inset-0 bg-gradient-to-r via-transparent rounded-lg opacity-0 blur-sm transition-opacity duration-300 from-primary/5 to-primary/5 group-focus-within:opacity-100 -z-10"></div>
               <Search
                 className={cn(
-                  "absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 transition-all duration-300",
+                  "absolute left-3 top-1/2 w-4 h-4 transition-all duration-300 transform -translate-y-1/2",
                   searchQuery
                     ? "text-primary"
                     : "text-muted-foreground group-focus-within:text-primary"
@@ -265,19 +269,19 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
         ) : (
           <div className="flex flex-col items-center space-y-3">
             <Link href="/" className="relative group">
-              <Button className="p-0 transition-all duration-200 rounded-lg shadow-sm w-11 h-11 bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md">
+              <Button className="p-0 w-11 h-11 rounded-lg shadow-sm transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md">
                 <MessageSquare className="w-5 h-5" />
                 <span className="sr-only">New Chat</span>
               </Button>
               {/* Tooltip */}
-              <div className="absolute z-50 px-2 py-1 ml-2 text-xs transition-opacity duration-200 -translate-y-1/2 rounded opacity-0 pointer-events-none left-full top-1/2 bg-foreground text-background group-hover:opacity-100 whitespace-nowrap">
+              <div className="absolute top-1/2 left-full z-50 px-2 py-1 ml-2 text-xs whitespace-nowrap rounded opacity-0 transition-opacity duration-200 -translate-y-1/2 pointer-events-none bg-foreground text-background group-hover:opacity-100">
                 New Chat
               </div>
             </Link>
 
             <Button
               variant="ghost"
-              className="w-10 h-10 p-0 transition-all duration-200 border border-transparent rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 hover:shadow-md hover:border-primary/20"
+              className="p-0 w-10 h-10 rounded-lg border border-transparent transition-all duration-200 text-muted-foreground hover:text-primary hover:bg-primary/10 hover:shadow-md hover:border-primary/20"
             >
               <Search className="w-5 h-5" />
               <span className="sr-only">Search</span>
@@ -287,11 +291,11 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
       </div>
 
       {!collapsed && (
-        <div className="flex-1 px-2 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        <div className="overflow-y-auto flex-1 px-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           {isSearching ? (
             <div className="space-y-4">
-              <div className="px-3 py-3 mx-2 mb-4 border shadow-sm bg-gradient-to-r from-secondary/20 via-secondary/30 to-secondary/20 rounded-xl border-border/30">
-                <div className="flex items-center justify-between mb-2">
+              <div className="px-3 py-3 mx-2 mb-4 bg-gradient-to-r rounded-xl border shadow-sm from-secondary/20 via-secondary/30 to-secondary/20 border-border/30">
+                <div className="flex justify-between items-center mb-2">
                   <div className="text-xs font-semibold text-foreground/90">
                     Search Results
                   </div>
@@ -301,14 +305,14 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
+                <div className="flex gap-2 items-center text-xs text-muted-foreground">
+                  <span className="flex gap-1 items-center">
                     <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                     {displayChats.length}{" "}
                     {displayChats.length === 1 ? "chat" : "chats"}
                   </span>
                   {searchResults.length > 0 && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex gap-1 items-center">
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                       {searchResults.length} message
                       {searchResults.length !== 1 ? "s" : ""}
@@ -319,7 +323,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
               {searchResults.length > 0 && (
                 <div className="px-2">
-                  <div className="flex items-center gap-2 px-2 mb-3">
+                  <div className="flex gap-2 items-center px-2 mb-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Message Matches
@@ -336,7 +340,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
               {displayChats.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 px-4 mb-3">
+                  <div className="flex gap-2 items-center px-4 mb-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Chats
@@ -361,7 +365,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
             <>
               {chatGroups.pinned.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                  <div className="flex gap-2 items-center px-3 py-2 mb-2">
                     <div className="w-2 h-2 rounded-full bg-primary"></div>
                     <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Pinned
@@ -384,7 +388,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
               {chatGroups.today.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                  <div className="flex gap-2 items-center px-3 py-2 mb-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Today
@@ -407,8 +411,8 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
               {chatGroups.yesterday.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <div className="flex gap-2 items-center px-3 py-2 mb-2">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                     <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Yesterday
                     </div>
@@ -430,7 +434,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
               {chatGroups.lastWeek.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                  <div className="flex gap-2 items-center px-3 py-2 mb-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                     <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Last Week
@@ -453,7 +457,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
               {chatGroups.older.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 px-3 py-2 mb-2">
+                  <div className="flex gap-2 items-center px-3 py-2 mb-2">
                     <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                     <div className="text-xs font-semibold tracking-wide uppercase text-foreground/80">
                       Older
@@ -483,7 +487,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
       <div
         className={cn(
-          "border-t border-border transition-all duration-150 ease-in-out",
+          "border-t transition-all duration-150 ease-in-out border-border",
           collapsed ? "p-2" : "p-4"
         )}
       >
@@ -492,16 +496,16 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           className={cn(
             "space-y-1 transition-all duration-150 ease-in-out",
             collapsed
-              ? "opacity-0 max-h-0 overflow-hidden"
-              : "opacity-100 max-h-40"
+              ? "overflow-hidden max-h-0 opacity-0"
+              : "max-h-40 opacity-100"
           )}
         >
           <Link href="/settings">
             <Button
               variant="ghost"
-              className="justify-center w-full px-3 font-sans text-sm rounded-lg h-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              className="justify-center px-3 w-full h-9 font-sans text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             >
-              <Settings className="w-4 h-4 mr-3" />
+              <Settings className="mr-3 w-4 h-4" />
               Settings
             </Button>
           </Link>
@@ -513,14 +517,14 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
           className={cn(
             "flex flex-col items-center space-y-2 transition-all duration-150 ease-in-out",
             collapsed
-              ? "opacity-100 max-h-40"
-              : "opacity-0 max-h-0 overflow-hidden"
+              ? "max-h-40 opacity-100"
+              : "overflow-hidden max-h-0 opacity-0"
           )}
         >
           <Link href="/settings">
             <Button
               variant="ghost"
-              className="w-10 h-10 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              className="p-0 w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             >
               <Settings className="w-5 h-5" />
               <span className="sr-only">Settings</span>

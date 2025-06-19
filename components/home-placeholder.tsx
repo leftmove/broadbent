@@ -211,7 +211,13 @@ export function HomePlaceholder() {
           }`}
         >
           <SearchProgressBar />
-          <ChatInput chatSlug="" isHomepage={true} className="p-3" />
+          <ChatInput 
+            chatSlug="" 
+            isHomepage={true} 
+            className="p-3" 
+            defaultValue={prompt}
+            onPromptHandled={handlePromptHandled}
+          />
         </div>
       </div>
       <div className="absolute bottom-0 left-0 w-[0.5px] h-full bg-border"></div>

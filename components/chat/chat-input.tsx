@@ -33,14 +33,18 @@ interface ChatInputProps {
   className?: string;
   chatSlug: string;
   isHomepage?: boolean;
+  defaultValue?: string;
+  onPromptHandled?: () => void;
 }
 
 export function ChatInput({
   className,
   chatSlug,
   isHomepage = false,
+  defaultValue,
+  onPromptHandled,
 }: ChatInputProps) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(defaultValue || "");
   const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [isDemosSectionExpanded, setIsDemosSectionExpanded] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +108,11 @@ export function ChatInput({
     setIsSubmitting(true);
     setInput("");
     clearError();
+    
+    // Notify that prompt was handled
+    if (onPromptHandled) {
+      onPromptHandled();
+    }
     try {
       let currentChatSlug = chatSlug;
 
@@ -204,6 +213,13 @@ export function ChatInput({
     // Auto-resize textarea when input changes
     autoResizeTextarea();
   }, [isHomepage, input]);
+
+  // Update input when defaultValue changes
+  useEffect(() => {
+    if (defaultValue !== undefined) {
+      setInput(defaultValue);
+    }
+  }, [defaultValue]);
 
   return (
     <div className="relative">
