@@ -15,18 +15,69 @@ export const prompts = {
 Always call the webSearch tool BEFORE responding if the question requires current information.`,
   },
 
-  system: {
-    default: `You are a helpful AI assistant. Provide accurate, helpful, and concise responses to user questions.`,
-
-    reasoning: `You are a helpful AI assistant with advanced reasoning capabilities. When solving complex problems, show your thinking process clearly before providing your final answer.`,
-
-    webSearchEnabled: `You are a helpful AI assistant with access to real-time web search capabilities. Use web search when you need current information that may not be in your training data.`,
-
-    webSearchAndReasoning: `You are a helpful AI assistant with advanced reasoning capabilities and access to real-time web search. When solving complex problems, show your thinking process clearly. Use web search when you need current information that may not be in your training data.`,
+  base: {
+    identity: `You are a helpful AI assistant.`,
+    behavior: `Provide accurate, helpful, and concise responses to user questions.`,
+    reasoning: `When solving complex problems, show your thinking process clearly before providing your final answer.`,
+    webSearch: `Use web search when you need current information that may not be in your training data.`,
   },
 };
+
+interface SystemPromptOptions {
+  hasReasoning?: boolean;
+  hasWebSearch?: boolean;
+  customBehavior?: string;
+}
+
+export function buildSystemPrompt(options: SystemPromptOptions = {}): string {
+  const {
+    hasReasoning = false,
+    hasWebSearch = false,
+    customBehavior,
+  } = options;
+
+  let prompt = prompts.base.identity;
+
+  // Add capabilities
+  const capabilities: string[] = [];
+  if (hasReasoning) {
+    capabilities.push("advanced reasoning capabilities");
+  }
+  if (hasWebSearch) {
+    capabilities.push("access to real-time web search");
+  }
+
+  if (capabilities.length > 0) {
+    prompt += ` with ${capabilities.join(" and ")}`;
+  }
+
+  prompt += ".";
+
+  // Add specific behaviors
+  const behaviors: string[] = [];
+
+  if (customBehavior) {
+    behaviors.push(customBehavior);
+  } else {
+    behaviors.push(prompts.base.behavior);
+  }
+
+  if (hasReasoning) {
+    behaviors.push(prompts.base.reasoning);
+  }
+
+  if (hasWebSearch) {
+    behaviors.push(prompts.base.webSearch);
+  }
+
+  if (behaviors.length > 0) {
+    prompt += ` ${behaviors.join(" ")}`;
+  }
+
+  return prompt;
+}
 
 export type PromptKey = keyof typeof prompts;
 export type ReasoningPromptKey = keyof typeof prompts.reasoning;
 export type WebSearchPromptKey = keyof typeof prompts.webSearch;
-export type SystemPromptKey = keyof typeof prompts.system;
+export type BasePromptKey = keyof typeof prompts.base;

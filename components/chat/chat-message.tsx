@@ -203,6 +203,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   if (isUser) {
     return (
       <div
+        id={message._id}
         className="flex justify-end w-full px-4 py-2"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -262,6 +263,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
 
   return (
     <div
+      id={message._id}
       className="flex w-full px-4 py-2"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -387,7 +389,10 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
 
             {/* Reasoning section - only show if model has reasoning */}
             {hasReasoning && (
-              <ThinkingDisplay thinking={message.thinking!} messageId={message._id} />
+              <ThinkingDisplay
+                thinking={message.thinking!}
+                messageId={message._id}
+              />
             )}
 
             {/* Action buttons and model info - only show on hover */}
@@ -447,7 +452,9 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                       isRegenerating && "animate-spin"
                     )}
                   />
-                  <span className="font-medium hidden xs:inline">Regenerate</span>
+                  <span className="font-medium hidden xs:inline">
+                    Regenerate
+                  </span>
                 </button>
 
                 <button

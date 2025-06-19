@@ -12,7 +12,7 @@ import { createGroq } from "@ai-sdk/groq";
 import { webSearchTool } from "../lib/tools/web-search";
 
 import { llms } from "../lib/ai/providers";
-import { prompts } from "../lib/ai/prompts";
+import { prompts, buildSystemPrompt } from "../lib/ai/prompts";
 import { handleError, ErrorDetails } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
 import { api } from "./_generated/api";
@@ -141,15 +141,11 @@ function prepareMessages(
 ): Message[] {
   const messages: Message[] = [];
 
-  // Add system message based on capabilities
-  let systemMessage = prompts.system.default;
-  if (hasToolSupport && shouldAddReasoningInstructions) {
-    systemMessage = prompts.system.webSearchAndReasoning;
-  } else if (hasToolSupport) {
-    systemMessage = prompts.system.webSearchEnabled;
-  } else if (shouldAddReasoningInstructions) {
-    systemMessage = prompts.system.reasoning;
-  }
+  // Build system message based on capabilities
+  const systemMessage = buildSystemPrompt({
+    hasReasoning: shouldAddReasoningInstructions,
+    hasWebSearch: hasToolSupport,
+  });
 
   messages.push({
     role: "system",

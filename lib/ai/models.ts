@@ -10,6 +10,9 @@ export const GOOGLE_DEFAULT_MODEL = "gemini-1.5-flash";
 export const XAI_DEFAULT_MODEL = "grok-2";
 export const GROQ_DEFAULT_MODEL = "llama-3.1-8b-instant";
 
+export const DEFAULT_MODEL = OPENAI_DEFAULT_MODEL;
+export const DEFAULT_PROVIDER = "openai";
+
 export type OpenAIModelId = (typeof openai.models)[number]["id"];
 export type AnthropicModelId = (typeof anthropic.models)[number]["id"];
 export type GoogleModelId = (typeof google.models)[number]["id"];
