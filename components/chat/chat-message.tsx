@@ -5,7 +5,7 @@ import { Doc } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import ReactMarkdown from "react-markdown";
-import { Copy, FileText, RotateCcw, Trash2, Check, Edit2 } from "lucide-react";
+import { Copy, FileText, RotateCcw, Trash2, Check, Edit2, Globe } from "lucide-react";
 import { markdownToTxt } from "markdown-to-txt";
 
 import { cn } from "lib/utils";
@@ -16,6 +16,7 @@ import { ThinkingDisplay } from "components/chat/thinking-display";
 import { MessageSources } from "components/chat/message-sources";
 import { llms } from "lib/ai/providers";
 import { useAIGeneration } from "state/ai";
+import { useUIState } from "state/ui";
 
 interface ChatMessageProps {
   message: Doc<"messages">;
@@ -42,10 +43,17 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   const deleteMessage = useMutation(api.messages.deleteMessage);
   const editMessage = useMutation(api.messages.editMessage);
   const updateMessage = useMutation(api.messages.updateBySlug);
-  const { generateResponse } = useAIGeneration();
+  const { generateResponse, streaming } = useAIGeneration();
+  const { isSearching } = useUIState();
 
   const isUser = message.role === "user";
   const isOwnMessage = user && message.userId === user._id;
+
+  // Check if this is the last assistant message and if we're currently streaming/searching
+  const isLastAssistantMessage = messages && messages.length > 0 && 
+    messages[messages.length - 1]._id === message._id && 
+    message.role === "assistant";
+  const showSearchIndicator = isLastAssistantMessage && isSearching && streaming;
 
   const copyToClipboard = async (text: string, type: "formatted" | "raw") => {
     try {
@@ -286,6 +294,32 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
           />
         ) : (
           <>
+            {/* Search indicator - show when this is the last assistant message and search is active */}
+            {showSearchIndicator && (
+              <div className="mb-4 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <div className="flex items-center gap-3 text-sm text-blue-700 dark:text-blue-300">
+                  <div className="relative">
+                    <Globe className="w-4 h-4 animate-pulse" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+                    </div>
+                  </div>
+                  <span className="font-medium">Searching the web...</span>
+                  <div className="flex-1">
+                    <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 overflow-hidden">
+                      <div 
+                        className="h-full rounded-full animate-[shimmer_2s_ease-in-out_infinite]" 
+                        style={{
+                          background: 'linear-gradient(90deg, rgb(59 130 246) 0%, rgb(37 99 235) 50%, rgb(59 130 246) 100%)',
+                          backgroundSize: '200% 100%'
+                        }} 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="prose prose-base max-w-none font-sans break-words text-foreground [&_*]:text-foreground">
               <ReactMarkdown
                 components={{
