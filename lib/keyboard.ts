@@ -1,6 +1,6 @@
 import { KeyboardError } from "lib/errors";
 
-type Key = "enter" | "shift";
+type Key = "enter" | "shift" | "escape" | "tab";
 
 export class Keyboard {
   shortcuts: {
@@ -34,6 +34,10 @@ export class Keyboard {
               return e.key === "Enter";
             case "shift":
               return e.shiftKey;
+            case "escape":
+              return e.key === "Escape";
+            case "tab":
+              return e.key === "Tab";
           }
         });
         const met = conditions.every((k) => k);

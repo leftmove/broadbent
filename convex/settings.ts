@@ -1,7 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-import { providersValidator, modelIdsValidator } from "./schema";
+import { providersValidator, modelIdsValidator, apiKeyProvidersValidator } from "./schema";
 
 export const getProvider = query({
   args: { userId: v.id("users") },
@@ -111,6 +111,7 @@ export const getAllApiKeys = query({
     google: v.optional(v.string()),
     xai: v.optional(v.string()),
     groq: v.optional(v.string()),
+    firecrawl: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     const apiKeys = await ctx.db
@@ -129,6 +130,7 @@ export const getAllApiKeys = query({
       google: result.google || "",
       xai: result.xai || "",
       groq: result.groq || "",
+      firecrawl: result.firecrawl || "",
     };
   },
 });
@@ -136,7 +138,7 @@ export const getAllApiKeys = query({
 export const setApiKey = mutation({
   args: {
     userId: v.id("users"),
-    provider: providersValidator,
+    provider: apiKeyProvidersValidator,
     keyValue: v.string(),
   },
   returns: v.null(),

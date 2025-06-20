@@ -46,7 +46,7 @@ export const ChatItem = memo(function ChatItem({
   const handleSave = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
-    
+
     if (editTitle.trim() === chat.title || !editTitle.trim()) {
       setIsEditing(false);
       setEditTitle(chat.title);
@@ -73,9 +73,9 @@ export const ChatItem = memo(function ChatItem({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
+    if (e.key === "Enter") {
+      void handleSave();
+    } else if (e.key === "Escape") {
       handleCancel();
     }
   };
@@ -91,10 +91,10 @@ export const ChatItem = memo(function ChatItem({
           >
             {/* Pin indicator */}
             {chat.pinned && (
-              <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-4 bg-primary rounded-full"></div>
+              <div className="absolute left-1 top-1/2 w-1 h-4 rounded-full -translate-y-1/2 bg-primary"></div>
             )}
-            
-            <div className="relative z-10 flex items-center w-full min-w-0">
+
+            <div className="flex relative z-10 items-center w-full min-w-0">
               <Input
                 ref={inputRef}
                 value={editTitle}
@@ -114,8 +114,12 @@ export const ChatItem = memo(function ChatItem({
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-6 w-6 hover:bg-green-500/20 hover:text-green-600 rounded-md transition-colors"
-              onClick={handleSave}
+              className="p-0 w-6 h-6 rounded-md transition-colors cursor-pointer hover:bg-green-500/20 hover:text-green-600"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleSave(e);
+              }}
               disabled={isUpdating}
             >
               <Check className="w-3 h-3" />
@@ -124,8 +128,12 @@ export const ChatItem = memo(function ChatItem({
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-6 w-6 hover:bg-red-500/20 hover:text-red-600 rounded-md transition-colors"
-              onClick={handleCancel}
+              className="p-0 w-6 h-6 rounded-md transition-colors cursor-pointer hover:bg-red-500/20 hover:text-red-600"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCancel(e);
+              }}
               disabled={isUpdating}
             >
               <X className="w-3 h-3" />
@@ -134,30 +142,33 @@ export const ChatItem = memo(function ChatItem({
         </div>
       ) : (
         <>
-          <Link href={`/c/${chat.slug}`} className="relative block">
+          <Link href={`/c/${chat.slug}`} className="block relative">
             <div
               className={cn(
                 "relative w-full px-3 py-2.5 text-sm font-medium transition-all duration-200 rounded-xl border border-transparent cursor-pointer overflow-hidden",
                 "hover:bg-secondary/50 hover:border-border/30 hover:shadow-sm",
-                isSelected && "bg-primary/10 border-primary/20 text-primary shadow-sm",
+                isSelected &&
+                  "bg-primary/10 border-primary/20 text-primary shadow-sm",
                 "group-hover:pr-20" // Make space for action buttons
               )}
             >
               {/* Subtle background gradient for selected state */}
               {isSelected && (
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-r via-transparent rounded-xl from-primary/5 to-primary/5"></div>
               )}
-              
+
               {/* Pin indicator */}
               {chat.pinned && (
-                <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-4 bg-primary rounded-full"></div>
+                <div className="absolute left-1 top-1/2 w-1 h-4 rounded-full -translate-y-1/2 bg-primary"></div>
               )}
-              
-              <div className="relative z-10 flex items-center w-full min-w-0">
-                <span className={cn(
-                  "flex-1 text-left truncate leading-relaxed",
-                  chat.pinned && "ml-2"
-                )}>
+
+              <div className="flex relative z-10 items-center w-full min-w-0">
+                <span
+                  className={cn(
+                    "flex-1 text-left truncate leading-relaxed",
+                    chat.pinned && "ml-2"
+                  )}
+                >
                   {chat.title}
                 </span>
               </div>
@@ -169,16 +180,16 @@ export const ChatItem = memo(function ChatItem({
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-6 w-6 hover:bg-secondary/70 rounded-md"
+              className="p-0 w-6 h-6 rounded-md hover:bg-secondary/70"
               onClick={handleEditClick}
             >
-              <Edit2 className="h-3 w-3 text-muted-foreground hover:text-foreground transition-colors" />
+              <Edit2 className="w-3 h-3 transition-colors text-muted-foreground hover:text-foreground" />
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-6 w-6 hover:bg-secondary/70 rounded-md"
+              className="p-0 w-6 h-6 rounded-md hover:bg-secondary/70"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -198,7 +209,7 @@ export const ChatItem = memo(function ChatItem({
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-6 w-6 hover:bg-destructive/20 hover:text-destructive rounded-md transition-colors"
+              className="p-0 w-6 h-6 rounded-md transition-colors hover:bg-destructive/20 hover:text-destructive"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

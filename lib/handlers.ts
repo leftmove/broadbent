@@ -39,37 +39,73 @@ export function requestHandler(
   message: string,
   details: RequestErrorDetails
 ) {
-  switch (details.request.statusCode) {
-    case 401:
-    case 403:
-      return NO_API_KEY_SET(details.provider);
-    case 404:
-      return INVALID_RESOURCE(details.provider, details.model);
-    case 429:
-      return RATE_LIMIT(details.provider);
-    default:
-      return DEFAULT_MESSAGE();
+  if (
+    details.request.statusCode === 401 ||
+    details.request.statusCode === 403
+  ) {
+    return NO_API_KEY_SET(details.provider);
   }
+
+  if (details.request.statusCode === 404) {
+    return INVALID_RESOURCE(details.provider, details.model);
+  }
+
+  if (details.request.statusCode === 429) {
+    return RATE_LIMIT(details.provider);
+  }
+
+  if ("toolName" in details.request) {
+    return toolHandler(name, message, details as any);
+  }
+
+  return DEFAULT_MESSAGE();
+}
+
+export function toolHandler(
+  name: string,
+  message: string,
+  details: RequestErrorDetails & {
+    request: RequestDetails & { toolName: string; cause: Error };
+  }
+) {
+  name = "ToolError";
+  let subError: string;
+
+  if (details.request.toolName === "web") {
+    if (details.request.cause.message.includes("401")) {
+      subError = NO_API_KEY_SET("Firecrawl");
+      return WEB_SEARCH_ERROR(subError);
+    }
+  }
+
+  return DEFAULT_MESSAGE();
 }
 
 export const DEFAULT_MESSAGE = () =>
   `An unexpected error occurred while generating the response.`;
 
-export const NO_API_KEY_SET = (provider?: AIProvider) => {
-  const providerName = provider
-    ? llms.provider(provider).name
-    : "this provider";
+export const NO_API_KEY_SET = (provider?: any) => {
+  const providerName =
+    (provider in llms.providers ? llms.provider(provider).name : provider) ||
+    "Unknown";
   return `## Missing API Key
 
 No API key has been configured for **${providerName}**.
 
 You can setup an API key through any of the following providers.
 
+### Large Language Models
+
 - [OpenAI](${openai.links[4].link})
 - [Anthropic](${anthropic.links[4].link})
 - [Google](${google.links[4].link})
 - [xAI](${xai.links[4].link})
 - [Groq](${groq.links[4].link})
+
+### Tools
+
+- [Firecrawl](https://www.firecrawl.dev/app/api-keys)
+
 
 After you've created an API key, head over to **Settings** (bottom left) and then **API Keys** (left sidebar).
 
@@ -119,5 +155,14 @@ You have either reached a temporary limit, or your billing has expired. Here are
 - Verify your API key is correct
 
 For now, you can try and switch to a different provider/model.
+`;
+};
+
+export const WEB_SEARCH_ERROR = (message: string) => {
+  return `## Tool Error
+
+Something went wrong while trying to web search.
+
+${message}
 `;
 };

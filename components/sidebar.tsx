@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -31,11 +31,14 @@ interface ChatToDelete {
 }
 
 export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
+  // Ensure toggleSidebar is available for mobile
+  const safeToggleSidebar = toggleSidebar || (() => console.warn('toggleSidebar not provided'));
   const chats = useQuery(api.chats.list) || [];
   const togglePinChat = useMutation(api.chats.togglePin);
   const deleteChatMutation = useMutation(api.chats.deleteChat);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile, setInputHasContent } = useUIState();
@@ -203,7 +206,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
             variant="ghost"
             size="sm"
             className="p-0 w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            onClick={toggleSidebar}
+            onClick={safeToggleSidebar}
           >
             <PanelLeft className="w-5 h-5" />
             <span className="sr-only">Toggle Sidebar</span>
@@ -227,7 +230,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                   variant="ghost"
                   size="sm"
                   className="p-0 mb-4 w-3/12 h-11 rounded-lg rounded-l-none border border-l-0 transition-all duration-200 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary hover:shadow-md border-primary/10"
-                  onClick={toggleSidebar}
+                  onClick={safeToggleSidebar}
                 >
                   <PanelLeft className="w-5 h-5 transition-transform duration-200 hover:scale-110" />
                   <span className="sr-only">Toggle Sidebar</span>
@@ -245,6 +248,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
                 )}
               />
               <Input
+                ref={searchInputRef}
                 placeholder="Search messages and chats..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -282,6 +286,17 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
             <Button
               variant="ghost"
               className="p-0 w-10 h-10 rounded-lg border border-transparent transition-all duration-200 text-muted-foreground hover:text-primary hover:bg-primary/10 hover:shadow-md hover:border-primary/20"
+              onClick={() => {
+                if (toggleSidebar) {
+                  toggleSidebar();
+                  // Focus the search input after a short delay to allow sidebar to expand
+                  setTimeout(() => {
+                    if (searchInputRef.current) {
+                      searchInputRef.current.focus();
+                    }
+                  }, 200);
+                }
+              }}
             >
               <Search className="w-5 h-5" />
               <span className="sr-only">Search</span>
@@ -487,48 +502,54 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
 
       <div
         className={cn(
-          "border-t transition-all duration-150 ease-in-out border-border",
+          "relative flex-shrink-0 border-t transition-all duration-150 ease-in-out border-border",
           collapsed ? "p-2" : "p-4"
         )}
       >
         {/* Expanded view */}
         <div
           className={cn(
-            "space-y-1 transition-all duration-150 ease-in-out",
+            "space-y-2 transition-all duration-150 ease-in-out",
             collapsed
               ? "overflow-hidden max-h-0 opacity-0"
-              : "max-h-40 opacity-100"
+              : "overflow-y-auto opacity-100 max-h-[50vh]"
           )}
         >
           <Link href="/settings">
             <Button
               variant="ghost"
-              className="justify-center px-3 w-full h-9 font-sans text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              className="justify-start px-3 w-full h-10 font-sans text-sm rounded-lg border border-transparent transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-secondary/60 hover:border-secondary/40"
             >
               <Settings className="mr-3 w-4 h-4" />
               Settings
             </Button>
           </Link>
-          <UserProfile collapsed={false} />
+          <div className="overflow-y-auto max-h-[40vh]">
+            <UserProfile collapsed={false} />
+          </div>
         </div>
 
         {/* Collapsed view */}
         <div
           className={cn(
-            "flex flex-col items-center space-y-2 transition-all duration-150 ease-in-out",
+            "flex flex-col items-center space-y-3 transition-all duration-150 ease-in-out",
             collapsed
               ? "max-h-40 opacity-100"
               : "overflow-hidden max-h-0 opacity-0"
           )}
         >
-          <Link href="/settings">
+          <Link href="/settings" className="relative group">
             <Button
               variant="ghost"
-              className="p-0 w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              className="p-0 w-10 h-10 rounded-lg border border-transparent transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-secondary/60 hover:border-secondary/40"
             >
               <Settings className="w-5 h-5" />
               <span className="sr-only">Settings</span>
             </Button>
+            {/* Tooltip */}
+            <div className="absolute top-1/2 left-full z-50 px-2 py-1 ml-2 text-xs whitespace-nowrap rounded opacity-0 transition-opacity duration-200 -translate-y-1/2 pointer-events-none bg-foreground text-background group-hover:opacity-100">
+              Settings
+            </div>
           </Link>
           <UserProfile collapsed={true} />
         </div>

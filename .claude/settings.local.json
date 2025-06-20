@@ -3,7 +3,9 @@
     "allow": [
       "Bash(ls:*)",
       "WebFetch(domain:ai-sdk.dev)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:docs.firecrawl.dev)"
     ],
     "deny": []
   }

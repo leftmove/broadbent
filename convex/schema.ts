@@ -13,6 +13,11 @@ export const modelIdsValidator = v.union(
   v.string()
 );
 
+export const apiKeyProvidersValidator = v.union(
+  ...llms.providers.map((p) => v.literal(p.id)),
+  v.literal("firecrawl")
+);
+
 const applicationTables = {
   chats: defineTable({
     slug: v.string(),
@@ -59,7 +64,7 @@ const applicationTables = {
 
   apiKeys: defineTable({
     userId: v.id("users"),
-    provider: providersValidator,
+    provider: apiKeyProvidersValidator,
     keyValue: v.string(),
   })
     .index("by_user", ["userId"])

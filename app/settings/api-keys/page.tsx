@@ -1,11 +1,13 @@
 "use client";
-import React, { useState, useEffect, SVGProps } from "react";
+import React, { useState, useEffect, useReducer, SVGProps } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
 
-import { Key, Check, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Key, Check, Eye, EyeOff, Loader2, Search } from "lucide-react";
 
 import { AIProvider } from "lib/ai/providers";
+import { ToolProvider, toolProviders } from "lib/tools/types";
+import { useToolsState } from "state/tools";
 import { cn } from "lib/utils";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
@@ -189,6 +191,10 @@ const OpenRouterIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const FirecrawlIcon = (props: SVGProps<SVGSVGElement>) => (
+  <span className="text-3xl">🔥</span>
+);
+
 const providersInfo: Record<
   AIProvider,
   {
@@ -297,6 +303,11 @@ export default function ApiKeysPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentApiKey, setCurrentApiKey] = useState("");
 
+  // Tools state - only selectedTool persisted globally, visibility is local
+  const { selectedTool } = useToolsState();
+  const [toolsKeyVisibility, setToolsKeyVisibility] = useState(false);
+  const [currentToolsApiKey, setCurrentToolsApiKey] = useState("");
+
   useEffect(() => {
     if (providerPref) {
       setSelectedProvider(providerPref);
@@ -308,6 +319,12 @@ export default function ApiKeysPage() {
       setCurrentApiKey(apiKeys[selectedProvider] || "");
     }
   }, [selectedProvider, apiKeys]);
+
+  useEffect(() => {
+    if (apiKeys && selectedTool) {
+      setCurrentToolsApiKey(apiKeys[selectedTool] || "");
+    }
+  }, [apiKeys, selectedTool]);
 
   const handleProviderChange = (value: AIProvider) => {
     setSelectedProvider(value);
@@ -348,6 +365,23 @@ export default function ApiKeysPage() {
     }
   };
 
+  const handleToolsSave = async () => {
+    if (!userId || !selectedTool) return;
+
+    setIsSaving(true);
+    try {
+      await setApiKeyMutation({
+        userId,
+        provider: selectedTool as any, // Cast since selectedTool is ToolProvider which extends the schema
+        keyValue: currentToolsApiKey,
+      });
+    } catch (error) {
+      console.error("Failed to save tools API key:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <RouteGuard>
       <div className="space-y-8">
@@ -359,12 +393,12 @@ export default function ApiKeysPage() {
         </div>
 
         {/* AI Providers Section */}
-        <div className="p-6 border rounded-lg shadow-sm bg-card">
+        <div className="p-6 rounded-lg border shadow-sm bg-card">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex justify-between items-center">
               <div className="space-y-1">
                 <h3 className="flex items-center text-xl font-medium">
-                  <Key className="w-5 h-5 mr-2 text-primary" />
+                  <Key className="mr-2 w-5 h-5 text-primary" />
                   AI Providers
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -389,10 +423,10 @@ export default function ApiKeysPage() {
                     )}
                     onClick={() => handleProviderChange(key as AIProvider)}
                   >
-                    <provider.logo className="w-10 h-10 mb-3" />
+                    <provider.logo className="mb-3 w-10 h-10" />
                     <div className="font-medium">{provider.name}</div>
                     {isSelected && (
-                      <div className="absolute flex items-center justify-center w-4 h-4 rounded-full -top-1 -right-1 bg-primary">
+                      <div className="flex absolute -top-1 -right-1 justify-center items-center w-4 h-4 rounded-full bg-primary">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                     )}
@@ -404,12 +438,12 @@ export default function ApiKeysPage() {
         </div>
 
         {/* API Key Management */}
-        <div className="p-6 border rounded-lg shadow-sm bg-card">
+        <div className="p-6 rounded-lg border shadow-sm bg-card">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex justify-between items-center">
               <div className="space-y-1">
                 <h3 className="flex items-center text-xl font-medium">
-                  <Key className="w-5 h-5 mr-2 text-primary" />
+                  <Key className="mr-2 w-5 h-5 text-primary" />
                   API Keys
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -419,7 +453,7 @@ export default function ApiKeysPage() {
             </div>
 
             {selectedProvider ? (
-              <div className="flex flex-col items-start gap-4 p-4 border rounded-lg md:flex-row bg-muted/30">
+              <div className="flex flex-col gap-4 items-start p-4 rounded-lg border md:flex-row bg-muted/30">
                 <div
                   className={cn(
                     "p-3 rounded-md shrink-0",
@@ -470,7 +504,7 @@ export default function ApiKeysPage() {
                             onClick={() =>
                               toggleKeyVisibility(selectedProvider)
                             }
-                            className="absolute -translate-y-1/2 right-3 top-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             aria-label={
                               apiKeyVisibility[selectedProvider]
                                 ? "Hide API Key"
@@ -491,14 +525,14 @@ export default function ApiKeysPage() {
                           disabled={isSaving}
                         >
                           {isSaving ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
                           ) : (
-                            <Check className="w-4 h-4 mr-2" />
+                            <Check className="mr-2 w-4 h-4" />
                           )}
                           Save
                         </Button>
                       </div>
-                      <div className="flex flex-col justify-between gap-2 mt-2 sm:flex-row">
+                      <div className="flex flex-col gap-2 justify-between mt-2 sm:flex-row">
                         <p className="text-xs text-muted-foreground">
                           Your API key is stored securely in the database.
                         </p>
@@ -513,7 +547,7 @@ export default function ApiKeysPage() {
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 20 20"
                             fill="currentColor"
-                            className="w-3 h-3 ml-1"
+                            className="ml-1 w-3 h-3"
                           >
                             <path
                               fillRule="evenodd"
@@ -528,12 +562,125 @@ export default function ApiKeysPage() {
                 </div>
               </div>
             ) : (
-              <div className="p-6 text-center border rounded-lg bg-muted/30">
+              <div className="p-6 text-center rounded-lg border bg-muted/30">
                 <p className="text-muted-foreground">
                   Select an AI provider above to configure its API key.
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Tools Section */}
+        <div className="p-6 rounded-lg border shadow-sm bg-card">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                <h3 className="flex items-center text-xl font-medium">
+                  <Search className="mr-2 w-5 h-5 text-primary" />
+                  Tools
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Configure tool providers for enhanced AI capabilities.
+                </p>
+              </div>
+            </div>
+
+            {/* Tool Provider Configuration */}
+            <div className="flex flex-col gap-4 items-start p-4 rounded-lg border md:flex-row bg-muted/30">
+              <div className="p-3 bg-yellow-50 rounded-md shrink-0">
+                <FirecrawlIcon className="w-10 h-10 text-yellow-600" />
+              </div>
+              <div className="flex-1 w-full">
+                <h4 className="text-lg font-medium">
+                  {toolProviders[selectedTool].name}
+                </h4>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  {toolProviders[selectedTool].description}
+                </p>
+
+                <div className="grid gap-4">
+                  <div className="relative">
+                    <Label
+                      htmlFor="toolsApiKey"
+                      className="text-sm font-medium mb-1.5 block"
+                    >
+                      {toolProviders[selectedTool].apiKeyName}
+                    </Label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <div className="relative flex-1">
+                        <Input
+                          id="toolsApiKey"
+                          value={currentToolsApiKey}
+                          type={toolsKeyVisibility ? "text" : "password"}
+                          placeholder={
+                            toolProviders[selectedTool].apiKeyPlaceholder
+                          }
+                          onChange={(e) =>
+                            setCurrentToolsApiKey(e.target.value)
+                          }
+                          className="pr-10 font-mono text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setToolsKeyVisibility(!toolsKeyVisibility)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          aria-label={
+                            toolsKeyVisibility ? "Hide API Key" : "Show API Key"
+                          }
+                        >
+                          {toolsKeyVisibility ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => void handleToolsSave()}
+                        className="shrink-0"
+                        disabled={isSaving}
+                      >
+                        {isSaving ? (
+                          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                        ) : (
+                          <Check className="mr-2 w-4 h-4" />
+                        )}
+                        Save
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2 justify-between mt-2 sm:flex-row">
+                      <p className="text-xs text-muted-foreground">
+                        Your API key is stored securely in the database.
+                      </p>
+                      <a
+                        href={toolProviders[selectedTool].href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-xs text-primary hover:underline"
+                      >
+                        Get API Key
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="ml-1 w-3 h-3"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

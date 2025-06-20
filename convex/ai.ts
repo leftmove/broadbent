@@ -2,17 +2,17 @@ import { action, ActionCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
-import { streamText, wrapLanguageModel, extractReasoningMiddleware } from "ai";
+import { streamText, ToolSet } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createXai } from "@ai-sdk/xai";
 import { createGroq } from "@ai-sdk/groq";
 
-import { webSearchTool } from "../lib/tools/web-search";
+import { createWebSearchTool } from "../lib/tools/web-search";
 
 import { llms } from "../lib/ai/providers";
-import { prompts, buildSystemPrompt } from "../lib/ai/prompts";
+import { buildSystemPrompt } from "../lib/ai/prompts";
 import { handleError, ErrorDetails } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
 import { api } from "./_generated/api";
@@ -69,9 +69,7 @@ async function throwError(
 function createModelInstance(
   provider: string,
   apiKey: string,
-  selectedModel: any,
-  hasToolSupport: boolean,
-  enableWebSearch?: boolean
+  selectedModel: any
 ) {
   let llm;
   let model;
@@ -87,11 +85,7 @@ function createModelInstance(
       break;
     case "google":
       llm = createGoogleGenerativeAI({ apiKey });
-      if (hasToolSupport && enableWebSearch) {
-        model = llm(selectedModel.id, { useSearchGrounding: true });
-      } else {
-        model = llm(selectedModel.id);
-      }
+      model = llm(selectedModel.id);
       break;
     case "xai":
       llm = createXai({ apiKey });
@@ -108,124 +102,63 @@ function createModelInstance(
   return model;
 }
 
-function configureTools(
-  selectedProvider: string,
-  selectedModel: any,
+async function configureTools(
+  apiKeys: Record<string, string>,
   hasToolSupport: boolean,
-  llm?: any
-): any {
+  webSearchTool: boolean,
+  ctx: ActionCtx,
+  chatSlug: Id<"chats"> | string,
+  messageSlug: Id<"messages"> | string
+): Promise<ToolSet | undefined> {
   if (!hasToolSupport) return undefined;
 
-  switch (selectedProvider) {
-    case "openai":
-      if (selectedModel.id.includes("gpt-4o") && llm) {
-        return {
-          web_search_preview: llm.tools?.webSearchPreview?.(),
-        };
-      } else {
-        return { webSearch: webSearchTool };
-      }
-    case "google":
-      return undefined;
-    default:
-      return { webSearch: webSearchTool };
+  const tools: ToolSet = {};
+
+  if (webSearchTool) {
+    if ("firecrawl" in apiKeys === false) {
+      await throwError(
+        ctx,
+        "EmptyAPIKey",
+        "API key not set with selected provider.",
+        {
+          provider: "firecrawl",
+        },
+        chatSlug,
+        messageSlug
+      );
+    } else {
+      tools.web = createWebSearchTool(apiKeys.firecrawl);
+    }
   }
+
+  return tools;
 }
 
 function prepareMessages(
   prompt: string,
   messageHistory: Message[] | undefined,
   selectedProvider: string,
-  hasToolSupport: boolean,
-  shouldAddReasoningInstructions: boolean
+  instructWebSearch: boolean,
+  instructReasoning: boolean
 ): Message[] {
   const messages: Message[] = [];
 
-  // Build system message based on capabilities
   const systemMessage = buildSystemPrompt({
-    hasReasoning: shouldAddReasoningInstructions,
-    hasWebSearch: hasToolSupport,
+    instructWebSearch,
+    instructReasoning,
   });
 
   messages.push({
     role: "system",
     content: systemMessage,
   });
-
-  // Add Anthropic-specific web search instructions for legacy support
-  if (selectedProvider === "anthropic" && hasToolSupport) {
-    messages.push({
-      role: "system",
-      content: prompts.webSearch.systemMessage,
-    });
-  }
-
-  // Add message history
   messages.push(...(messageHistory || []));
-
-  // Prepare user content with provider-specific instructions
-  let userContent = prompt;
-  if (selectedProvider === "anthropic" && hasToolSupport) {
-    userContent = `${prompt}${prompts.webSearch.anthropicInstructions}`;
-  }
-
-  if (shouldAddReasoningInstructions) {
-    userContent += prompts.reasoning.instructions;
-  }
-
   messages.push({
     role: "user",
-    content: userContent,
+    content: prompt,
   });
 
   return messages;
-}
-
-function extractSourcesFromToolResult(
-  toolResult: any,
-  selectedProvider: string
-): Source[] {
-  const sources: Source[] = [];
-
-  try {
-    if (selectedProvider === "google" && toolResult.searchResults) {
-      const searchResults = toolResult.searchResults;
-      for (const result of searchResults) {
-        if (result.title && result.uri) {
-          sources.push({
-            title: result.title,
-            url: result.uri,
-            excerpt: result.snippet || result.content?.substring(0, 200),
-          });
-        }
-      }
-    } else if (selectedProvider === "openai" && toolResult.sources) {
-      const toolSources = toolResult.sources;
-      for (const source of toolSources) {
-        if (source.title && source.url) {
-          sources.push({
-            title: source.title,
-            url: source.url,
-            excerpt: source.excerpt || source.snippet,
-          });
-        }
-      }
-    } else if (toolResult.sources && Array.isArray(toolResult.sources)) {
-      for (const source of toolResult.sources) {
-        if (source.title && source.url) {
-          sources.push({
-            title: source.title,
-            url: source.url,
-            excerpt: source.excerpt || "No excerpt available",
-          });
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Error extracting sources from tool result:", error);
-  }
-
-  return sources;
 }
 
 async function checkCancellation(
@@ -272,7 +205,6 @@ async function handleStreamChunk(
   const { ctx, chatSlug, messageSlug, isReasoningModel, selectedProvider } =
     config;
 
-  // Check for cancellation
   const cancellationResult = await checkCancellation(
     ctx,
     messageSlug,
@@ -282,17 +214,9 @@ async function handleStreamChunk(
   );
   if (cancellationResult) return cancellationResult;
 
-  console.log("Chunk:", chunk.type, Object.keys(chunk));
-
   if (chunk.type === "text-delta") {
-    if (isReasoningModel && chunk.textDelta?.includes("<think>")) {
-      console.log("Text delta with think tag:", chunk.textDelta);
-    }
-
     state.fullText += chunk.textDelta;
-
     if (isReasoningModel) {
-      // Extract thinking from text stream for real-time streaming
       const extractedThinking = extractThinkingFromText(state.fullText);
       if (extractedThinking && extractedThinking !== state.fullThinking) {
         state.fullThinking = extractedThinking;
@@ -312,7 +236,6 @@ async function handleStreamChunk(
       });
     }
   } else if (chunk.type === "reasoning") {
-    console.log("Reasoning chunk:", chunk);
     if (chunk.textDelta) {
       state.fullThinking += chunk.textDelta;
       await ctx.runMutation(api.messages.updateBySlug, {
@@ -323,7 +246,6 @@ async function handleStreamChunk(
       });
     }
   } else if (chunk.type === "step-finish") {
-    // Handle OpenAI native reasoning (overrides extracted thinking)
     if (chunk.providerMetadata?.openai?.reasoning) {
       const reasoning = chunk.providerMetadata.openai.reasoning;
       if (typeof reasoning === "string") {
@@ -335,9 +257,7 @@ async function handleStreamChunk(
           thinking: state.fullThinking,
         });
       }
-    }
-    // Handle reasoning from extractReasoningMiddleware (use if we don't have extracted thinking)
-    else if (chunk?.providerMetadata?.reasoning && !state.fullThinking) {
+    } else if (chunk?.providerMetadata?.reasoning && !state.fullThinking) {
       const reasoning = chunk.providerMetadata.reasoning;
       if (typeof reasoning === "string") {
         state.fullThinking = stripThinkTags(reasoning);
@@ -349,30 +269,12 @@ async function handleStreamChunk(
         });
       }
     }
-  } else if (chunk.type === "tool-call") {
-    console.log(
-      `[${selectedProvider}] Tool call started:`,
-      chunk.toolName,
-      chunk.toolCallId
-    );
-    if (chunk.toolName === "webSearch") {
-      console.log(
-        `[${selectedProvider}] Web search tool call detected - search is actually happening`
-      );
-      console.log("Search args:", chunk.args);
-    }
-  } else if (chunk.type === "tool-result") {
-    console.log(`[${selectedProvider}] Tool result for:`, chunk.toolName);
-    console.log("Tool result data:", chunk.result);
-
-    if (chunk.toolName === "webSearch" && chunk.result) {
-      const sources = extractSourcesFromToolResult(
-        chunk.result,
-        selectedProvider
-      );
-      state.collectedSources.push(...sources);
-    }
   }
+  // } else if (chunk.type === "tool-result") {
+  //   if (chunk.toolName === "web" && chunk.result) {
+  //     console.log(chunk.result);
+  //   }
+  // }
 
   return null;
 }
@@ -500,7 +402,6 @@ export const generateResponse = action({
     const selectedModel = llms.model(args.modelId as ModelId);
     const selectedProvider = selectedModel.provider;
 
-    // Check API key
     if (!(selectedProvider in apiKeys) || !apiKeys[selectedProvider]) {
       return await throwError(
         ctx,
@@ -516,41 +417,27 @@ export const generateResponse = action({
     }
 
     const apiKey = apiKeys[selectedProvider];
-    const enableWebSearch = Boolean(args.enableWebSearch);
-    const hasToolSupport = selectedModel.capabilities.tool && enableWebSearch;
+    const hasToolSupport = selectedModel.capabilities.tool;
+    const enableWebSearch = Boolean(args.enableWebSearch) && hasToolSupport;
     const isReasoningModel = selectedModel.capabilities.thinking;
 
     try {
-      // Create model instance
-      let model = createModelInstance(
+      const model = createModelInstance(
         selectedProvider,
         apiKey,
-        selectedModel,
-        hasToolSupport,
-        enableWebSearch
+        selectedModel
       );
-
-      // Wrap model with reasoning middleware for non-OpenAI reasoning models
-      if (isReasoningModel && selectedProvider !== "openai") {
-        model = wrapLanguageModel({
-          model,
-          middleware: extractReasoningMiddleware({
-            tagName: "think",
-            startWithReasoning: true,
-          }),
-        });
-      }
-
-      // Configure tools
-      const tools = configureTools(
-        selectedProvider,
-        selectedModel,
-        hasToolSupport
+      const tools = await configureTools(
+        apiKeys,
+        hasToolSupport,
+        enableWebSearch,
+        ctx,
+        args.chatSlug,
+        args.messageSlug
       );
 
       // Prepare messages
-      const shouldAddReasoningInstructions =
-        isReasoningModel && selectedProvider !== "openai";
+      const shouldAddReasoningInstructions = isReasoningModel;
       const messages = prepareMessages(
         args.prompt,
         args.messageHistory,
@@ -566,7 +453,7 @@ export const generateResponse = action({
         tools,
         maxRetries: 0,
         onError: async (error) => {
-          void (await throwError(
+          await throwError(
             ctx,
             "RequestError",
             "Error occurred streaming text for model.",
@@ -577,7 +464,7 @@ export const generateResponse = action({
             },
             args.chatSlug,
             args.messageSlug
-          ));
+          );
         },
       });
 
@@ -592,7 +479,7 @@ export const generateResponse = action({
 
       return await processStream(result, streamConfig, args.modelId);
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
 
       if (
         !(error instanceof ConvexError && error.name === "GenerationCancelled")

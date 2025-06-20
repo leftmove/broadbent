@@ -23,58 +23,92 @@ Always call the webSearch tool BEFORE responding if the question requires curren
   },
 };
 
+export function defineString(...args: string[]): string {
+  return args.join("\n");
+}
+
+export type InstructionKey = "base" | "tools" | "web" | "reasoning";
+export const instructions: Record<InstructionKey, string> = {
+  base: defineString(
+    "base",
+    defineString(
+      "You are an assistant, hosted on Broadbent - a platform for conversations with large language models.\n",
+      "# Instructions",
+      "- Engage warmly yet honestly with the user.",
+      "- Be direct; avoid ungrounded or sycophantic flattery.",
+      "- Maintain professionalism and grounded honesty.",
+      "- Ask a general, single-sentence follow-up question when natural.",
+      "- Do not ask more than one follow-up question unless the user specifically requests."
+    )
+  ),
+  tools: defineString(
+    "tools",
+    defineString(
+      "# Tools",
+      "You can use attached tools as needed to answer the user's question."
+    )
+  ),
+  web: defineString(
+    "web",
+    defineString(
+      "## Web Search",
+      "Use the `web` tool to access up-to-date information from the web or when responding to the user requires information about their location. Some examples of when to use the `web` tool include the following.",
+      "- Local Information: Use the `web` tool to respond to questions that require information about the user's location, such as the weather, local businesses, or events.",
+      "- Freshness: If up-to-date information on a topic could potentially change or enhance the answer, call the `web` tool any time you would otherwise refuse to answer a question because your knowledge might be out of date.",
+      "- Niche Information: If the answer would benefit from detailed information not widely known or understood (which might be found on the internet), such as details about a small neighborhood, a less well-known company, or arcane regulations, use web sources directly rather than relying on the distilled knowledge from pre-training.",
+      "- Accuracy: If the cost of a small mistake or outdated information is high (e.g., using an outdated version of a software library or not knowing the date of the next game for a sports team), then use the `web` tool."
+    )
+  ),
+  reasoning: defineString(
+    "reasoning",
+    defineString(
+      "## Reasoning",
+      "When solving complex problems, show your thinking process clearly before providing your final answer."
+    )
+  ),
+} as const;
+
+class Prompt {
+  public prompt: string;
+
+  constructor(base: string) {
+    this.prompt = base;
+  }
+
+  build(addition: string) {
+    this.prompt += `\n${addition}`;
+    return this;
+  }
+}
+
 interface SystemPromptOptions {
-  hasReasoning?: boolean;
-  hasWebSearch?: boolean;
+  instructWebSearch?: boolean;
+  instructReasoning?: boolean;
   customBehavior?: string;
 }
 
 export function buildSystemPrompt(options: SystemPromptOptions = {}): string {
   const {
-    hasReasoning = false,
-    hasWebSearch = false,
-    customBehavior,
+    instructWebSearch = false,
+    instructReasoning = false,
+    customBehavior = "",
   } = options;
 
-  let prompt = prompts.base.identity;
+  const builder = new Prompt(prompts.base.identity);
 
-  // Add capabilities
-  const capabilities: string[] = [];
-  if (hasReasoning) {
-    capabilities.push("advanced reasoning capabilities");
-  }
-  if (hasWebSearch) {
-    capabilities.push("access to real-time web search");
+  if (instructWebSearch) {
+    builder.build(instructions.web);
   }
 
-  if (capabilities.length > 0) {
-    prompt += ` with ${capabilities.join(" and ")}`;
+  if (instructReasoning) {
+    builder.build(instructions.reasoning);
   }
-
-  prompt += ".";
-
-  // Add specific behaviors
-  const behaviors: string[] = [];
 
   if (customBehavior) {
-    behaviors.push(customBehavior);
-  } else {
-    behaviors.push(prompts.base.behavior);
+    builder.build(customBehavior);
   }
 
-  if (hasReasoning) {
-    behaviors.push(prompts.base.reasoning);
-  }
-
-  if (hasWebSearch) {
-    behaviors.push(prompts.base.webSearch);
-  }
-
-  if (behaviors.length > 0) {
-    prompt += ` ${behaviors.join(" ")}`;
-  }
-
-  return prompt;
+  return builder.prompt;
 }
 
 export type PromptKey = keyof typeof prompts;
