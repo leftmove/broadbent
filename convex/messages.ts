@@ -142,6 +142,23 @@ export const updateBySlug = mutation({
         })
       )
     ),
+    toolCalls: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          name: v.string(),
+          args: v.any(),
+        })
+      )
+    ),
+    toolResults: v.optional(
+      v.array(
+        v.object({
+          toolCallId: v.string(),
+          result: v.any(),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -165,12 +182,14 @@ export const updateBySlug = mutation({
       throw new Error("Message not found or access denied");
     }
 
-    // Update the message content and thinking
+    // Update the message content, thinking, and tool context
     await ctx.db.patch(args.messageSlug, {
       content: args.content,
       thinking: args.thinking,
       type: args.type,
       sources: args.sources,
+      toolCalls: args.toolCalls,
+      toolResults: args.toolResults,
     });
 
     return args.messageSlug;

@@ -24,7 +24,7 @@ export const cancel = mutation({
       .query("generations")
       .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
       .first();
-    
+
     if (generation) {
       await ctx.db.patch(generation._id, { cancelled: true });
     }
@@ -40,7 +40,7 @@ export const isCancelled = query({
       .query("generations")
       .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
       .first();
-    
+
     return generation?.cancelled ?? false;
   },
 });
@@ -54,7 +54,7 @@ export const cleanup = mutation({
       .query("generations")
       .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
       .first();
-    
+
     if (generation) {
       await ctx.db.delete(generation._id);
     }
@@ -70,7 +70,7 @@ export const isGenerating = query({
       .query("generations")
       .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
       .first();
-    
+
     return !!generation;
   },
 });

@@ -62,49 +62,6 @@ export const useAIGeneration = () => {
     setStreaming(true);
     setCurrentMessageId(messageSlug);
 
-    // Only show search animation if web search is enabled and the prompt likely requires search
-    // Check if the prompt contains keywords that would trigger web search
-    if (enableWebSearch) {
-      const searchKeywords = [
-        "current",
-        "recent",
-        "latest",
-        "today",
-        "yesterday",
-        "news",
-        "weather",
-        "price",
-        "stock",
-        "market",
-        "update",
-        "happening",
-        "events",
-        "when did",
-        "when was",
-        "what happened",
-        "search",
-        "find",
-        "look up",
-        "check",
-        "2024",
-        "2025",
-        "this year",
-        "this month",
-        "this week",
-      ];
-
-      const promptLower = prompt.toLowerCase();
-      const likelyToSearch =
-        searchKeywords.some((keyword) => promptLower.includes(keyword)) ||
-        promptLower.includes("?"); // Questions are more likely to need search
-
-      if (likelyToSearch) {
-        setIsSearching(true);
-        // Auto-clear after 5 seconds if still showing
-        setTimeout(() => setIsSearching(false), 5000);
-      }
-    }
-
     try {
       const result = await generateResponseAction({
         userId,

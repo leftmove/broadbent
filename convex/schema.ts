@@ -49,6 +49,24 @@ const applicationTables = {
         })
       )
     ),
+    // Store tool calls and results for conversation context
+    toolCalls: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          name: v.string(),
+          args: v.any(),
+        })
+      )
+    ),
+    toolResults: v.optional(
+      v.array(
+        v.object({
+          toolCallId: v.string(),
+          result: v.any(),
+        })
+      )
+    ),
   })
     .index("by_chat", ["chatId"])
     .searchIndex("search_messages", {

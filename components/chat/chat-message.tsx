@@ -5,7 +5,15 @@ import { Doc } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import ReactMarkdown from "react-markdown";
-import { Copy, FileText, RotateCcw, Trash2, Check, Edit2, Globe } from "lucide-react";
+import {
+  Copy,
+  FileText,
+  RotateCcw,
+  Trash2,
+  Check,
+  Edit2,
+  Globe,
+} from "lucide-react";
 import { markdownToTxt } from "markdown-to-txt";
 
 import { cn } from "lib/utils";
@@ -50,10 +58,13 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   const isOwnMessage = user && message.userId === user._id;
 
   // Check if this is the last assistant message and if we're currently streaming/searching
-  const isLastAssistantMessage = messages && messages.length > 0 && 
-    messages[messages.length - 1]._id === message._id && 
+  const isLastAssistantMessage =
+    messages &&
+    messages.length > 0 &&
+    messages[messages.length - 1]._id === message._id &&
     message.role === "assistant";
-  const showSearchIndicator = isLastAssistantMessage && isSearching && streaming;
+  const showSearchIndicator =
+    isLastAssistantMessage && isSearching && streaming;
 
   const copyToClipboard = async (text: string, type: "formatted" | "raw") => {
     try {
@@ -148,13 +159,18 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
 
       if (!lastUserMessage) return;
 
+      // Check if model supports tools for web search
+      const model = llms.model(message.modelId as any);
+      const shouldEnableWebSearch = model.capabilities?.tool ?? false;
+
       await generateResponse(
         message.userId,
         chatSlug,
         message._id,
         lastUserMessage.content,
         message.modelId as any,
-        conversationHistory.reverse().slice(0, -1) // Exclude the prompt message from history
+        conversationHistory.reverse().slice(0, -1), // Exclude the prompt message from history
+        shouldEnableWebSearch
       );
     } catch (error) {
       console.error("Failed to regenerate message:", error);
@@ -307,12 +323,13 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                   <span className="font-medium">Searching the web...</span>
                   <div className="flex-1">
                     <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 overflow-hidden">
-                      <div 
-                        className="h-full rounded-full animate-[shimmer_2s_ease-in-out_infinite]" 
+                      <div
+                        className="h-full rounded-full animate-[shimmer_2s_ease-in-out_infinite]"
                         style={{
-                          background: 'linear-gradient(90deg, rgb(59 130 246) 0%, rgb(37 99 235) 50%, rgb(59 130 246) 100%)',
-                          backgroundSize: '200% 100%'
-                        }} 
+                          background:
+                            "linear-gradient(90deg, rgb(59 130 246) 0%, rgb(37 99 235) 50%, rgb(59 130 246) 100%)",
+                          backgroundSize: "200% 100%",
+                        }}
                       />
                     </div>
                   </div>

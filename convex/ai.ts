@@ -199,6 +199,9 @@ async function handleStreamChunk(
     fullText: string;
     fullThinking: string;
     collectedSources: Source[];
+    lastUpdateTime: number;
+    toolCalls: Array<{ id: string; name: string; args: any }>;
+    toolResults: Array<{ toolCallId: string; result: any }>;
   },
   modelId: string
 ) {
@@ -216,25 +219,15 @@ async function handleStreamChunk(
 
   if (chunk.type === "text-delta") {
     state.fullText += chunk.textDelta;
-    if (isReasoningModel) {
-      const extractedThinking = extractThinkingFromText(state.fullText);
-      if (extractedThinking && extractedThinking !== state.fullThinking) {
-        state.fullThinking = extractedThinking;
-      }
-
-      await ctx.runMutation(api.messages.updateBySlug, {
-        chatSlug,
-        messageSlug,
-        content: stripThinkTags(state.fullText),
-        thinking: state.fullThinking || undefined,
-      });
-    } else {
-      await ctx.runMutation(api.messages.updateBySlug, {
-        chatSlug,
-        messageSlug,
-        content: state.fullText,
-      });
+    const updateData: any = {
+      chatSlug,
+      messageSlug,
+      content: state.fullText,
+    };
+    if (isReasoningModel && state.fullThinking) {
+      updateData.thinking = state.fullThinking;
     }
+    await ctx.runMutation(api.messages.updateBySlug, updateData);
   } else if (chunk.type === "reasoning") {
     if (chunk.textDelta) {
       state.fullThinking += chunk.textDelta;
@@ -242,7 +235,7 @@ async function handleStreamChunk(
         chatSlug,
         messageSlug,
         content: state.fullText,
-        thinking: stripThinkTags(state.fullThinking),
+        thinking: state.fullThinking,
       });
     }
   } else if (chunk.type === "step-finish") {
@@ -253,28 +246,54 @@ async function handleStreamChunk(
         await ctx.runMutation(api.messages.updateBySlug, {
           chatSlug,
           messageSlug,
-          content: stripThinkTags(state.fullText),
+          content: state.fullText,
           thinking: state.fullThinking,
         });
       }
     } else if (chunk?.providerMetadata?.reasoning && !state.fullThinking) {
       const reasoning = chunk.providerMetadata.reasoning;
       if (typeof reasoning === "string") {
-        state.fullThinking = stripThinkTags(reasoning);
         await ctx.runMutation(api.messages.updateBySlug, {
           chatSlug,
           messageSlug,
-          content: stripThinkTags(state.fullText),
+          content: state.fullText,
           thinking: state.fullThinking,
         });
       }
     }
+  } else if (chunk.type === "tool-call") {
+    // Store tool call for conversation context
+    state.toolCalls.push({
+      id: chunk.toolCallId,
+      name: chunk.toolName,
+      args: chunk.args,
+    });
+  } else if (chunk.type === "tool-result") {
+    // Store tool result for conversation context
+    state.toolResults.push({
+      toolCallId: chunk.toolCallId,
+      result: chunk.result,
+    });
+
+    if (chunk.toolName === "web" && chunk.result) {
+      if (chunk.result.results && Array.isArray(chunk.result.results)) {
+        const webSources = chunk.result.results.map((result: any) => ({
+          title: result.title || "Web Search Result",
+          url: result.url,
+          excerpt: result.excerpt,
+        }));
+        state.collectedSources.push(...webSources);
+
+        // Update the message to show that web search was performed
+        await ctx.runMutation(api.messages.updateBySlug, {
+          chatSlug,
+          messageSlug,
+          content: state.fullText,
+          sources: state.collectedSources,
+        });
+      }
+    }
   }
-  // } else if (chunk.type === "tool-result") {
-  //   if (chunk.toolName === "web" && chunk.result) {
-  //     console.log(chunk.result);
-  //   }
-  // }
 
   return null;
 }
@@ -310,6 +329,9 @@ async function processStream(
     fullText: "",
     fullThinking: "",
     collectedSources: [] as Source[],
+    lastUpdateTime: 0,
+    toolCalls: [] as Array<{ id: string; name: string; args: any }>,
+    toolResults: [] as Array<{ toolCallId: string; result: any }>,
   };
 
   for await (const chunk of result.fullStream) {
@@ -317,25 +339,50 @@ async function processStream(
     if (chunkResult) return chunkResult; // Early return for cancellation
   }
 
+  // Final update to ensure we don't miss the last content
+  if (state.fullText) {
+    const finalUpdateData: any = {
+      chatSlug: config.chatSlug,
+      messageSlug: config.messageSlug,
+      content: state.fullText,
+    };
+
+    if (config.isReasoningModel && state.fullThinking) {
+      finalUpdateData.thinking = state.fullThinking;
+    }
+
+    await config.ctx.runMutation(api.messages.updateBySlug, finalUpdateData);
+  }
+
   // Extract and update final sources
   const sources = await extractFinalSources(result, state.collectedSources);
 
+  // Always save final update with tool context
+  const finalUpdateData: any = {
+    chatSlug: config.chatSlug,
+    messageSlug: config.messageSlug,
+    content: config.isReasoningModel
+      ? stripThinkTags(state.fullText)
+      : state.fullText,
+  };
+
   if (sources) {
-    const updateData: any = {
-      chatSlug: config.chatSlug,
-      messageSlug: config.messageSlug,
-      content: config.isReasoningModel
-        ? stripThinkTags(state.fullText)
-        : state.fullText,
-      sources,
-    };
-
-    if (config.isReasoningModel) {
-      updateData.thinking = state.fullThinking || undefined;
-    }
-
-    await config.ctx.runMutation(api.messages.updateBySlug, updateData);
+    finalUpdateData.sources = sources;
   }
+
+  if (config.isReasoningModel && state.fullThinking) {
+    finalUpdateData.thinking = state.fullThinking;
+  }
+
+  // Include tool calls and results if any were made
+  if (state.toolCalls.length > 0) {
+    finalUpdateData.toolCalls = state.toolCalls;
+  }
+  if (state.toolResults.length > 0) {
+    finalUpdateData.toolResults = state.toolResults;
+  }
+
+  await config.ctx.runMutation(api.messages.updateBySlug, finalUpdateData);
 
   // Clean up generation record on success
   await config.ctx.runMutation(api.generations.cleanup, {
@@ -436,13 +483,16 @@ export const generateResponse = action({
         args.messageSlug
       );
 
+      // Abort controller for cancellation
+      const controller = new AbortController();
+
       // Prepare messages
       const shouldAddReasoningInstructions = isReasoningModel;
       const messages = prepareMessages(
         args.prompt,
         args.messageHistory,
         selectedProvider,
-        hasToolSupport,
+        enableWebSearch,
         shouldAddReasoningInstructions
       );
 
@@ -451,7 +501,17 @@ export const generateResponse = action({
         model,
         messages,
         tools,
-        maxRetries: 0,
+        maxRetries: 10,
+        maxSteps: 10,
+        abortSignal: controller.signal,
+        onChunk: async (chunk) => {
+          const isCancelled = await ctx.runQuery(api.generations.isCancelled, {
+            messageId: args.messageSlug,
+          });
+          if (isCancelled) {
+            controller.abort();
+          }
+        },
         onError: async (error) => {
           await throwError(
             ctx,

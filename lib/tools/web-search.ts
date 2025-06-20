@@ -58,28 +58,47 @@ export function createWebSearchTool(apiKey: string) {
       query: z.string().describe("The search query"),
       maxResults: z
         .number()
+        .max(8)
         .optional()
+        .default(5)
         .describe("Maximum number of results to return (default: 5)"),
+      cache: z
+        .boolean()
+        .optional()
+        .describe("Whether to use cached search results"),
     }),
-    execute: async ({ query, maxResults = 5 }) => {
+    execute: async ({ query, cache = true, maxResults = 5 }) => {
+      // return {
+      //   results: [
+      //     {
+      //       title: "Example Title",
+      //       url: "https://www.example.com",
+      //       excerpt: "Example Excerpt",
+      //       content: "Example Content",
+      //     },
+      //     {
+      //       title: "Example Title 2",
+      //       url: "https://www.example.com",
+      //       excerpt: "Example Excerpt 2",
+      //       content: "Example Content 2",
+      //     },
+      //   ],
+      // };
       const results = await searchWithFirecrawl(apiKey, {
         query,
         maxResults,
+        cache,
       });
-
-      return {
+      const context = {
         results: results.map((result) => ({
           title: result.title,
           url: result.url,
           excerpt: result.excerpt,
-          content: result.content.substring(0, 1000), // Limit content for AI context
-        })),
-        sources: results.map((result) => ({
-          title: result.title,
-          url: result.url,
-          excerpt: result.excerpt,
+          content: result.content,
         })),
       };
+
+      return context;
     },
   });
 }
