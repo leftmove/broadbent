@@ -36,7 +36,7 @@ const DEFAULT_UI_STATE: UIState = {
     hasContent: false,
   },
   search: {
-    enabled: false,
+    enabled: true,
     isSearching: false,
   },
 };
@@ -217,7 +217,7 @@ export const useUIState = () => {
     inputHasContent: currentState.input.hasContent,
     setInputHasContent,
 
-    // Direct access to search state for convenience  
+    // Direct access to search state for convenience
     searchEnabled: currentState.search.enabled,
     isSearching: currentState.search.isSearching,
     setSearchEnabled: (enabled: boolean) => {

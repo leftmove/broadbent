@@ -11,6 +11,13 @@ export const send = mutation({
       v.literal("assistant"),
       v.literal("system")
     ),
+    usage: v.optional(
+      v.object({
+        prompt: v.optional(v.number()),
+        completion: v.optional(v.number()),
+        total: v.optional(v.number()),
+      })
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -29,7 +36,21 @@ export const send = mutation({
       content: args.content,
       role: args.role,
       userId,
+      usage: args.usage,
     });
+  },
+});
+
+export const getHistory = query({
+  args: {
+    chatId: v.id("chats"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("messages")
+      .withIndex("by_chat", (q) => q.eq("chatId", args.chatId))
+      .order("asc")
+      .collect();
   },
 });
 
@@ -44,6 +65,13 @@ export const sendBySlug = mutation({
     ),
     thinking: v.optional(v.string()),
     modelId: v.optional(v.string()),
+    usage: v.optional(
+      v.object({
+        prompt: v.optional(v.number()),
+        completion: v.optional(v.number()),
+        thinking: v.optional(v.number()),
+      })
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -68,6 +96,7 @@ export const sendBySlug = mutation({
       userId,
       thinking: args.thinking,
       modelId: args.modelId,
+      usage: args.usage,
     });
   },
 });
@@ -103,6 +132,13 @@ export const updateWithThinking = mutation({
     messageId: v.id("messages"),
     content: v.string(),
     thinking: v.optional(v.string()),
+    usage: v.optional(
+      v.object({
+        prompt: v.optional(v.number()),
+        completion: v.optional(v.number()),
+        total: v.optional(v.number()),
+      })
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -120,6 +156,7 @@ export const updateWithThinking = mutation({
     await ctx.db.patch(args.messageId, {
       content: args.content,
       thinking: args.thinking,
+      usage: args.usage,
     });
 
     return args.messageId;
@@ -140,6 +177,31 @@ export const updateBySlug = mutation({
           url: v.string(),
           excerpt: v.optional(v.string()),
         })
+      )
+    ),
+    usage: v.optional(
+      v.object({
+        prompt: v.optional(v.number()),
+        completion: v.optional(v.number()),
+        total: v.optional(v.number()),
+      })
+    ),
+    tools: v.optional(
+      v.array(
+        v.union(
+          v.object({
+            type: v.literal("tool_call"),
+            toolCallId: v.string(),
+            toolName: v.string(),
+            args: v.any(),
+          }),
+          v.object({
+            type: v.literal("tool_result"),
+            toolCallId: v.string(),
+            toolName: v.string(),
+            result: v.any(),
+          })
+        )
       )
     ),
   },
@@ -171,6 +233,8 @@ export const updateBySlug = mutation({
       thinking: args.thinking,
       type: args.type,
       sources: args.sources,
+      usage: args.usage,
+      tools: args.tools,
     });
 
     return args.messageSlug;

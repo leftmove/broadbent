@@ -1,72 +1,44 @@
-import { SearchResult } from "./web-search";
+import FirecrawlApp from "@mendable/firecrawl-js";
+import type { SearchParams, SearchResponse } from "@mendable/firecrawl-js";
+
+import type { SearchResult } from "./web-search";
 
 interface FirecrawlSearchParams {
   query: string;
   maxResults?: number;
-}
-
-interface FirecrawlSearchResponse {
-  success: boolean;
-  data?: Array<{
-    url: string;
-    title?: string;
-    description?: string;
-    markdown?: string;
-    metadata?: {
-      title?: string;
-      description?: string;
-    };
-  }>;
-  error?: string;
+  cache?: boolean;
 }
 
 export async function searchWithFirecrawl(
   apiKey: string,
   params: FirecrawlSearchParams
 ): Promise<SearchResult[]> {
-  if (!apiKey) {
-    throw new Error("Firecrawl API key is required");
+  const firecrawl = new FirecrawlApp({ apiKey });
+  const options: SearchParams = {
+    limit: params.maxResults || 5,
+    scrapeOptions: {
+      formats: ["markdown"],
+      onlyMainContent: true,
+      maxAge: params.cache ? 1000 * 60 * 60 * 24 * 7 : undefined,
+    },
+  };
+  const results: SearchResponse = await firecrawl.search(params.query, options);
+
+  console.log("results", results);
+
+  if (!results.success || !results.data) {
+    throw new Error(results.error || "Search failed");
   }
 
-  try {
-    const response = await fetch("https://api.firecrawl.dev/v1/search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        query: params.query,
-        limit: params.maxResults || 5,
-        location: "",
-        tbs: "",
-        scrapeOptions: {
-          formats: ["markdown"],
-        },
-      }),
-    });
-
-    const data: FirecrawlSearchResponse = await response.json();
-
-    console.log("firecrawl response", data);
-
-    if (!data.success || !data.data) {
-      throw new Error(data.error || "Search failed");
-    }
-
-    return data.data.map((item) => ({
-      title: item.title || item.metadata?.title || "Untitled",
-      url: item.url,
-      content:
-        item.markdown || item.description || item.metadata?.description || "",
-      excerpt:
-        item.description ||
-        item.metadata?.description ||
-        item.markdown?.substring(0, 200) ||
-        "",
-    }));
-  } catch (error) {
-    console.error("Firecrawl search error:", error);
-    throw error;
-  }
+  return results.data.map((item) => ({
+    title: item.title || item.metadata?.title || "Untitled",
+    url: item.url || "",
+    content:
+      item.markdown || item.description || item.metadata?.description || "",
+    excerpt:
+      item.description ||
+      item.metadata?.description ||
+      item.markdown?.substring(0, 200) ||
+      "",
+  }));
 }

@@ -40,6 +40,24 @@ const applicationTables = {
     userId: v.id("users"),
     thinking: v.optional(v.string()),
     modelId: v.optional(v.string()),
+    tools: v.optional(
+      v.array(
+        v.union(
+          v.object({
+            type: v.literal("tool_call"),
+            toolCallId: v.string(),
+            toolName: v.string(),
+            args: v.any(),
+          }),
+          v.object({
+            type: v.literal("tool_result"),
+            toolCallId: v.string(),
+            toolName: v.string(),
+            result: v.any(),
+          })
+        )
+      )
+    ),
     sources: v.optional(
       v.array(
         v.object({
@@ -48,6 +66,13 @@ const applicationTables = {
           excerpt: v.optional(v.string()),
         })
       )
+    ),
+    usage: v.optional(
+      v.object({
+        prompt: v.optional(v.number()),
+        completion: v.optional(v.number()),
+        total: v.optional(v.number()),
+      })
     ),
   })
     .index("by_chat", ["chatId"])
@@ -74,6 +99,7 @@ const applicationTables = {
     messageId: v.id("messages"),
     userId: v.id("users"),
     cancelled: v.boolean(),
+    searching: v.boolean(),
   })
     .index("by_message", ["messageId"])
     .index("by_user", ["userId"]),

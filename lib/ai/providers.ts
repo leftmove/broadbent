@@ -12,6 +12,16 @@ export type AIProviderName = "OpenAI" | "Anthropic" | "Google" | "xAI" | "Groq";
 
 export type ApiKeys = Record<AIProvider, string>;
 
+export type Message = {
+  role: "user" | "assistant" | "system";
+  content: string;
+  usage?: {
+    prompt?: number;
+    completion?: number;
+    total?: number;
+  };
+};
+
 export class Provider {
   id: AIProvider;
   name: AIProviderName;

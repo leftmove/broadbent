@@ -5,10 +5,19 @@ import { Doc } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
 import ReactMarkdown from "react-markdown";
-import { Copy, FileText, RotateCcw, Trash2, Check, Edit2, Globe } from "lucide-react";
+import {
+  Copy,
+  FileText,
+  RotateCcw,
+  Trash2,
+  Check,
+  Edit2,
+  Globe,
+} from "lucide-react";
 import { markdownToTxt } from "markdown-to-txt";
 
 import { cn } from "lib/utils";
+import { ModelId } from "lib/ai/models";
 import { CodeBlock } from "components/code-block";
 import { Button } from "components/ui/button";
 import { MessageEditor } from "components/chat/message-editor";
@@ -44,16 +53,22 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   const editMessage = useMutation(api.messages.editMessage);
   const updateMessage = useMutation(api.messages.updateBySlug);
   const { generateResponse, streaming } = useAIGeneration();
-  const { isSearching } = useUIState();
+  const { isSearching, searchEnabled } = useUIState();
 
   const isUser = message.role === "user";
   const isOwnMessage = user && message.userId === user._id;
 
   // Check if this is the last assistant message and if we're currently streaming/searching
-  const isLastAssistantMessage = messages && messages.length > 0 && 
-    messages[messages.length - 1]._id === message._id && 
+  const isLastAssistantMessage =
+    messages &&
+    messages.length > 0 &&
+    messages[messages.length - 1]._id === message._id &&
     message.role === "assistant";
-  const showSearchIndicator = isLastAssistantMessage && isSearching && streaming;
+  const showSearchIndicator =
+    isLastAssistantMessage && isSearching && streaming;
+  const isSearchingTool = useQuery(api.generations.isSearching, {
+    messageId: message._id,
+  });
 
   const copyToClipboard = async (text: string, type: "formatted" | "raw") => {
     try {
@@ -153,8 +168,8 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
         chatSlug,
         message._id,
         lastUserMessage.content,
-        message.modelId as any,
-        conversationHistory.reverse().slice(0, -1) // Exclude the prompt message from history
+        message.modelId as ModelId,
+        searchEnabled
       );
     } catch (error) {
       console.error("Failed to regenerate message:", error);
@@ -186,13 +201,15 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
     };
   }, [deleteTimeout]);
 
+  console.log(isSearchingTool);
+
   // Show undo delete notification
   if (showDeleteUndo) {
     return (
-      <div className="flex w-full px-4 py-2">
-        <div className="flex items-center justify-between w-full p-4 duration-300 border bg-destructive/10 border-destructive/20 rounded-xl animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-destructive animate-pulse"></div>
+      <div className="flex px-4 py-2 w-full">
+        <div className="flex justify-between items-center p-4 w-full rounded-xl border duration-300 bg-destructive/10 border-destructive/20 animate-in fade-in slide-in-from-top-2">
+          <div className="flex gap-2 items-center">
+            <div className="w-2 h-2 rounded-full animate-pulse bg-destructive"></div>
             <span className="text-sm font-medium text-destructive">
               Message will be deleted in 3 seconds
             </span>
@@ -212,7 +229,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
     return (
       <div
         id={message._id}
-        className="flex justify-end w-full px-4 py-2"
+        className="flex justify-end px-4 py-2 w-full"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -233,7 +250,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
             />
           ) : (
             <>
-              <div className="px-4 py-3 transition-all duration-200 border shadow-sm rounded-xl bg-primary text-primary-foreground border-primary/20 hover:shadow-md">
+              <div className="px-4 py-3 rounded-xl border shadow-sm transition-all duration-200 bg-primary text-primary-foreground border-primary/20 hover:shadow-md">
                 <div className="text-base leading-relaxed">
                   {message.content}
                 </div>
@@ -241,7 +258,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
               {isOwnMessage && (
                 <div
                   className={cn(
-                    "flex justify-end gap-1 mt-2 transition-all duration-300",
+                    "flex gap-1 justify-end mt-2 transition-all duration-300",
                     isHovered
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-2"
@@ -272,11 +289,11 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   return (
     <div
       id={message._id}
-      className="flex w-full px-4 py-2"
+      className="flex px-4 py-2 w-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="w-full break-words max-w-none">
+      <div className="w-full max-w-none break-words">
         {isEditing ? (
           <MessageEditor
             content={editContent}
@@ -296,25 +313,55 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
           <>
             {/* Search indicator - show when this is the last assistant message and search is active */}
             {showSearchIndicator && (
-              <div className="mb-4 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl">
-                <div className="flex items-center gap-3 text-sm text-blue-700 dark:text-blue-300">
+              <div className="px-4 py-3 mb-4 bg-blue-50 rounded-xl border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                <div className="flex gap-3 items-center text-sm text-blue-700 dark:text-blue-300">
                   <div className="relative">
                     <Globe className="w-4 h-4 animate-pulse" />
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex absolute inset-0 justify-center items-center">
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
                     </div>
                   </div>
                   <span className="font-medium">Searching the web...</span>
                   <div className="flex-1">
                     <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 overflow-hidden">
-                      <div 
-                        className="h-full rounded-full animate-[shimmer_2s_ease-in-out_infinite]" 
+                      <div
+                        className="h-full rounded-full animate-[shimmer_2s_ease-in-out_infinite]"
                         style={{
-                          background: 'linear-gradient(90deg, rgb(59 130 246) 0%, rgb(37 99 235) 50%, rgb(59 130 246) 100%)',
-                          backgroundSize: '200% 100%'
-                        }} 
+                          background:
+                            "linear-gradient(90deg, rgb(59 130 246) 0%, rgb(37 99 235) 50%, rgb(59 130 246) 100%)",
+                          backgroundSize: "200% 100%",
+                        }}
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tool search progress bar */}
+            {isSearchingTool && (
+              <div className="flex justify-between items-center mb-4">
+                <div className="overflow-hidden relative w-11/12">
+                  <div className="w-full h-2 bg-gradient-to-r from-blue-100 to-blue-50 rounded-full border shadow-inner dark:from-blue-950/40 dark:to-blue-900/20 border-blue-200/50 dark:border-blue-800/30">
+                    <div className="overflow-hidden relative h-full rounded-full">
+                      <div
+                        className="h-full rounded-full animate-[progress_2.5s_ease-in-out_infinite] shadow-sm"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, rgb(59 130 246) 0%, rgb(96 165 250) 25%, rgb(147 197 253) 50%, rgb(96 165 250) 75%, rgb(59 130 246) 100%)",
+                          backgroundSize: "200% 100%",
+                          animation: "progress 2.5s ease-in-out infinite",
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full animate-[shimmer_2s_ease-in-out_infinite]" />
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r rounded-full animate-pulse from-blue-400/10 via-blue-500/20 to-blue-400/10" />
+                </div>
+                <div className="relative flex-shrink-0">
+                  <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="absolute -inset-1">
+                    <div className="w-6 h-6 rounded-full border-2 border-blue-200 opacity-30 animate-ping dark:border-blue-700" />
                   </div>
                 </div>
               </div>
@@ -432,7 +479,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
             {/* Action buttons and model info - only show on hover */}
             <div
               className={cn(
-                "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-3 transition-all duration-300",
+                "flex flex-col gap-3 pt-4 mt-3 transition-all duration-300 sm:flex-row sm:items-center sm:justify-between",
                 isHovered
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-2"
@@ -450,7 +497,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
-                  <span className="font-medium hidden xs:inline">Copy</span>
+                  <span className="hidden font-medium xs:inline">Copy</span>
                 </button>
 
                 <button
@@ -462,7 +509,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                   ) : (
                     <FileText className="w-3.5 h-3.5" />
                   )}
-                  <span className="font-medium hidden xs:inline">Raw</span>
+                  <span className="hidden font-medium xs:inline">Raw</span>
                 </button>
 
                 {isOwnMessage && (
@@ -471,7 +518,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                     className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-all duration-200 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 rounded-full hover:bg-secondary/30"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
-                    <span className="font-medium hidden xs:inline">Edit</span>
+                    <span className="hidden font-medium xs:inline">Edit</span>
                   </button>
                 )}
 
@@ -486,7 +533,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                       isRegenerating && "animate-spin"
                     )}
                   />
-                  <span className="font-medium hidden xs:inline">
+                  <span className="hidden font-medium xs:inline">
                     Regenerate
                   </span>
                 </button>
@@ -497,7 +544,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                   className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-all duration-200 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 disabled:opacity-50 rounded-full hover:bg-destructive/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span className="font-medium hidden xs:inline">Delete</span>
+                  <span className="hidden font-medium xs:inline">Delete</span>
                 </button>
               </div>
 

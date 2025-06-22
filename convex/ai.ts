@@ -1,27 +1,39 @@
 import { action, ActionCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 import { v } from "convex/values";
 
-import { streamText, ToolSet } from "ai";
+import {
+  streamText,
+  ToolSet,
+  type StreamTextOnChunkCallback,
+  type StreamTextOnStepFinishCallback,
+  type StreamTextOnFinishCallback,
+  type LanguageModelUsage,
+} from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createXai } from "@ai-sdk/xai";
 import { createGroq } from "@ai-sdk/groq";
 
-import { createWebSearchTool } from "../lib/tools/web-search";
-
-import { llms } from "../lib/ai/providers";
+import { createWebSearchTool, WebSearchResult } from "../lib/tools/web-search";
+import { llms, type Message } from "../lib/ai/providers";
+import { AIProvider, Model, type ModelId } from "../lib/ai/models";
+import { Context, determineContext } from "../lib/ai/context";
 import { buildSystemPrompt } from "../lib/ai/prompts";
 import { handleError, ErrorDetails } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
-import { api } from "./_generated/api";
-import { ConvexError, CustomError } from "../lib/errors";
-import { type ModelId } from "../lib/ai/models";
+import { CustomError } from "../lib/errors";
 
-interface Message {
-  role: "user" | "assistant" | "system";
+interface GenerateResponse {
   content: string;
+  thinking?: string;
+  tools?: Array<{
+    name: string;
+    result: string;
+    type: "tool_result" | "tool_call";
+  }>;
 }
 
 interface Source {
@@ -30,21 +42,21 @@ interface Source {
   excerpt?: string;
 }
 
+interface StreamState {
+  fullText: string;
+  fullThinking: string;
+  sources: Source[];
+  isCancelled: boolean;
+  hasError: boolean;
+}
+
 interface StreamConfig {
   ctx: ActionCtx;
   chatSlug: string;
   messageSlug: Id<"messages">;
   isReasoningModel: boolean;
   selectedProvider: string;
-}
-
-function stripThinkTags(text: string): string {
-  return text.replace(/<think>|<\/think>/g, "").trim();
-}
-
-function extractThinkingFromText(text: string): string {
-  const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
-  return thinkMatch ? thinkMatch[1].trim() : "";
+  modelId: string;
 }
 
 async function throwError(
@@ -67,36 +79,47 @@ async function throwError(
 }
 
 function createModelInstance(
-  provider: string,
-  apiKey: string,
-  selectedModel: any
+  provider: AIProvider,
+  selectedModel: Model,
+  apiKey: string
 ) {
   let llm;
   let model;
 
-  switch (provider) {
-    case "openai":
-      llm = createOpenAI({ apiKey });
-      model = llm(selectedModel.id);
-      break;
-    case "anthropic":
-      llm = createAnthropic({ apiKey });
-      model = llm(selectedModel.id, { sendReasoning: true });
-      break;
-    case "google":
-      llm = createGoogleGenerativeAI({ apiKey });
-      model = llm(selectedModel.id);
-      break;
-    case "xai":
-      llm = createXai({ apiKey });
-      model = llm(selectedModel.id);
-      break;
-    case "groq":
-      llm = createGroq({ apiKey });
-      model = llm(selectedModel.id);
-      break;
-    default:
-      throw new Error(`Invalid provider: ${provider}`);
+  try {
+    switch (provider) {
+      case "openai":
+        llm = createOpenAI({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      case "anthropic":
+        llm = createAnthropic({ apiKey });
+        model = llm(selectedModel.id, { sendReasoning: true });
+        break;
+      case "google":
+        llm = createGoogleGenerativeAI({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      case "xai":
+        llm = createXai({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+      case "groq":
+        llm = createGroq({ apiKey });
+        model = llm(selectedModel.id);
+        break;
+    }
+  } catch (error) {
+    const customError = new CustomError(
+      "InvalidModel",
+      "Error occurred selecting and creating model.",
+      {
+        error,
+        model: selectedModel.id,
+        provider: provider,
+      }
+    );
+    throw customError;
   }
 
   return model;
@@ -108,7 +131,8 @@ async function configureTools(
   webSearchTool: boolean,
   ctx: ActionCtx,
   chatSlug: Id<"chats"> | string,
-  messageSlug: Id<"messages"> | string
+  messageSlug: Id<"messages"> | string,
+  context: Context
 ): Promise<ToolSet | undefined> {
   if (!hasToolSupport) return undefined;
 
@@ -137,7 +161,6 @@ async function configureTools(
 function prepareMessages(
   prompt: string,
   messageHistory: Message[] | undefined,
-  selectedProvider: string,
   instructWebSearch: boolean,
   instructReasoning: boolean
 ): Message[] {
@@ -152,7 +175,21 @@ function prepareMessages(
     role: "system",
     content: systemMessage,
   });
-  messages.push(...(messageHistory || []));
+  messages.push(
+    ...((messageHistory || [])
+      .filter((message) => message.content.trim() !== "") // Filter out empty messages
+      .map((message) =>
+        message.role === "user" ||
+        message.role === "assistant" ||
+        message.role === "system"
+          ? {
+              role: message.role,
+              content: message.content,
+            }
+          : null
+      )
+      .filter((message) => message !== null) as Message[])
+  );
   messages.push({
     role: "user",
     content: prompt,
@@ -166,191 +203,261 @@ async function checkCancellation(
   messageSlug: Id<"messages">,
   chatSlug: string,
   selectedProvider: string,
-  modelId: string
+  modelId: string,
+  controller: AbortController
 ) {
   const isCancelled = await ctx.runQuery(api.generations.isCancelled, {
     messageId: messageSlug,
   });
 
   if (isCancelled) {
-    await ctx.runMutation(api.generations.cleanup, {
-      messageId: messageSlug,
-    });
-    return await throwError(
-      ctx,
-      "GenerationCancelled",
-      "Generation was cancelled by user.",
-      {
-        provider: selectedProvider,
-        model: modelId,
-      },
-      chatSlug,
-      messageSlug
-    );
+    controller.abort();
+    // await ctx.runMutation(api.generations.cleanup, {
+    //   messageId: messageSlug,
+    // });
   }
 
-  return null;
+  return isCancelled;
 }
 
-async function handleStreamChunk(
-  chunk: any,
-  config: StreamConfig,
-  state: {
-    fullText: string;
-    fullThinking: string;
-    collectedSources: Source[];
-  },
-  modelId: string
+async function updateMessage(
+  ctx: ActionCtx,
+  chatSlug: string,
+  messageSlug: Id<"messages">,
+  content: string,
+  thinking?: string,
+  sources?: Source[],
+  usage?: LanguageModelUsage,
+  tools?: any[]
 ) {
-  const { ctx, chatSlug, messageSlug, isReasoningModel, selectedProvider } =
-    config;
-
-  const cancellationResult = await checkCancellation(
-    ctx,
-    messageSlug,
+  const updateData: any = {
     chatSlug,
-    selectedProvider,
-    modelId
-  );
-  if (cancellationResult) return cancellationResult;
-
-  if (chunk.type === "text-delta") {
-    state.fullText += chunk.textDelta;
-    if (isReasoningModel) {
-      const extractedThinking = extractThinkingFromText(state.fullText);
-      if (extractedThinking && extractedThinking !== state.fullThinking) {
-        state.fullThinking = extractedThinking;
-      }
-
-      await ctx.runMutation(api.messages.updateBySlug, {
-        chatSlug,
-        messageSlug,
-        content: stripThinkTags(state.fullText),
-        thinking: state.fullThinking || undefined,
-      });
-    } else {
-      await ctx.runMutation(api.messages.updateBySlug, {
-        chatSlug,
-        messageSlug,
-        content: state.fullText,
-      });
-    }
-  } else if (chunk.type === "reasoning") {
-    if (chunk.textDelta) {
-      state.fullThinking += chunk.textDelta;
-      await ctx.runMutation(api.messages.updateBySlug, {
-        chatSlug,
-        messageSlug,
-        content: state.fullText,
-        thinking: stripThinkTags(state.fullThinking),
-      });
-    }
-  } else if (chunk.type === "step-finish") {
-    if (chunk.providerMetadata?.openai?.reasoning) {
-      const reasoning = chunk.providerMetadata.openai.reasoning;
-      if (typeof reasoning === "string") {
-        state.fullThinking = reasoning;
-        await ctx.runMutation(api.messages.updateBySlug, {
-          chatSlug,
-          messageSlug,
-          content: stripThinkTags(state.fullText),
-          thinking: state.fullThinking,
-        });
-      }
-    } else if (chunk?.providerMetadata?.reasoning && !state.fullThinking) {
-      const reasoning = chunk.providerMetadata.reasoning;
-      if (typeof reasoning === "string") {
-        state.fullThinking = stripThinkTags(reasoning);
-        await ctx.runMutation(api.messages.updateBySlug, {
-          chatSlug,
-          messageSlug,
-          content: stripThinkTags(state.fullText),
-          thinking: state.fullThinking,
-        });
-      }
-    }
-  }
-  // } else if (chunk.type === "tool-result") {
-  //   if (chunk.toolName === "web" && chunk.result) {
-  //     console.log(chunk.result);
-  //   }
-  // }
-
-  return null;
-}
-
-async function extractFinalSources(
-  result: any,
-  collectedSources: Source[]
-): Promise<Source[] | undefined> {
-  const resultSources = await result.sources;
-  if (resultSources && resultSources.length > 0) {
-    return resultSources
-      .filter((source: any) => source.sourceType === "url")
-      .map((source: any) => ({
-        title: source.title || "Web Source",
-        url: source.url,
-        excerpt:
-          source.providerMetadata?.excerpt ||
-          source.providerMetadata?.snippet ||
-          "No excerpt available",
-      }));
-  } else if (collectedSources.length > 0) {
-    return collectedSources;
-  }
-  return undefined;
-}
-
-async function processStream(
-  result: any,
-  config: StreamConfig,
-  modelId: string
-) {
-  const state = {
-    fullText: "",
-    fullThinking: "",
-    collectedSources: [] as Source[],
+    messageSlug,
+    content,
   };
 
-  for await (const chunk of result.fullStream) {
-    const chunkResult = await handleStreamChunk(chunk, config, state, modelId);
-    if (chunkResult) return chunkResult; // Early return for cancellation
+  if (thinking) {
+    updateData.thinking = thinking;
   }
 
-  // Extract and update final sources
-  const sources = await extractFinalSources(result, state.collectedSources);
+  if (sources && sources.length > 0) {
+    updateData.sources = sources;
+  }
 
-  if (sources) {
-    const updateData: any = {
-      chatSlug: config.chatSlug,
-      messageSlug: config.messageSlug,
-      content: config.isReasoningModel
-        ? stripThinkTags(state.fullText)
-        : state.fullText,
-      sources,
+  if (usage) {
+    updateData.usage = {
+      prompt: usage.promptTokens,
+      completion: usage.completionTokens,
+      total: usage.totalTokens,
     };
-
-    if (config.isReasoningModel) {
-      updateData.thinking = state.fullThinking || undefined;
-    }
-
-    await config.ctx.runMutation(api.messages.updateBySlug, updateData);
   }
 
-  // Clean up generation record on success
-  await config.ctx.runMutation(api.generations.cleanup, {
-    messageId: config.messageSlug,
-  });
+  if (tools && tools.length > 0) {
+    updateData.tools = tools;
+  }
 
+  await ctx.runMutation(api.messages.updateBySlug, updateData);
+}
+
+function createChunkHandler(
+  config: StreamConfig,
+  state: StreamState,
+  controller: AbortController
+) {
+  return async ({
+    chunk,
+  }: Parameters<StreamTextOnChunkCallback<ToolSet>>[0]) => {
+    // Check for cancellation on each chunk
+    const cancellationResult = await checkCancellation(
+      config.ctx,
+      config.messageSlug,
+      config.chatSlug,
+      config.selectedProvider,
+      config.modelId,
+      controller
+    );
+
+    if (cancellationResult) {
+      state.isCancelled = true;
+      return;
+    }
+
+    if (chunk.type === "text-delta") {
+      state.fullText += chunk.textDelta;
+      await updateMessage(
+        config.ctx,
+        config.chatSlug,
+        config.messageSlug,
+        state.fullText,
+        state.fullThinking || undefined
+      );
+    } else if (chunk.type === "reasoning") {
+      if (chunk.textDelta) {
+        state.fullThinking += chunk.textDelta;
+        await updateMessage(
+          config.ctx,
+          config.chatSlug,
+          config.messageSlug,
+          state.fullText,
+          state.fullThinking
+        );
+      }
+    } else if (chunk.type === "tool-call") {
+      if (chunk.toolName === "web") {
+        await config.ctx.runMutation(api.generations.updateSearching, {
+          messageId: config.messageSlug,
+          searching: true,
+        });
+      }
+    }
+  };
+}
+
+function createStepFinishHandler(config: StreamConfig, state: StreamState) {
+  return async (
+    chunk: Parameters<StreamTextOnStepFinishCallback<ToolSet>>[0]
+  ) => {
+    // Build tools array for schema compliance
+    const tools: any[] = [];
+
+    // Add tool calls
+    chunk.toolCalls.forEach((call: any) => {
+      tools.push({
+        type: "tool_call",
+        toolCallId: call.toolCallId,
+        toolName: call.toolName,
+        args: call.args,
+      });
+    });
+
+    // Add tool results and process web search
+    if (chunk.toolResults) {
+      chunk.toolResults.forEach((result: any, i: number) => {
+        const call = chunk.toolCalls[i];
+        if (!call) return;
+
+        tools.push({
+          type: "tool_result",
+          toolCallId: call.toolCallId,
+          toolName: call.toolName,
+          result,
+        });
+
+        // Handle web search results
+        if (call.toolName === "web" && result && Array.isArray(result.result)) {
+          const webSources = result.result.map(
+            (webResult: WebSearchResult) => ({
+              title: webResult.title,
+              url: webResult.source,
+              excerpt: webResult.excerpt,
+            })
+          );
+          state.sources.push(...webSources);
+
+          // Turn off searching state
+          void config.ctx.runMutation(api.generations.updateSearching, {
+            messageId: config.messageSlug,
+            searching: false,
+          });
+        }
+      });
+    }
+
+    await updateMessage(
+      config.ctx,
+      config.chatSlug,
+      config.messageSlug,
+      state.fullText,
+      state.fullThinking,
+      state.sources.length > 0 ? state.sources : undefined,
+      chunk.usage,
+      tools.length > 0 ? tools : undefined
+    );
+  };
+}
+
+function createFinishHandler(config: StreamConfig, state: StreamState) {
+  return async ({
+    text,
+    reasoning,
+    usage,
+  }: Parameters<StreamTextOnFinishCallback<ToolSet>>[0]) => {
+    // Final cleanup and state update
+    state.fullText = text;
+
+    if (reasoning && !state.fullThinking) {
+      state.fullThinking = reasoning;
+    }
+
+    // Store token usage if available
+    if (usage) {
+      await updateMessage(
+        config.ctx,
+        config.chatSlug,
+        config.messageSlug,
+        text,
+        reasoning || state.fullThinking,
+        state.sources.length > 0 ? state.sources : undefined,
+        usage
+      );
+    }
+    // Reset searching state and clean up generation record on success
+    await config.ctx.runMutation(api.generations.updateSearching, {
+      messageId: config.messageSlug,
+      searching: false,
+    });
+
+    await config.ctx.runMutation(api.generations.cleanup, {
+      messageId: config.messageSlug,
+    });
+  };
+}
+
+function createErrorHandler(
+  config: StreamConfig,
+  state: StreamState,
+  controller: AbortController
+) {
+  return async ({ error }: { error: any }) => {
+    controller.abort();
+    state.hasError = true;
+    await throwError(
+      config.ctx,
+      "RequestError",
+      "Error occurred streaming text for model.",
+      {
+        error,
+        request: error.error,
+        provider: config.selectedProvider,
+        model: config.modelId,
+      },
+      config.chatSlug,
+      config.messageSlug
+    );
+  };
+}
+
+async function handleToolCalls(
+  config: StreamConfig,
+  tools: ToolSet | undefined
+) {
+  if (tools && tools.web) {
+    await config.ctx.runMutation(api.generations.updateSearching, {
+      messageId: config.messageSlug,
+      searching: true,
+    });
+  }
+
+  return tools;
+}
+
+function buildFinalResponse(state: StreamState): GenerateResponse {
   const returnData: any = {
-    content: config.isReasoningModel
-      ? stripThinkTags(state.fullText)
-      : state.fullText,
-    sources,
+    content: state.fullText,
   };
 
-  if (config.isReasoningModel) {
-    returnData.thinking = state.fullThinking || undefined;
+  if (state.fullThinking) {
+    returnData.thinking = state.fullThinking;
   }
 
   return returnData;
@@ -363,18 +470,6 @@ export const generateResponse = action({
     messageSlug: v.id("messages"),
     prompt: v.string(),
     modelId: modelIdsValidator,
-    messageHistory: v.optional(
-      v.array(
-        v.object({
-          role: v.union(
-            v.literal("user"),
-            v.literal("assistant"),
-            v.literal("system")
-          ),
-          content: v.string(),
-        })
-      )
-    ),
     enableWebSearch: v.optional(v.boolean()),
   },
   returns: v.object({
@@ -416,80 +511,89 @@ export const generateResponse = action({
       );
     }
 
+    const messageHistory = await ctx.runQuery(api.messages.listBySlug, {
+      chatSlug: args.chatSlug,
+    });
+
     const apiKey = apiKeys[selectedProvider];
     const hasToolSupport = selectedModel.capabilities.tool;
-    const enableWebSearch = Boolean(args.enableWebSearch) && hasToolSupport;
     const isReasoningModel = selectedModel.capabilities.thinking;
+    const instructWebSearch = Boolean(args.enableWebSearch) && hasToolSupport;
+    const instructReasoning = isReasoningModel;
+
+    const state: StreamState = {
+      fullText: "",
+      fullThinking: "",
+      isCancelled: false,
+      hasError: false,
+      sources: [],
+    };
+    const config: StreamConfig = {
+      ctx,
+      chatSlug: args.chatSlug,
+      messageSlug: args.messageSlug,
+      isReasoningModel,
+      selectedProvider,
+      modelId: args.modelId,
+    };
 
     try {
       const model = createModelInstance(
         selectedProvider,
-        apiKey,
-        selectedModel
-      );
-      const tools = await configureTools(
-        apiKeys,
-        hasToolSupport,
-        enableWebSearch,
-        ctx,
-        args.chatSlug,
-        args.messageSlug
+        selectedModel,
+        apiKey
       );
 
       // Prepare messages
-      const shouldAddReasoningInstructions = isReasoningModel;
       const messages = prepareMessages(
         args.prompt,
-        args.messageHistory,
-        selectedProvider,
+        messageHistory,
+        instructWebSearch,
+        instructReasoning
+      );
+      const context = determineContext(selectedModel, messageHistory);
+
+      const controller = new AbortController();
+      const tools = await configureTools(
+        apiKeys,
         hasToolSupport,
-        shouldAddReasoningInstructions
+        instructWebSearch,
+        ctx,
+        args.chatSlug,
+        args.messageSlug,
+        context
       );
 
-      // Create stream
+      await handleToolCalls(config, tools);
+
       const result = streamText({
         model,
         messages,
         tools,
-        maxRetries: 0,
-        onError: async (error) => {
-          await throwError(
-            ctx,
-            "RequestError",
-            "Error occurred streaming text for model.",
-            {
-              request: error.error,
-              provider: selectedProvider,
-              model: args.modelId,
-            },
-            args.chatSlug,
-            args.messageSlug
-          );
-        },
+        maxRetries: 10,
+        maxSteps: 10,
+        abortSignal: controller.signal,
+        onChunk: createChunkHandler(config, state, controller),
+        onError: createErrorHandler(config, state, controller),
+        onFinish: createFinishHandler(config, state),
+        onStepFinish: createStepFinishHandler(config, state),
       });
+      const reader = result.textStream.getReader();
 
-      // Process stream
-      const streamConfig: StreamConfig = {
-        ctx,
-        chatSlug: args.chatSlug,
-        messageSlug: args.messageSlug,
-        isReasoningModel,
-        selectedProvider,
-      };
-
-      return await processStream(result, streamConfig, args.modelId);
-    } catch (error: any) {
-      console.error(error);
-
-      if (
-        !(error instanceof ConvexError && error.name === "GenerationCancelled")
-      ) {
-        await ctx.runMutation(api.generations.cleanup, {
-          messageId: args.messageSlug,
-        });
+      let i = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        console.log(i, value);
+        i++;
+        if (done) break;
       }
 
-      if (error instanceof ConvexError) {
+      return buildFinalResponse(state);
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        // Generation cancelled, do nothing.
+        return buildFinalResponse(state);
+      } else if (error instanceof CustomError) {
         return await throwError(
           ctx,
           error.name,
@@ -504,6 +608,7 @@ export const generateResponse = action({
           "RequestError",
           "Error occurred when trying to query AI provider for response.",
           {
+            error,
             request: error.error,
             provider: selectedProvider,
             model: args.modelId,

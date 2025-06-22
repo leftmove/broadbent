@@ -28,6 +28,13 @@ export interface SearchOptions {
   includeRawHtml?: boolean;
 }
 
+export interface WebSearchResult {
+  title: string;
+  source: string;
+  content: string;
+  excerpt?: string;
+}
+
 export interface WebSearchProviderInfo {
   name: string;
   apiKeyName: string;
@@ -58,28 +65,51 @@ export function createWebSearchTool(apiKey: string) {
       query: z.string().describe("The search query"),
       maxResults: z
         .number()
+        .default(3)
         .optional()
-        .describe("Maximum number of results to return (default: 5)"),
+        .describe("Maximum number of results to return"),
+      cache: z
+        .boolean()
+        .default(true)
+        .optional()
+        .describe("Whether to cache results"),
     }),
-    execute: async ({ query, maxResults = 5 }) => {
+    execute: async ({
+      query,
+      maxResults,
+      cache,
+    }): Promise<WebSearchResult[]> => {
       const results = await searchWithFirecrawl(apiKey, {
         query,
         maxResults,
+        cache,
       });
 
-      return {
-        results: results.map((result) => ({
-          title: result.title,
-          url: result.url,
-          excerpt: result.excerpt,
-          content: result.content.substring(0, 1000), // Limit content for AI context
-        })),
-        sources: results.map((result) => ({
-          title: result.title,
-          url: result.url,
-          excerpt: result.excerpt,
-        })),
-      };
+      // Temporary section length based on number of results
+      let section = 500;
+      if (results.length <= 1) {
+        section = 1000;
+      } else if (results.length <= 2) {
+        section = 750;
+      } else if (results.length <= 3) {
+        section = 500;
+      } else if (results.length <= 4) {
+        section = 300;
+      } else if (results.length <= 5) {
+        section = 200;
+      } else {
+        section = 100;
+      }
+
+      return results.map((result) => ({
+        title: result.title,
+        source: result.url,
+        excerpt: result.excerpt,
+        content:
+          result.content.length > 100
+            ? result.content.slice(0, 100) + "..."
+            : result.content,
+      }));
     },
   });
 }

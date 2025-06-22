@@ -10,8 +10,6 @@ export function extractMetadata(message: string) {
   const metadataRegex = /<<(.+?)>>/;
   const match = message.match(metadataRegex);
 
-  console.log(match, message);
-
   if (!match) {
     return { message };
   }

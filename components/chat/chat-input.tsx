@@ -62,7 +62,13 @@ export function ChatInput({
   const { setSelectedChatSlug } = useChatState();
   const { generateResponse, streaming, setError, clearError, stopGeneration } =
     useAIGeneration();
-  const { setInputHasContent, searchEnabled, isSearching, setSearchEnabled, setIsSearching } = useUIState();
+  const {
+    setInputHasContent,
+    searchEnabled,
+    isSearching,
+    setSearchEnabled,
+    setIsSearching,
+  } = useUIState();
 
   const createChat = useMutation(api.chats.create);
   const sendMessage = useMutation(api.messages.sendBySlug);
@@ -108,7 +114,7 @@ export function ChatInput({
     setIsSubmitting(true);
     setInput("");
     clearError();
-    
+
     // Notify that prompt was handled
     if (onPromptHandled) {
       onPromptHandled();
@@ -138,15 +144,7 @@ export function ChatInput({
         role: "assistant",
         modelId: currentModel.id,
       });
-      // Prepare message history
-      const messageHistory =
-        messages
-          .filter((msg) => msg.content.trim() !== "")
-          .filter((msg) => msg.type !== "error")
-          .map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })) || [];
+
       // Generate AI response
       await generateResponse(
         user._id,
@@ -154,20 +152,8 @@ export function ChatInput({
         assistantMessageId,
         message,
         userSettings.selectedModel as ModelId,
-        messageHistory,
         searchEnabled
-      ).catch(async (error: any) => {
-        const errorMessage = handleError(error, {
-          provider: currentProvider.id,
-          model: currentModel.id,
-        });
-        await updateMessage({
-          chatSlug: currentChatSlug,
-          messageSlug: assistantMessageId,
-          content: errorMessage,
-          type: "error",
-        });
-      });
+      );
     } catch (error: any) {
       setError(error);
     } finally {
@@ -224,7 +210,7 @@ export function ChatInput({
   return (
     <div className="relative">
       {/* {error && (
-        <div className="absolute left-0 right-0 z-40 mb-2 bottom-full">
+        <div className="absolute right-0 left-0 bottom-full z-40 mb-2">
           <ErrorMessage
             error={error}
             details={{ provider: currentProvider.id, model: currentModel.id }}
@@ -240,16 +226,16 @@ export function ChatInput({
           className
         )}
       >
-        <div className="flex items-center justify-between px-4 py-3 transition-colors duration-200 border-b border-border/30">
+        <div className="flex justify-between items-center px-4 py-3 border-b transition-colors duration-200 border-border/30">
           <button
             onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
             className="flex items-center gap-2 px-3 py-1.5 text-sm transition-all duration-200 rounded-lg text-foreground hover:bg-secondary/70 border border-transparent hover:border-border/50 hover:shadow-sm"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2 items-center">
               <span className="font-medium">{currentModel.name}</span>
               {currentModel.capabilities?.thinking && (
                 <div
-                  className="flex items-center justify-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30"
+                  className="flex justify-center items-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30"
                   title="Reasoning capabilities"
                 >
                   <Brain className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
@@ -257,9 +243,9 @@ export function ChatInput({
               )}
             </div>
             {isModelSelectorOpen ? (
-              <ChevronUp className="w-4 h-4 ml-1 transition-transform duration-200" />
+              <ChevronUp className="ml-1 w-4 h-4 transition-transform duration-200" />
             ) : (
-              <ChevronDown className="w-4 h-4 ml-1 transition-transform duration-200" />
+              <ChevronDown className="ml-1 w-4 h-4 transition-transform duration-200" />
             )}
           </button>
 
@@ -268,21 +254,21 @@ export function ChatInput({
             <button
               onClick={() => setSearchEnabled(!searchEnabled)}
               className={cn(
-                "flex items-center justify-center w-8 h-8 transition-all duration-200 rounded-lg border relative",
+                "flex relative justify-center items-center w-8 h-8 rounded-lg border transition-all duration-200",
                 searchEnabled
-                  ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-                  : "bg-transparent text-blue-500 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-950"
+                  ? "text-white bg-blue-500 border-blue-500 hover:bg-blue-600"
+                  : "text-blue-500 bg-transparent border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-950"
               )}
-              title={
-                searchEnabled ? "Disable web search" : "Enable web search"
-              }
+              title={searchEnabled ? "Disable web search" : "Enable web search"}
             >
-              <Globe className={cn(
-                "w-4 h-4 transition-transform duration-200",
-                isSearching && "animate-pulse"
-              )} />
+              <Globe
+                className={cn(
+                  "w-4 h-4 transition-transform duration-200",
+                  isSearching && "animate-pulse"
+                )}
+              />
               {isSearching && (
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex absolute inset-0 justify-center items-center">
                   <div className="w-2 h-2 bg-current rounded-full animate-ping" />
                 </div>
               )}
@@ -292,26 +278,26 @@ export function ChatInput({
 
         <div
           className={cn(
-            "overflow-hidden border-b border-border/30 bg-background/50 transition-all duration-300 ease-in-out backdrop-blur-sm",
+            "overflow-hidden border-b backdrop-blur-sm transition-all duration-300 ease-in-out border-border/30 bg-background/50",
             isModelSelectorOpen
-              ? "max-h-[32rem] opacity-100 transform translate-y-0 shadow-inner"
+              ? "shadow-inner opacity-100 transform translate-y-0 max-h-[32rem]"
               : "max-h-0 opacity-0 transform -translate-y-2"
           )}
         >
           <div className="overflow-y-auto max-h-[32rem] p-2">
             {/* Icon Key */}
             <div className="flex justify-end pr-2 mb-4">
-              <div className="flex items-center gap-4 px-3 py-2 border rounded-lg bg-secondary/30 border-border/20">
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center justify-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30">
+              <div className="flex gap-4 items-center px-3 py-2 rounded-lg border bg-secondary/30 border-border/20">
+                <div className="flex gap-1 items-center">
+                  <div className="flex justify-center items-center w-4 h-4 bg-purple-100 rounded-full dark:bg-purple-900/30">
                     <Brain className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <span className="text-xs text-muted-foreground">
                     Reasoning
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center justify-center w-4 h-4 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                <div className="flex gap-1 items-center">
+                  <div className="flex justify-center items-center w-4 h-4 bg-blue-100 rounded-full dark:bg-blue-900/30">
                     <Globe className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <span className="text-xs text-muted-foreground">
@@ -335,7 +321,7 @@ export function ChatInput({
                 <>
                   {regularProviders.map((provider) => (
                     <div key={provider.id} className="mb-6">
-                      <div className="flex items-center justify-between px-3 py-3 mb-3 border-b border-border/20">
+                      <div className="flex justify-between items-center px-3 py-3 mb-3 border-b border-border/20">
                         <div className="text-sm font-medium tracking-wide text-foreground/90">
                           {provider.name}
                         </div>
@@ -359,14 +345,14 @@ export function ChatInput({
                             >
                               <div className="flex items-center min-h-[4rem]">
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex gap-2 items-center">
                                     <div className="font-medium text-foreground">
                                       {model.name}
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex gap-1 items-center">
                                       {model.capabilities?.thinking && (
                                         <div
-                                          className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30"
+                                          className="flex justify-center items-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30"
                                           title="Reasoning capabilities"
                                         >
                                           <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
@@ -374,7 +360,7 @@ export function ChatInput({
                                       )}
                                       {model.capabilities?.tool && (
                                         <div
-                                          className="flex items-center justify-center w-5 h-5 bg-blue-100 rounded-full dark:bg-blue-900/30"
+                                          className="flex justify-center items-center w-5 h-5 bg-blue-100 rounded-full dark:bg-blue-900/30"
                                           title="Web search capabilities"
                                         >
                                           <Globe className="w-3 h-3 text-blue-600 dark:text-blue-400" />
@@ -389,7 +375,7 @@ export function ChatInput({
                                   )}
                                 </div>
                                 {isSelected && (
-                                  <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
+                                  <div className="flex justify-center items-center ml-2 w-5 h-5 rounded-full bg-primary/10">
                                     <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
                                   </div>
                                 )}
@@ -407,7 +393,7 @@ export function ChatInput({
                         onClick={() =>
                           setIsDemosSectionExpanded(!isDemosSectionExpanded)
                         }
-                        className="flex items-center justify-between w-full px-3 py-3 mb-3 transition-colors duration-200 border-b rounded-lg border-border/20 hover:bg-secondary/30"
+                        className="flex justify-between items-center px-3 py-3 mb-3 w-full rounded-lg border-b transition-colors duration-200 border-border/20 hover:bg-secondary/30"
                       >
                         <div>
                           <div className="text-sm font-medium tracking-wide text-left text-foreground/90">
@@ -464,14 +450,14 @@ export function ChatInput({
                                     >
                                       <div className="flex items-center min-h-[4rem]">
                                         <div className="flex-1">
-                                          <div className="flex items-center gap-2">
+                                          <div className="flex gap-2 items-center">
                                             <div className="font-medium text-foreground">
                                               {model.name}
                                             </div>
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex gap-1 items-center">
                                               {model.capabilities?.thinking && (
                                                 <div
-                                                  className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30"
+                                                  className="flex justify-center items-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30"
                                                   title="Reasoning capabilities"
                                                 >
                                                   <Brain className="w-3 h-3 text-purple-600 dark:text-purple-400" />
@@ -479,7 +465,7 @@ export function ChatInput({
                                               )}
                                               {model.capabilities?.tool && (
                                                 <div
-                                                  className="flex items-center justify-center w-5 h-5 bg-blue-100 rounded-full dark:bg-blue-900/30"
+                                                  className="flex justify-center items-center w-5 h-5 bg-blue-100 rounded-full dark:bg-blue-900/30"
                                                   title="Web search capabilities"
                                                 >
                                                   <Globe className="w-3 h-3 text-blue-600 dark:text-blue-400" />
@@ -494,7 +480,7 @@ export function ChatInput({
                                           )}
                                         </div>
                                         {isSelected && (
-                                          <div className="flex items-center justify-center w-5 h-5 ml-2 rounded-full bg-primary/10">
+                                          <div className="flex justify-center items-center ml-2 w-5 h-5 rounded-full bg-primary/10">
                                             <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
                                           </div>
                                         )}
@@ -514,8 +500,8 @@ export function ChatInput({
             })()}
           </div>
         </div>
-        <div className="flex items-start gap-3 p-4 transition-all duration-200 min-h-20">
-          <div className="relative flex items-center flex-1 group">
+        <div className="flex gap-3 items-start p-4 transition-all duration-200 min-h-20">
+          <div className="flex relative flex-1 items-center group">
             <Textarea
               ref={textareaRef}
               value={input}
@@ -526,7 +512,7 @@ export function ChatInput({
               }}
               onKeyDown={handleKeyboard}
               placeholder={streaming ? "Streaming..." : inputPhrase()}
-              className="w-full px-0 text-sm leading-relaxed transition-all duration-200 bg-transparent border-0 outline-none resize-none min-h-16 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
+              className="px-0 w-full text-sm leading-relaxed bg-transparent border-0 transition-all duration-200 outline-none resize-none min-h-16 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 focus:placeholder:text-muted-foreground/40"
               disabled={isSubmitting || streaming}
             />
           </div>
@@ -544,11 +530,11 @@ export function ChatInput({
                     : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 hover:shadow-md active:scale-95"
               )}
             >
-              <div className="relative z-10 flex items-center justify-center">
+              <div className="flex relative z-10 justify-center items-center">
                 {streaming ? (
                   <Square className="w-4 h-4" />
                 ) : isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-current rounded-full border-t-transparent animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-current animate-spin border-t-transparent" />
                 ) : (
                   <ArrowUp className="w-4 h-4 transition-transform duration-200 group-hover:translate-y-[-1px]" />
                 )}

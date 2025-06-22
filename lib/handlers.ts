@@ -3,7 +3,9 @@ import { CustomError, RequestDetails } from "./errors";
 import { openai, anthropic, google, xai, groq } from "./ai/spec";
 
 export type ErrorDetails = Record<string, any>;
-export type RequestErrorDetails = ErrorDetails & { request: RequestDetails };
+export type RequestErrorDetails = ErrorDetails & {
+  request: RequestDetails & { toolName?: string };
+};
 
 export function handleError(error: CustomError, details: ErrorDetails) {
   const name = error.name;
@@ -39,22 +41,26 @@ export function requestHandler(
   message: string,
   details: RequestErrorDetails
 ) {
+  if (!details?.request) {
+    return DEFAULT_MESSAGE();
+  }
+
   if (
-    details.request.statusCode === 401 ||
-    details.request.statusCode === 403
+    details.request?.statusCode === 401 ||
+    details.request?.statusCode === 403
   ) {
     return NO_API_KEY_SET(details.provider);
   }
 
-  if (details.request.statusCode === 404) {
+  if (details.request?.statusCode === 404) {
     return INVALID_RESOURCE(details.provider, details.model);
   }
 
-  if (details.request.statusCode === 429) {
+  if (details.request?.statusCode === 429) {
     return RATE_LIMIT(details.provider);
   }
 
-  if ("toolName" in details.request) {
+  if (details.request?.toolName) {
     return toolHandler(name, message, details as any);
   }
 
@@ -71,8 +77,10 @@ export function toolHandler(
   name = "ToolError";
   let subError: string;
 
-  if (details.request.toolName === "web") {
-    if (details.request.cause.message.includes("401")) {
+  console.log(details.request, Object.keys(details.request));
+
+  if (details.request?.toolName === "web") {
+    if (details.request?.cause?.message?.includes("401")) {
       subError = NO_API_KEY_SET("Firecrawl");
       return WEB_SEARCH_ERROR(subError);
     }

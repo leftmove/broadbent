@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Globe, ChevronDown, ChevronUp } from "lucide-react";
+import { ExternalLink, ChevronRight } from "lucide-react";
 import { cn } from "lib/utils";
 
 interface MessageSource {
@@ -23,17 +23,21 @@ export function MessageSources({ sources, className }: MessageSourcesProps) {
   }
 
   // Filter out sources with no excerpt and Google Vertex AI search URLs
-  const validSources = sources.filter(source => {
+  const validSources = sources.filter((source) => {
     // Skip if no excerpt
-    if (!source.excerpt || source.excerpt.trim() === "" || source.excerpt === "No excerpt available") {
+    if (
+      !source.excerpt ||
+      source.excerpt.trim() === "" ||
+      source.excerpt === "No excerpt available"
+    ) {
       return false;
     }
-    
+
     // Skip Google Vertex AI search URLs that aren't real links
     if (source.url.includes("vertexaisearch.cloud.google.com")) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -42,49 +46,60 @@ export function MessageSources({ sources, className }: MessageSourcesProps) {
   }
 
   return (
-    <div className={cn("mt-4 space-y-2", className)}>
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Globe className="w-4 h-4" />
-        <span>Web Sources ({validSources.length})</span>
-        {isExpanded ? (
-          <ChevronUp className="w-4 h-4" />
-        ) : (
-          <ChevronDown className="w-4 h-4" />
+    <div className={cn("mt-6", className)}>
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="group flex items-center gap-2 text-xs font-medium text-muted-foreground/70 hover:text-muted-foreground transition-all duration-200"
+        >
+          <span className="tracking-wide uppercase">Sources</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-normal">
+              ({validSources.length})
+            </span>
+            <ChevronRight
+              className={cn(
+                "w-3 h-3 transition-transform duration-200",
+                isExpanded && "rotate-90"
+              )}
+            />
+          </div>
+        </button>
+      </div>
+
+      <div
+        className={cn(
+          "transition-all duration-300 ease-out overflow-hidden",
+          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}
-      </button>
-      
-      <div className={cn(
-        "transition-all duration-300 ease-in-out overflow-hidden",
-        isExpanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
-      )}>
-        <div className="overflow-y-auto max-h-[400px] pt-1 pr-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {validSources.map((source, index) => (
-              <a
-                key={index}
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col gap-2 p-3 text-sm transition-colors duration-200 border rounded-lg border-border/30 bg-secondary/20 hover:bg-secondary/30 hover:border-border/50 group"
-              >
-                <div className="flex items-start gap-2">
-                  <ExternalLink className="w-3 h-3 mt-0.5 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
-                  <div className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2 text-xs leading-relaxed">
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+          {validSources.map((source, index) => (
+            <a
+              key={index}
+              href={source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block p-3 text-right border-l-2 border-border/20 hover:border-primary/30 bg-secondary/10 hover:bg-secondary/20 transition-all duration-200 rounded-r-md"
+            >
+              <div className="flex items-start justify-end gap-2 mb-1.5">
+                <div className="text-right">
+                  <div className="text-xs font-medium text-foreground/90 group-hover:text-foreground line-clamp-2 leading-relaxed">
                     {source.title}
                   </div>
+                  <div className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">
+                    {new URL(source.url).hostname.replace("www.", "")}
+                  </div>
                 </div>
-                <div className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+                <ExternalLink className="w-3 h-3 mt-0.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
+              </div>
+              {source.excerpt && (
+                <div className="text-[11px] text-muted-foreground/70 line-clamp-2 leading-relaxed text-right font-light">
                   {source.excerpt}
                 </div>
-                <div className="text-xs text-muted-foreground/60 truncate">
-                  {new URL(source.url).hostname}
-                </div>
-              </a>
-            ))}
-          </div>
+              )}
+            </a>
+          ))}
         </div>
       </div>
     </div>
