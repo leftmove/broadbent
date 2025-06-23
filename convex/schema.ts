@@ -72,6 +72,9 @@ const applicationTables = {
         prompt: v.optional(v.number()),
         completion: v.optional(v.number()),
         total: v.optional(v.number()),
+        promptTokens: v.optional(v.number()),
+        completionTokens: v.optional(v.number()),
+        totalTokens: v.optional(v.number()),
       })
     ),
   })
@@ -99,7 +102,7 @@ const applicationTables = {
     messageId: v.id("messages"),
     userId: v.id("users"),
     cancelled: v.boolean(),
-    searching: v.boolean(),
+    searching: v.optional(v.boolean()),
   })
     .index("by_message", ["messageId"])
     .index("by_user", ["userId"]),
