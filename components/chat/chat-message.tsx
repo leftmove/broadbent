@@ -171,8 +171,6 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
         message.modelId as ModelId,
         searchEnabled
       );
-    } catch (error) {
-      console.error("Failed to regenerate message:", error);
     } finally {
       setIsRegenerating(false);
     }
@@ -200,8 +198,6 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
       }
     };
   }, [deleteTimeout]);
-
-  console.log(isSearchingTool);
 
   // Show undo delete notification
   if (showDeleteUndo) {

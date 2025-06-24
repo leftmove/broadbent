@@ -57,7 +57,10 @@ export const webSearchProviders: Record<
   },
 };
 
-export function createWebSearchTool(apiKey: string) {
+export function createWebSearchTool(
+  apiKey: string,
+  catcher: (error: Error) => any
+) {
   return tool({
     description:
       "Search the web for current information and get full content from results",
@@ -79,40 +82,39 @@ export function createWebSearchTool(apiKey: string) {
       maxResults,
       cache,
     }): Promise<WebSearchResult[]> => {
-      const results = await searchWithFirecrawl(apiKey, {
+      return await searchWithFirecrawl(apiKey, {
         query,
         maxResults,
         cache,
-      });
+      })
+        .then((results) => {
+          // Temporary section length based on number of results
+          let section = 500;
+          if (results.length <= 1) {
+            section = 1000;
+          } else if (results.length <= 2) {
+            section = 750;
+          } else if (results.length <= 3) {
+            section = 500;
+          } else if (results.length <= 4) {
+            section = 300;
+          } else if (results.length <= 5) {
+            section = 200;
+          } else {
+            section = 100;
+          }
 
-      // Temporary section length based on number of results
-      let section = 500;
-      if (results.length <= 1) {
-        section = 1000;
-      } else if (results.length <= 2) {
-        section = 750;
-      } else if (results.length <= 3) {
-        section = 500;
-      } else if (results.length <= 4) {
-        section = 300;
-      } else if (results.length <= 5) {
-        section = 200;
-      } else {
-        section = 100;
-      }
-
-      return results.map((result) => ({
-        title: result.title,
-        source: result.url,
-        excerpt: result.excerpt,
-        content:
-          result.content.length > 100
-            ? result.content.slice(0, 100) + "..."
-            : result.content,
-      }));
+          return results.map((result) => ({
+            title: result.title,
+            source: result.url,
+            excerpt: result.excerpt,
+            content:
+              result.content.length > 100
+                ? result.content.slice(0, 100) + "..."
+                : result.content,
+          }));
+        })
+        .catch(catcher);
     },
   });
 }
-
-// Legacy export for backward compatibility
-export const webSearchTool = createWebSearchTool("");

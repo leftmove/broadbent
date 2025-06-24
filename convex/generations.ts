@@ -66,7 +66,10 @@ export const cleanup = mutation({
       .first();
 
     if (generation) {
-      await ctx.db.delete(generation._id);
+      await ctx.db.patch(generation._id, {
+        cancelled: true,
+        searching: false,
+      });
     }
   },
 });

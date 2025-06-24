@@ -4,13 +4,21 @@ import {
   Model,
   type ModelId,
   type AIProvider as ModelAIProvider,
+  type ToolProvider as ModelToolProvider,
 } from "./models";
 
 export type AIProvider = ModelAIProvider;
-export type { ModelId } from "./models";
 export type AIProviderName = "OpenAI" | "Anthropic" | "Google" | "xAI" | "Groq";
 
-export type ApiKeys = Record<AIProvider, string>;
+export type ToolProvider = ModelToolProvider;
+export type ToolProviderName = "Firecrawl";
+
+export type GeneralProvider = AIProvider | ToolProvider;
+export type GeneralProviderName = AIProviderName | ToolProviderName;
+
+export type { ModelId } from "./models";
+
+export type ApiKeys = Record<GeneralProvider, string>;
 
 export type Message = {
   role: "user" | "assistant" | "system";

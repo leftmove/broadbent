@@ -64,19 +64,10 @@ export const useAIGeneration = () => {
       setIsSearching(false);
       return result;
     } catch (error: any) {
-      if (error instanceof CustomError) {
-        setError(error);
-      } else {
-        const customError = new CustomError(
-          "UnknownError",
-          "An unknown error occurred while streaming text."
-        );
-        setError(customError);
-      }
+      setError(error);
       setStreaming(false);
       setCurrentMessageId(null);
       setIsSearching(false);
-      throw error;
     }
   };
 

@@ -3,6 +3,7 @@ import { merge } from "lodash";
 import { openai, anthropic, google, xai, groq } from "./spec";
 
 export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "groq";
+export type ToolProvider = "firecrawl";
 
 export const OPENAI_DEFAULT_MODEL = "gpt-4o";
 export const ANTHROPIC_DEFAULT_MODEL = "claude-3-5-sonnet";

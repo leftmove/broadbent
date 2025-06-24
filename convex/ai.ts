@@ -22,9 +22,9 @@ import { llms, type Message } from "../lib/ai/providers";
 import { AIProvider, Model, type ModelId } from "../lib/ai/models";
 import { Context, determineContext } from "../lib/ai/context";
 import { buildSystemPrompt } from "../lib/ai/prompts";
-import { handleError, ErrorDetails } from "../lib/handlers";
+import { handleError, type ErrorType } from "../lib/handlers";
 import { modelIdsValidator } from "./schema";
-import { CustomError } from "../lib/errors";
+import { CustomError, MessagedError } from "../lib/errors";
 
 interface GenerateResponse {
   content: string;
@@ -59,23 +59,31 @@ interface StreamConfig {
   modelId: string;
 }
 
-async function throwError(
+async function messageError(
   ctx: ActionCtx,
-  name: string,
-  message: string,
-  details: ErrorDetails,
+  name: ErrorType["name"],
+  message: ErrorType["message"],
+  details: ErrorType["details"],
   chatSlug: Id<"chats"> | string,
-  messageSlug: Id<"messages"> | string
+  messageSlug: Id<"messages"> | string,
+  throwError: boolean = true
 ) {
-  const customError = new CustomError(name, message, details);
-  const errorMessage = handleError(customError, details);
+  const errorMessage = handleError({ name, message, details }, details);
   await ctx.runMutation(api.messages.updateBySlug, {
     chatSlug,
     messageSlug: messageSlug as Id<"messages">,
     content: errorMessage,
     type: "error",
   });
-  return { content: errorMessage };
+  await ctx.runMutation(api.generations.cleanup, {
+    messageId: messageSlug as Id<"messages">,
+  });
+
+  if (throwError) {
+    throw new MessagedError(name, message, details);
+  } else {
+    return { content: errorMessage } as any; // Satisfy type checker
+  }
 }
 
 function createModelInstance(
@@ -137,21 +145,50 @@ async function configureTools(
   if (!hasToolSupport) return undefined;
 
   const tools: ToolSet = {};
+  const createCatcher = async (details: Record<string, any> = {}) => {
+    return async (error: Error) => {
+      await ctx.runMutation(api.generations.cleanup, {
+        messageId: messageSlug as Id<"messages">,
+      });
+      await messageError(
+        ctx,
+        "ToolError",
+        "Error occurred when trying to query tool for response.",
+        { error, ...details },
+        chatSlug,
+        messageSlug,
+        false
+      );
+    };
+  };
+
+  let provider: string;
+  let currentTool: string;
 
   if (webSearchTool) {
-    if ("firecrawl" in apiKeys === false) {
-      await throwError(
+    provider = "firecrawl";
+    currentTool = "web";
+
+    if (!(provider in apiKeys) || !apiKeys[provider]) {
+      await messageError(
         ctx,
         "EmptyAPIKey",
         "API key not set with selected provider.",
         {
-          provider: "firecrawl",
+          provider: "Firecrawl",
+          tool: currentTool,
         },
         chatSlug,
         messageSlug
       );
     } else {
-      tools.web = createWebSearchTool(apiKeys.firecrawl);
+      tools[currentTool] = createWebSearchTool(
+        apiKeys[provider],
+        await createCatcher({
+          provider,
+          tool: currentTool,
+        })
+      );
     }
   }
 
@@ -332,9 +369,10 @@ function createStepFinishHandler(config: StreamConfig, state: StreamState) {
 
     // Add tool results and process web search
     if (chunk.toolResults) {
-      chunk.toolResults.forEach((result: any, i: number) => {
+      for (let i = 0; i < chunk.toolResults.length; i++) {
+        const result: any = chunk.toolResults[i];
         const call = chunk.toolCalls[i];
-        if (!call) return;
+        if (!call) continue;
 
         tools.push({
           type: "tool_result",
@@ -343,24 +381,20 @@ function createStepFinishHandler(config: StreamConfig, state: StreamState) {
           result,
         });
 
-        // Handle web search results
         if (call.toolName === "web" && result && Array.isArray(result.result)) {
-          const webSources = result.result.map(
-            (webResult: WebSearchResult) => ({
+          state.sources.push(
+            ...result.result.map((webResult: WebSearchResult) => ({
               title: webResult.title,
               url: webResult.source,
               excerpt: webResult.excerpt,
-            })
+            }))
           );
-          state.sources.push(...webSources);
-
-          // Turn off searching state
-          void config.ctx.runMutation(api.generations.updateSearching, {
+          await config.ctx.runMutation(api.generations.updateSearching, {
             messageId: config.messageSlug,
             searching: false,
           });
         }
-      });
+      }
     }
 
     await updateMessage(
@@ -421,7 +455,7 @@ function createErrorHandler(
   return async ({ error }: { error: any }) => {
     controller.abort();
     state.hasError = true;
-    await throwError(
+    await messageError(
       config.ctx,
       "RequestError",
       "Error occurred streaming text for model.",
@@ -498,7 +532,7 @@ export const generateResponse = action({
     const selectedProvider = selectedModel.provider;
 
     if (!(selectedProvider in apiKeys) || !apiKeys[selectedProvider]) {
-      return await throwError(
+      await messageError(
         ctx,
         "EmptyAPIKey",
         "API key not set with selected provider.",
@@ -590,20 +624,14 @@ export const generateResponse = action({
 
       return buildFinalResponse(state);
     } catch (error: any) {
-      if (error.name === "AbortError") {
+      console.log("123 error", error);
+      if (error.name === "AbortError" || error.name === "MessagedError") {
         // Generation cancelled, do nothing.
-        return buildFinalResponse(state);
-      } else if (error instanceof CustomError) {
-        return await throwError(
-          ctx,
-          error.name,
-          error.message,
-          error.details,
-          args.chatSlug,
-          args.messageSlug
-        );
+        // Error thrown, but proper message was already sent to the user.
+        throw error;
       } else {
-        return await throwError(
+        console.log("123 error", error);
+        return await messageError(
           ctx,
           "RequestError",
           "Error occurred when trying to query AI provider for response.",
