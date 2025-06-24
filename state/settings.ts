@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS: SettingsState = {
     google: "",
     xai: "",
     groq: "",
+    firecrawl: "",
   },
   selectedProvider: "openai",
   selectedModel: "gpt-4o",
