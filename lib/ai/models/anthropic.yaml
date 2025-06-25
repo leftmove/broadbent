@@ -17,7 +17,7 @@ models:
     description: Anthropic's most powerful model. Highest level of intelligence and capability.
     capabilities:
       thinking: true
-      # tool: true
+      tool: true
     input:
       text: true
       image: true
@@ -31,7 +31,7 @@ models:
     description: Effective model with exceptional reasoning capabilities. High intelligence and balanced performance
     capabilities:
       thinking: true
-      # tool: true
+      tool: true
     input:
       text: true
       image: true
@@ -45,7 +45,7 @@ models:
     description: High-performance and high-intelligence model with early extended thinking. Extended thinking is toggleable.
     capabilities:
       thinking: true
-      # tool: true
+      tool: true
     input:
       text: true
       image: true
@@ -58,7 +58,7 @@ models:
     id: claude-3-5-sonnet-latest
     description: Previous, less powerful intelligence model. On the higher end of intelligence and capability.
     capabilities:
-      # tool: true
+      tool: true
     input:
       text: true
       image: true
@@ -71,7 +71,7 @@ models:
     id: claude-3-5-haiku-latest
     description: Fastest model. Less powerful, but has mid-level intelligence at blazing speeds.
     capabilities:
-      # tool: true
+      tool: true
     input:
       text: true
       image: true
@@ -84,7 +84,7 @@ models:
     id: claude-3-opus-latest
     description: Previous power model. Top-level intelligence, fluency, and understanding.
     capabilities:
-      # tool: true
+      tool: true
     input:
       text: true
       image: true
@@ -97,7 +97,7 @@ models:
     id: claude-3-haiku-20240307
     description: Least powerful model, but fast. Quick and accurate targeted performance.
     capabilities:
-      # tool: true
+      tool: true
     input:
       text: true
       image: true

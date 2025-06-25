@@ -481,7 +481,8 @@ export const anthropic = {
       id: "claude-opus-4-20250514",
       description: "Anthropic's most powerful model. Highest level of intelligence and capability.",
       capabilities: {
-        thinking: true
+        thinking: true,
+        tool: true
       },
       input: {
         text: true,
@@ -504,7 +505,8 @@ export const anthropic = {
       id: "claude-sonnet-4-20250514",
       description: "Effective model with exceptional reasoning capabilities. High intelligence and balanced performance",
       capabilities: {
-        thinking: true
+        thinking: true,
+        tool: true
       },
       input: {
         text: true,
@@ -527,7 +529,8 @@ export const anthropic = {
       id: "claude-3-7-sonnet-latest",
       description: "High-performance and high-intelligence model with early extended thinking. Extended thinking is toggleable.",
       capabilities: {
-        thinking: true
+        thinking: true,
+        tool: true
       },
       input: {
         text: true,
@@ -549,7 +552,9 @@ export const anthropic = {
       name: "Claude Sonnet 3.5",
       id: "claude-3-5-sonnet-latest",
       description: "Previous, less powerful intelligence model. On the higher end of intelligence and capability.",
-      capabilities: null,
+      capabilities: {
+        tool: true
+      },
       input: {
         text: true,
         image: true
@@ -570,7 +575,9 @@ export const anthropic = {
       name: "Claude Haiku 3.5",
       id: "claude-3-5-haiku-latest",
       description: "Fastest model. Less powerful, but has mid-level intelligence at blazing speeds.",
-      capabilities: null,
+      capabilities: {
+        tool: true
+      },
       input: {
         text: true,
         image: true
@@ -591,7 +598,9 @@ export const anthropic = {
       name: "Claude Opus 3",
       id: "claude-3-opus-latest",
       description: "Previous power model. Top-level intelligence, fluency, and understanding.",
-      capabilities: null,
+      capabilities: {
+        tool: true
+      },
       input: {
         text: true,
         image: true
@@ -612,7 +621,9 @@ export const anthropic = {
       name: "Claude Haiku 3",
       id: "claude-3-haiku-20240307",
       description: "Least powerful model, but fast. Quick and accurate targeted performance.",
-      capabilities: null,
+      capabilities: {
+        tool: true
+      },
       input: {
         text: true,
         image: true
