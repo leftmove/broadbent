@@ -161,21 +161,22 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
       <div
         className="absolute top-0 right-0 left-0 z-50 pointer-events-none"
         style={{
-          background:
-            "linear-gradient(to bottom, rgba(var(--background), 0.98) 0%, rgba(var(--background), 0.95) 40%, rgba(var(--background), 0.8) 70%, rgba(var(--background), 0.4) 85%, transparent 100%)",
+          background: "rgba(var(--background), 0.95)",
           opacity: showSlidingResponse ? 1 : 0,
           transform: `translateY(${showSlidingResponse ? '0' : '-100%'})`,
-          backdropFilter: `blur(${showSlidingResponse ? '4px' : '0px'})`,
+          backdropFilter: `blur(${showSlidingResponse ? '6px' : '0px'})`,
           transition: 'all 300ms ease-out',
+          maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
         }}
       >
-        <div>
-          <div className="px-4 pt-4 pb-6">
-            <div className="mx-auto w-[60%]">
+        <div className="pb-3">
+          <div className="px-4 pt-3">
+            <div className="mx-auto w-[55%]">
               <div className="flex justify-end w-full">
                 <div className="max-w-[80%] break-words">
-                  <div className="px-4 py-3 rounded-xl border shadow-sm backdrop-blur-sm transition-all duration-200 bg-primary/90 text-primary-foreground border-primary/30">
-                    <div className="text-base leading-relaxed">
+                  <div className="px-3 py-2 rounded-lg shadow-md backdrop-blur-sm transition-all duration-200 bg-primary text-primary-foreground">
+                    <div className="text-sm leading-relaxed">
                       {lastUserMessage}
                     </div>
                   </div>

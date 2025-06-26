@@ -3,20 +3,24 @@
 import { Authenticated, Unauthenticated } from "convex/react";
 import { Sidebar } from "components/sidebar";
 import { AuthForm } from "components/auth/auth-form";
+import { observer } from "@legendapp/state/react";
 
-import { useUIState } from "state/ui";
+import { uiStore$ } from "state/ui";
 
 interface ChatInterfaceProps {
   children: React.ReactNode;
 }
 
-export function ChatInterface({ children }: ChatInterfaceProps) {
-  const { sidebarCollapsed, toggleSidebar } = useUIState();
-
+export const ChatInterface = observer(({ children }: ChatInterfaceProps) => {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Authenticated>
-        <Sidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+        <Sidebar
+          collapsed={uiStore$.sidebar.collapsed.get()}
+          toggleSidebar={() =>
+            uiStore$.sidebar.collapsed.set(!uiStore$.sidebar.collapsed.get())
+          }
+        />
         <div className="flex flex-col flex-1 min-h-0">
           <div className="h-[1px] border-b border-border/10"></div>
           {children}
@@ -37,4 +41,4 @@ export function ChatInterface({ children }: ChatInterfaceProps) {
       </Unauthenticated>
     </div>
   );
-}
+});

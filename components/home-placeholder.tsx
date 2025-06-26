@@ -1,20 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
+import { observer } from "@legendapp/state/react";
 
 import { Sparkles, BrainCircuit, Compass, Telescope } from "lucide-react";
 import { headerPhrase } from "lib/phrases";
 import { cn } from "lib/utils";
-import { useUIState } from "state/ui";
+import { uiStore$ } from "state/ui";
 import { ChatInput } from "components/chat/chat-input";
 import { SearchProgressBar } from "components/chat/search-progress-bar";
 
-export function HomePlaceholder() {
+export const HomePlaceholder = observer(() => {
   const [prompt, setPrompt] = useState("");
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const { inputHasContent, setInputHasContent } = useUIState();
 
   useEffect(() => {
-    setInputHasContent(false);
+    uiStore$.input.hasContent.set(false);
   }, []);
 
   const handlePromptClick = (text: string) => {
@@ -28,6 +28,8 @@ export function HomePlaceholder() {
   const handleChatStart = () => {
     setIsTransitioning(true);
   };
+
+  const inputHasContent = uiStore$.input.hasContent.get();
 
   return (
     <div className="relative flex flex-col items-center justify-center flex-1 px-4">
@@ -211,10 +213,10 @@ export function HomePlaceholder() {
           }`}
         >
           <SearchProgressBar />
-          <ChatInput 
-            chatSlug="" 
-            isHomepage={true} 
-            className="p-3" 
+          <ChatInput
+            chatSlug=""
+            isHomepage={true}
+            className="p-3"
             defaultValue={prompt}
             onPromptHandled={handlePromptHandled}
           />
@@ -223,4 +225,4 @@ export function HomePlaceholder() {
       <div className="absolute bottom-0 left-0 w-[0.5px] h-full bg-border"></div>
     </div>
   );
-}
+});

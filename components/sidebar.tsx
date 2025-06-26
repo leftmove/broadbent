@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { observer } from "@legendapp/state/react";
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
@@ -15,14 +16,12 @@ import { ChatDeleteDialog } from "@/components/chat/chat-delete-dialog";
 import { ChatItem } from "@/components/chat/chat-item";
 import { UserProfile } from "components/user-profile";
 import { SearchResults } from "components/search-results";
-import { useUIState } from "state/ui";
+import { uiStore$ } from "state/ui";
 
 import { cn } from "lib/utils";
 
 interface SidebarProps {
   onSettingsClick?: () => void;
-  collapsed?: boolean;
-  toggleSidebar?: () => void;
 }
 
 interface ChatToDelete {
@@ -30,9 +29,7 @@ interface ChatToDelete {
   title: string;
 }
 
-export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
-  // Ensure toggleSidebar is available for mobile
-  const safeToggleSidebar = toggleSidebar || (() => console.warn('toggleSidebar not provided'));
+export const Sidebar = observer(({ onSettingsClick }: SidebarProps) => {
   const chats = useQuery(api.chats.list) || [];
   const togglePinChat = useMutation(api.chats.togglePin);
   const deleteChatMutation = useMutation(api.chats.deleteChat);
@@ -41,7 +38,6 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { isMobile, setInputHasContent } = useUIState();
 
   // Search results from full text search
   const searchResults =
@@ -188,6 +184,10 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
     setIsSearching(false);
   };
 
+  const collapsed = uiStore$.sidebar.collapsed.get();
+  const toggleSidebar = () =>
+    uiStore$.sidebar.collapsed.set(!uiStore$.sidebar.collapsed.get());
+
   return (
     <div
       className={cn(
@@ -206,7 +206,7 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
             variant="ghost"
             size="sm"
             className="p-0 w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            onClick={safeToggleSidebar}
+            onClick={toggleSidebar}
           >
             <PanelLeft className="w-5 h-5" />
             <span className="sr-only">Toggle Sidebar</span>
@@ -218,24 +218,22 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
               <Link
                 href="/"
                 className="block w-full"
-                onClick={() => setInputHasContent(false)}
+                onClick={() => uiStore$.input.hasContent.set(false)}
               >
                 <Button className="mb-4 w-full h-11 font-sans text-sm font-medium rounded-lg rounded-r-none border shadow-sm transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md border-primary/10">
                   <MessageSquare className="mr-2 w-4 h-4" />
                   <span>New Chat</span>
                 </Button>
               </Link>
-              {!isMobile && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-0 mb-4 w-3/12 h-11 rounded-lg rounded-l-none border border-l-0 transition-all duration-200 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary hover:shadow-md border-primary/10"
-                  onClick={safeToggleSidebar}
-                >
-                  <PanelLeft className="w-5 h-5 transition-transform duration-200 hover:scale-110" />
-                  <span className="sr-only">Toggle Sidebar</span>
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-0 mb-4 w-3/12 h-11 rounded-lg rounded-l-none border border-l-0 transition-all duration-200 text-primary-foreground hover:text-primary-foreground hover:bg-primary/90 bg-primary hover:shadow-md border-primary/10"
+                onClick={toggleSidebar}
+              >
+                <PanelLeft className="w-5 h-5 transition-transform duration-200 hover:scale-110" />
+                <span className="sr-only">Toggle Sidebar</span>
+              </Button>
             </div>
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r via-transparent rounded-lg opacity-0 blur-sm transition-opacity duration-300 from-primary/5 to-primary/5 group-focus-within:opacity-100 -z-10"></div>
@@ -567,4 +565,4 @@ export function Sidebar({ collapsed = false, toggleSidebar }: SidebarProps) {
       />
     </div>
   );
-}
+});

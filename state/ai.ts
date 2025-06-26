@@ -5,7 +5,7 @@ import { ModelId } from "lib/ai/models";
 import { Id } from "../convex/_generated/dataModel";
 
 import { CustomError } from "lib/errors";
-import { useUIState } from "./ui";
+import { uiStore$ } from "./ui";
 
 export const useAIGeneration = () => {
   const [error, setError] = useState<CustomError | null>(null);
@@ -14,7 +14,6 @@ export const useAIGeneration = () => {
     useState<Id<"messages"> | null>(null);
   const generateResponseAction = useAction(api.ai.generateResponse);
   const cancelGeneration = useMutation(api.generations.cancel);
-  const { setIsSearching } = useUIState();
 
   const clearError = useCallback(() => {
     setError(null);
@@ -30,12 +29,12 @@ export const useAIGeneration = () => {
         await cancelGeneration({ messageId: currentMessageId });
         setStreaming(false);
         setCurrentMessageId(null);
-        setIsSearching(false);
+        uiStore$.search.isSearching.set(false);
       } catch (error) {
         console.error("Failed to cancel generation:", error);
       }
     }
-  }, [currentMessageId, streaming, cancelGeneration, setIsSearching]);
+  }, [currentMessageId, streaming, cancelGeneration]);
 
   const generateResponse = async (
     userId: Id<"users">,
@@ -61,13 +60,13 @@ export const useAIGeneration = () => {
 
       setStreaming(false);
       setCurrentMessageId(null);
-      setIsSearching(false);
+      uiStore$.search.isSearching.set(false);
       return result;
     } catch (error: any) {
       setError(error);
       setStreaming(false);
       setCurrentMessageId(null);
-      setIsSearching(false);
+      uiStore$.search.isSearching.set(false);
     }
   };
 

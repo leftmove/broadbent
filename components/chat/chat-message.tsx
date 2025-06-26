@@ -25,7 +25,7 @@ import { ThinkingDisplay } from "components/chat/thinking-display";
 import { MessageSources } from "components/chat/message-sources";
 import { llms } from "lib/ai/providers";
 import { useAIGeneration } from "state/ai";
-import { useUIState } from "state/ui";
+import { uiStore$ } from "state/ui";
 
 interface ChatMessageProps {
   message: Doc<"messages">;
@@ -53,7 +53,9 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   const editMessage = useMutation(api.messages.editMessage);
   const updateMessage = useMutation(api.messages.updateBySlug);
   const { generateResponse, streaming } = useAIGeneration();
-  const { isSearching, searchEnabled } = useUIState();
+
+  const isSearching = uiStore$.search.isSearching.get();
+  const searchEnabled = uiStore$.search.enabled.get();
 
   const isUser = message.role === "user";
   const isOwnMessage = user && message.userId === user._id;

@@ -7,7 +7,7 @@ import { Key, Check, Eye, EyeOff, Loader2, Search } from "lucide-react";
 
 import { AIProvider } from "lib/ai/providers";
 import { ToolProvider, toolProviders } from "lib/tools/types";
-import { useToolsState } from "state/tools";
+import { toolsState$ } from "state/tools";
 import { cn } from "lib/utils";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
