@@ -19,8 +19,8 @@ const DEFAULT_TOOLS_STATE: ToolsState = {
   selectedTool: "firecrawl",
 };
 
-export const toolsState$ = observable<ToolsState>(DEFAULT_TOOLS_STATE);
+export const toolsStore$ = observable<ToolsState>(DEFAULT_TOOLS_STATE);
 
-persistObservable(toolsState$, {
+persistObservable(toolsStore$, {
   local: "broadbent-tools",
 });

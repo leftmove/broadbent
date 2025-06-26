@@ -1,11 +1,9 @@
-"use client";
+"use server";
 
 import { Authenticated, Unauthenticated } from "convex/react";
 import { Sidebar } from "components/sidebar";
 import { AuthForm } from "components/auth/auth-form";
 import { observer } from "@legendapp/state/react";
-
-import { uiStore$ } from "state/ui";
 
 interface ChatInterfaceProps {
   children: React.ReactNode;
@@ -13,22 +11,17 @@ interface ChatInterfaceProps {
 
 export const ChatInterface = observer(({ children }: ChatInterfaceProps) => {
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex overflow-hidden h-screen bg-background">
       <Authenticated>
-        <Sidebar
-          collapsed={uiStore$.sidebar.collapsed.get()}
-          toggleSidebar={() =>
-            uiStore$.sidebar.collapsed.set(!uiStore$.sidebar.collapsed.get())
-          }
-        />
+        <Sidebar />
         <div className="flex flex-col flex-1 min-h-0">
           <div className="h-[1px] border-b border-border/10"></div>
           {children}
         </div>
       </Authenticated>
       <Unauthenticated>
-        <div className="flex items-center justify-center flex-1 p-8">
-          <div className="w-full max-w-md space-y-8">
+        <div className="flex flex-1 justify-center items-center p-8">
+          <div className="space-y-8 w-full max-w-md">
             <div className="text-center">
               <h1 className="mb-2 text-4xl font-bold">Broadent</h1>
               <p className="text-muted-foreground">

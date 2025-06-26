@@ -7,7 +7,7 @@ import { Key, Check, Eye, EyeOff, Loader2, Search } from "lucide-react";
 
 import { AIProvider } from "lib/ai/providers";
 import { ToolProvider, toolProviders } from "lib/tools/types";
-import { toolsState$ } from "state/tools";
+import { toolsStore$ } from "state/tools";
 import { cn } from "lib/utils";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
@@ -303,8 +303,7 @@ export default function ApiKeysPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentApiKey, setCurrentApiKey] = useState("");
 
-  // Tools state - only selectedTool persisted globally, visibility is local
-  const { selectedTool } = useToolsState();
+  const selectedTool = toolsStore$.selectedTool.get();
   const [toolsKeyVisibility, setToolsKeyVisibility] = useState(false);
   const [currentToolsApiKey, setCurrentToolsApiKey] = useState("");
 
