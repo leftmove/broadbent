@@ -159,16 +159,14 @@ export function ChatWindow({ chatSlug, prompt }: ChatWindowProps) {
     <div className="flex overflow-hidden relative flex-col -mb-4 h-full border-r-0 border-border">
       {/* User prompt overlay - positioned within the chat window */}
       <div
-        className="absolute top-0 right-0 left-0 z-50 pointer-events-none"
-        style={{
-          background: "rgba(var(--background), 0.95)",
-          opacity: showSlidingResponse ? 1 : 0,
-          transform: `translateY(${showSlidingResponse ? '0' : '-100%'})`,
-          backdropFilter: `blur(${showSlidingResponse ? '6px' : '0px'})`,
-          transition: 'all 300ms ease-out',
-          maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
-        }}
+        className={cn(
+          "absolute top-0 right-0 left-0 z-50 pointer-events-none",
+          "bg-background/95 transition-all duration-300 ease-out",
+          "[mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]",
+          showSlidingResponse
+            ? "opacity-100 translate-y-0 backdrop-blur-[6px]"
+            : "opacity-0 -translate-y-full backdrop-blur-none"
+        )}
       >
         <div className="pb-3">
           <div className="px-4 pt-3">

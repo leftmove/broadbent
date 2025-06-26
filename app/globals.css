@@ -98,10 +98,6 @@
     border: 3px solid hsl(var(--background));
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: none;
-  }
-
   @keyframes shimmer {
     0% {
       background-position: -200% 0;

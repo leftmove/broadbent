@@ -81,7 +81,7 @@ export function requestHandler(
   }
 
   if (details.request.statusCode === 429) {
-    return RATE_LIMIT(details.provider);
+    return RATE_LIMIT(details.provider, details.request.responseBody);
   }
 
   return DEFAULT_MESSAGE();

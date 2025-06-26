@@ -27,12 +27,15 @@ import { llms } from "lib/ai/providers";
 import { useAIGeneration } from "state/ai";
 import { uiStore$ } from "state/ui";
 
+import { AlertTriangle } from "lucide-react";
+
 interface ChatMessageProps {
   message: Doc<"messages">;
   chatSlug: string;
 }
 
 export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
+  const [showFullError, setShowFullError] = useState(false);
   const [copiedText, setCopiedText] = useState<"formatted" | "raw" | null>(
     null
   );
@@ -54,7 +57,11 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
   const updateMessage = useMutation(api.messages.updateBySlug);
   const { generateResponse, streaming } = useAIGeneration();
 
-  const isSearching = uiStore$.search.isSearching.get();
+  const generation = useQuery(api.generations.getByMessageId, {
+    messageId: message._id,
+  });
+  const isSearching = generation?.searching;
+  const generationError = generation?.error;
   const searchEnabled = uiStore$.search.enabled.get();
 
   const isUser = message.role === "user";
@@ -68,9 +75,6 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
     message.role === "assistant";
   const showSearchIndicator =
     isLastAssistantMessage && isSearching && streaming;
-  const isSearchingTool = useQuery(api.generations.isSearching, {
-    messageId: message._id,
-  });
 
   const copyToClipboard = async (text: string, type: "formatted" | "raw") => {
     try {
@@ -337,7 +341,7 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
             )}
 
             {/* Tool search progress bar */}
-            {isSearchingTool && (
+            {isSearching && (
               <div className="flex justify-between items-center mb-4">
                 <div className="overflow-hidden relative w-11/12">
                   <div className="w-full h-2 bg-gradient-to-r from-blue-100 to-blue-50 rounded-full border shadow-inner dark:from-blue-950/40 dark:to-blue-900/20 border-blue-200/50 dark:border-blue-800/30">
@@ -365,6 +369,28 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
               </div>
             )}
 
+            <div
+              className="p-4 mb-6 text-sm text-red-800 bg-red-50 rounded-lg dark:bg-gray-800 dark:text-red-400"
+              role="alert"
+            >
+              <div className="flex items-center h-10">
+                <AlertTriangle className="mr-2 w-4 h-4" />
+                <span className="font-medium">Error</span>
+              </div>
+              <button
+                onClick={() => setShowFullError(!showFullError)}
+                className="mt-2 text-xs font-medium text-red-600 dark:text-red-500 hover:underline"
+              >
+                {showFullError ? "Hide Full Error" : "Show Full Error"}
+              </button>
+              {showFullError && (
+                <pre className="overflow-y-auto p-2 mt-2 max-h-48 text-xs text-left whitespace-pre-wrap bg-gray-100 rounded-md dark:bg-gray-700">
+                  <code className="text-gray-500 dark:text-gray-400">
+                    {generationError}
+                  </code>
+                </pre>
+              )}
+            </div>
             <div className="prose prose-base max-w-none font-sans break-words text-foreground [&_*]:text-foreground">
               <ReactMarkdown
                 components={{
@@ -460,7 +486,6 @@ export function ChatMessage({ message, chatSlug }: ChatMessageProps) {
                 {message.content}
               </ReactMarkdown>
             </div>
-
             {/* Sources section - only show if message has sources */}
             {message.sources && message.sources.length > 0 && (
               <MessageSources sources={message.sources} />

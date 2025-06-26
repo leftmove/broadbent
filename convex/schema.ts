@@ -103,6 +103,7 @@ const applicationTables = {
     userId: v.id("users"),
     cancelled: v.boolean(),
     searching: v.optional(v.boolean()),
+    error: v.optional(v.string()),
   })
     .index("by_message", ["messageId"])
     .index("by_user", ["userId"]),

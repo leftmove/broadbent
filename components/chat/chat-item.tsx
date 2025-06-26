@@ -110,16 +110,12 @@ export const ChatItem = memo(function ChatItem({
           </div>
 
           {/* Edit action buttons */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-0.5 bg-background/80 backdrop-blur-sm rounded-lg p-1 shadow-sm border border-border/30">
+          <div className="absolute top-1/2 -translate-y-1/2 right-2 z-20 flex items-center gap-0.5 bg-background/80 backdrop-blur-sm rounded-lg p-1 shadow-sm border border-border/30">
             <Button
               variant="ghost"
               size="sm"
               className="p-0 w-6 h-6 rounded-md transition-colors cursor-pointer hover:bg-green-500/20 hover:text-green-600"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void handleSave(e);
-              }}
+              onClick={handleSave}
               disabled={isUpdating}
             >
               <Check className="w-3 h-3" />
@@ -129,11 +125,7 @@ export const ChatItem = memo(function ChatItem({
               variant="ghost"
               size="sm"
               className="p-0 w-6 h-6 rounded-md transition-colors cursor-pointer hover:bg-red-500/20 hover:text-red-600"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleCancel(e);
-              }}
+              onClick={handleCancel}
               disabled={isUpdating}
             >
               <X className="w-3 h-3" />

@@ -166,14 +166,38 @@ export class MessagedError extends CustomError {
   }
 }
 
+function getProviderName(provider?: string) {
+  if (!provider) {
+    return "Unknown";
+  }
+
+  if (provider in llms.providers.map((p) => p.id)) {
+    return llms.provider(provider as AIProvider).name;
+  }
+
+  switch (provider.toLowerCase()) {
+    case "openai":
+      return "OpenAI";
+    case "anthropic":
+      return "Anthropic";
+    case "google":
+      return "Google";
+    case "xai":
+      return "xAI";
+    case "groq":
+      return "Groq";
+    case "firecrawl":
+      return "Firecrawl";
+    default:
+      return "Unknown";
+  }
+}
+
 export const DEFAULT_MESSAGE = () =>
   `An unexpected error occurred while generating the response.`;
 
 export const NO_API_KEY_SET = (provider: string) => {
-  const providerName =
-    (provider in llms.providers
-      ? llms.provider(provider as AIProvider).name
-      : provider) || "Unknown";
+  const providerName = getProviderName(provider);
   return `## Missing API Key
 
 No API key has been configured for **${providerName}**.
@@ -211,7 +235,7 @@ This is likely due to an error in our configuration. For now, you can try and sw
 };
 
 export const INVALID_PROVIDER = (provider?: AIProvider) => {
-  const providerName = provider ? llms.provider(provider).name : "Unknown";
+  const providerName = getProviderName(provider);
   return `## Provider Not Recognized
 
 The AI provider **${providerName}** is not supported or does not exist.
@@ -220,7 +244,7 @@ This is likely due to an error in our configuration. For now, you can try and sw
 };
 
 export const INVALID_RESOURCE = (provider?: AIProvider, model?: string) => {
-  const providerName = provider ? llms.provider(provider).name : "Unknown";
+  const providerName = getProviderName(provider);
   const modelName = model || "Unknown";
   return `## Resource Not Found
   
@@ -228,22 +252,26 @@ export const INVALID_RESOURCE = (provider?: AIProvider, model?: string) => {
   `;
 };
 
-export const RATE_LIMIT = (provider: string) => {
-  const providerName =
-    (provider in llms.providers
-      ? llms.provider(provider as AIProvider).name
-      : provider) || "Unknown";
+export const RATE_LIMIT = (provider: string, message?: string) => {
+  const providerName = getProviderName(provider);
   return `## Usage Limit Reached
 
 The API key for **${providerName}** has exceeded its usage allocation.
 
-You have either reached a temporary limit, or your billing has expired. Here are a couple of options going forward.
+A couple of things may have happened.
+
+- You have run out of credits in your account
+- You have reached a temporary limit
+- The model you selected is not available for your account
+
+Here are a couple of options going forward.
 
 - Wait for the limit to reset
 - Upgrade your subscription plan or add credits
 - Verify your API key is correct
+- Visit your provider's console to see more details
 
-For now, you can try and switch to a different provider/model.
+For now, you can try to switch to a different provider/model.
 `;
 };
 

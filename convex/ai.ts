@@ -77,6 +77,7 @@ async function messageError(
   });
   await ctx.runMutation(api.generations.cleanup, {
     messageId: messageSlug as Id<"messages">,
+    error: JSON.stringify(details, null, 2),
   });
 
   if (throwError) {
@@ -455,15 +456,16 @@ function createErrorHandler(
   return async ({ error }: { error: any }) => {
     controller.abort();
     state.hasError = true;
+    console.log("125 error", error);
     await messageError(
       config.ctx,
       "RequestError",
       "Error occurred streaming text for model.",
       {
-        error,
-        request: error.error,
+        request: error.error || error.lastError || error,
         provider: config.selectedProvider,
         model: config.modelId,
+        full: error,
       },
       config.chatSlug,
       config.messageSlug
@@ -604,7 +606,7 @@ export const generateResponse = action({
         model,
         messages,
         tools,
-        maxRetries: 10,
+        maxRetries: 2,
         maxSteps: 10,
         abortSignal: controller.signal,
         onChunk: createChunkHandler(config, state, controller),
@@ -624,13 +626,11 @@ export const generateResponse = action({
 
       return buildFinalResponse(state);
     } catch (error: any) {
-      console.log("123 error", error);
       if (error.name === "AbortError" || error.name === "MessagedError") {
         // Generation cancelled, do nothing.
         // Error thrown, but proper message was already sent to the user.
         throw error;
       } else {
-        console.log("123 error", error);
         return await messageError(
           ctx,
           "RequestError",
