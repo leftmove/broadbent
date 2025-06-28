@@ -1,4 +1,4 @@
-import { createAuthClient } from "better-auth/react"
+import { createAuthClient } from "better-auth/client"
 import type { Session, User } from "./auth"
 
 export const authClient = createAuthClient({
