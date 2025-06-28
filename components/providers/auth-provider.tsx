@@ -1,19 +1,13 @@
-"use client";
+"use client"
 
-import { ReactNode } from "react";
-import { ConvexAuthProvider } from "@convex-dev/auth/react";
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import { ReactNode } from "react"
 
 interface AuthProviderProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  return (
-    <ConvexProvider client={convex}>
-      <ConvexAuthProvider client={convex}>{children}</ConvexAuthProvider>
-    </ConvexProvider>
-  );
+  // Better Auth doesn't need a provider wrapper like Convex Auth
+  // The auth client handles everything internally
+  return <>{children}</>
 }

@@ -1,39 +1,36 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "convex/_generated/api";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { Avatar, AvatarFallback, AvatarImage } from "components/ui/avatar";
-import { LogOut, ChevronUp, Users, PlusCircle } from "lucide-react";
-import { cn } from "lib/utils";
-import { Button } from "components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAccounts } from "state/accounts";
-import { toast } from "sonner";
+import { useState } from "react"
+import { useSession, signOut } from "@/lib/auth-client"
+import { Avatar, AvatarFallback, AvatarImage } from "components/ui/avatar"
+import { LogOut, ChevronUp, Users, PlusCircle } from "lucide-react"
+import { cn } from "lib/utils"
+import { Button } from "components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
+import { useAccounts } from "state/accounts"
+import { toast } from "sonner"
 
 interface UserProfileProps {
-  collapsed?: boolean;
+  collapsed?: boolean
 }
 
 export function UserProfile({ collapsed = false }: UserProfileProps) {
-  const user = useQuery(api.auth.loggedInUser);
-  const { signOut } = useAuthActions();
-  const [expanded, setExpanded] = useState(false);
-  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
+  const { data: session } = useSession()
+  const [expanded, setExpanded] = useState(false)
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
 
-  const { accounts, switchToAccount, isValidatingAccount } = useAccounts();
+  const { accounts, switchToAccount, isValidatingAccount } = useAccounts()
 
-  // Prevent unnecessary re-renders with memoized handler functions
-  const handleToggleExpand = () => setExpanded((prev) => !prev);
-
+  const handleToggleExpand = () => setExpanded((prev) => !prev)
   const handleToggleAccountSwitcher = () => {
-    setShowAccountSwitcher((prev) => !prev);
-  };
-
-  if (!user) {
-    return null;
+    setShowAccountSwitcher((prev) => !prev)
   }
+
+  if (!session?.user) {
+    return null
+  }
+
+  const user = session.user
 
   // Generate initials from name or email
   const getInitials = (name?: string, email?: string) => {
@@ -43,55 +40,57 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
         .map((n) => n[0])
         .join("")
         .toUpperCase()
-        .substring(0, 2);
+        .substring(0, 2)
     }
 
     if (email) {
-      return email.substring(0, 2).toUpperCase();
+      return email.substring(0, 2).toUpperCase()
     }
 
-    return "U";
-  };
+    return "U"
+  }
 
   // Get name from user object or parse from email
   const getName = () => {
-    if (user.name) return user.name;
+    if (user.name) return user.name
     if (user.email) {
-      const emailName = user.email.split("@")[0];
+      const emailName = user.email.split("@")[0]
       // Convert to title case and replace dots/underscores with spaces
       return emailName
         .replace(/[._]/g, " ")
-        .replace(/\b\w/g, (l) => l.toUpperCase());
+        .replace(/\b\w/g, (l) => l.toUpperCase())
     }
-    return "User";
-  };
+    return "User"
+  }
 
-  // Get avatar from user object or use provider-specific avatar
+  // Get avatar from user object
   const getAvatar = () => {
-    return user.image || null;
-  };
+    return user.image || null
+  }
 
   const handleSignOut = () => {
-    void signOut();
-  };
+    void signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Signed out successfully")
+        },
+      },
+    })
+  }
 
   const handleSwitchAccount = (accountId: string) => {
-    switchToAccount(accountId);
-    setShowAccountSwitcher(false);
-    toast.success("Account switched successfully");
-
-    // In a real app, this would navigate to a sign-in page or trigger an auth flow
-    // For now, we just show a toast
-  };
+    switchToAccount(accountId)
+    setShowAccountSwitcher(false)
+    toast.success("Account switched successfully")
+  }
 
   // Get current account
   const currentAccount = accounts.find((account) => account.current) || {
     name: getName(),
     email: user.email || "",
     image: getAvatar(),
-  };
+  }
 
-  // Always render both versions, but using CSS to show/hide
   if (collapsed) {
     return (
       <div className="px-1 py-2 transition-all duration-150 ease-in-out">
@@ -110,13 +109,12 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
               </AvatarFallback>
             </Avatar>
           </button>
-          {/* Tooltip */}
           <div className="absolute top-1/2 left-full z-50 px-2 py-1 ml-2 text-xs whitespace-nowrap rounded opacity-0 transition-opacity duration-200 -translate-y-1/2 pointer-events-none bg-foreground text-background group-hover:opacity-100">
             {currentAccount.name}
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -243,5 +241,5 @@ export function UserProfile({ collapsed = false }: UserProfileProps) {
         )}
       </AnimatePresence>
     </div>
-  );
+  )
 }

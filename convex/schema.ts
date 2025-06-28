@@ -1,6 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 import { llms } from "../lib/ai/providers";
 
@@ -19,10 +18,60 @@ export const apiKeyProvidersValidator = v.union(
 );
 
 const applicationTables = {
+  // Better Auth tables - these will be created by the adapter
+  user: defineTable({
+    name: v.string(),
+    email: v.string(),
+    emailVerified: v.boolean(),
+    image: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  session: defineTable({
+    id: v.string(),
+    expiresAt: v.number(),
+    token: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    userId: v.id("user"),
+  })
+    .index("by_id", ["id"])
+    .index("by_user_id", ["userId"]),
+
+  account: defineTable({
+    id: v.string(),
+    accountId: v.string(),
+    providerId: v.string(),
+    userId: v.id("user"),
+    accessToken: v.optional(v.string()),
+    refreshToken: v.optional(v.string()),
+    idToken: v.optional(v.string()),
+    accessTokenExpiresAt: v.optional(v.number()),
+    refreshTokenExpiresAt: v.optional(v.number()),
+    scope: v.optional(v.string()),
+    password: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_provider_account", ["providerId", "accountId"]),
+
+  verification: defineTable({
+    id: v.string(),
+    identifier: v.string(),
+    value: v.string(),
+    expiresAt: v.number(),
+    createdAt: v.optional(v.number()),
+    updatedAt: v.optional(v.number()),
+  }).index("by_identifier", ["identifier"]),
+
   chats: defineTable({
     slug: v.string(),
     title: v.string(),
-    userId: v.id("users"),
+    userId: v.id("user"),
     pinned: v.optional(v.boolean()),
   })
     .index("by_user", ["userId"])
@@ -37,7 +86,7 @@ const applicationTables = {
       v.literal("system")
     ),
     type: v.optional(v.union(v.literal("error"), v.literal("normal"))),
-    userId: v.id("users"),
+    userId: v.id("user"),
     thinking: v.optional(v.string()),
     modelId: v.optional(v.string()),
     tools: v.optional(
@@ -85,13 +134,13 @@ const applicationTables = {
     }),
 
   settings: defineTable({
-    userId: v.id("users"),
+    userId: v.id("user"),
     provider: providersValidator,
     selectedModel: modelIdsValidator,
   }).index("by_user", ["userId"]),
 
   apiKeys: defineTable({
-    userId: v.id("users"),
+    userId: v.id("user"),
     provider: apiKeyProvidersValidator,
     keyValue: v.string(),
   })
@@ -100,7 +149,7 @@ const applicationTables = {
 
   generations: defineTable({
     messageId: v.id("messages"),
-    userId: v.id("users"),
+    userId: v.id("user"),
     cancelled: v.boolean(),
     searching: v.optional(v.boolean()),
     error: v.optional(v.string()),
@@ -109,7 +158,4 @@ const applicationTables = {
     .index("by_user", ["userId"]),
 };
 
-export default defineSchema({
-  ...authTables,
-  ...applicationTables,
-});
+export default defineSchema(applicationTables);

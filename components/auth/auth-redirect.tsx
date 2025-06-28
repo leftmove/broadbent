@@ -1,18 +1,18 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useConvexAuth } from "convex/react";
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "@/lib/auth-client"
 
 export function AuthRedirect() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const router = useRouter();
+  const { data: session, isPending } = useSession()
+  const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push("/");
+    if (!isPending && session) {
+      router.push("/")
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [session, isPending, router])
 
-  return null;
+  return null
 }

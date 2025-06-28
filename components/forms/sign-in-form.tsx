@@ -1,68 +1,50 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { Input } from "components/ui/input";
-import { Button } from "components/ui/button";
-import { toast } from "sonner";
-import { useAccounts } from "state/accounts";
-import { useQuery } from "convex/react";
-import { api } from "convex/_generated/api";
-import { Alert, AlertDescription } from "components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { useState } from "react"
+import { signIn } from "@/lib/auth-client"
+import { Button } from "components/ui/button"
+import { toast } from "sonner"
+import { Alert, AlertDescription } from "components/ui/alert"
+import { AlertCircle } from "lucide-react"
+
 interface SignInFormProps {
-  mode?: "signIn" | "addAccount";
-  showLinks?: boolean;
+  mode?: "signIn" | "addAccount"
+  showLinks?: boolean
 }
 
 export function SignInForm({
   mode = "signIn",
   showLinks = true,
 }: SignInFormProps) {
-  const { signIn } = useAuthActions();
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeProvider, setActiveProvider] = useState<string | null>(null);
-  const user = useQuery(api.auth.loggedInUser);
-  const { syncWithAuthUser } = useAccounts();
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync the current user with accounts system when user data changes
-  useEffect(() => {
-    // Only sync when we have a valid user and we're not in addAccount mode
-    // This prevents the infinite loop when switching accounts
-    if (user && mode === "signIn") {
-      syncWithAuthUser({
-        email: user.email || "",
-        name: user.name,
-        image: user.image,
-      });
-    }
-  }, [user, syncWithAuthUser, mode]);
+  const [isLoading, setIsLoading] = useState(false)
+  const [activeProvider, setActiveProvider] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleOAuthSignIn = async (provider: "github" | "google") => {
-    setIsLoading(true);
-    setActiveProvider(provider);
-    setError(null);
+    setIsLoading(true)
+    setActiveProvider(provider)
+    setError(null)
 
     try {
-      await signIn(provider);
-      // The user effect will handle syncing the user with accounts once signed in
+      await signIn.social({
+        provider,
+        callbackURL: "/",
+      })
     } catch (error: any) {
-      console.error(`${provider} sign in error:`, error);
-      setError(`Failed to sign in with ${provider}. ${error.message || ""}`);
-      toast.error(`Failed to sign in with ${provider}.`);
+      console.error(`${provider} sign in error:`, error)
+      setError(`Failed to sign in with ${provider}. ${error.message || ""}`)
+      toast.error(`Failed to sign in with ${provider}.`)
     } finally {
-      setIsLoading(false);
-      setActiveProvider(null);
+      setIsLoading(false)
+      setActiveProvider(null)
     }
-  };
+  }
 
-  const title = mode === "signIn" ? "Sign In" : "Add Account";
+  const title = mode === "signIn" ? "Sign In" : "Add Account"
   const subtitle =
     mode === "signIn"
       ? "Sign in with your preferred service"
-      : "Add another account to switch between different identities";
+      : "Add another account to switch between different identities"
 
   return (
     <div className="space-y-6">
@@ -177,7 +159,6 @@ export function SignInForm({
           )}
         </Button>
 
-        {/* Add explanatory note about OAuth */}
         <p className="text-xs text-center text-muted-foreground">
           We only support signing in with GitHub and Google accounts.
           {mode === "signIn" &&
@@ -185,5 +166,5 @@ export function SignInForm({
         </p>
       </div>
     </div>
-  );
+  )
 }
